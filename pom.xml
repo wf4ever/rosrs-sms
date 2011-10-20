@@ -1,0 +1,20 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>pl.psnc.dl.wf4ever</groupId>
+	<artifactId>rosrs-sms</artifactId>
+	<version>1.0.0-SNAPSHOT</version>
+	<name>ROSRS Semantic Metadata Service</name>
+	<inceptionYear>2010</inceptionYear>
+	<developers>
+		<developer>
+			<id>piotrhol</id>
+			<name>Piotr Hołubowicz</name>
+			<email>piotrhol@man.poznan.pl</email>
+			<roles>
+				<role>Developer</role>
+			</roles>
+			<organization>PSNC</organization>
+		</developer>
+	</developers>
+</project>
