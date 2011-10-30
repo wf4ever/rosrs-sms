@@ -5,6 +5,7 @@ package pl.psnc.dl.wf4ever.sms;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.util.List;
 import java.util.Map;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
@@ -20,33 +21,39 @@ public interface SemanticMetadataService {
 	}
 
 	/**
-	 * Create a research object (ro:ResearchObject, ore:Aggregation) with a
-	 * given URI. Automatically creates a manifest as well (ore:ResourceMap).
+	 * Create a research object (ro:ResearchObject, ore:Aggregation) described
+	 * by a manifest with a given URI. Automatically creates a manifest as well
+	 * (ore:ResourceMap). If URI is used already, an IllegalArgumentException is
+	 * thrown.
 	 * 
-	 * @param researchObjectURI
-	 *            Research Object URI
+	 * @param manifestURI
+	 *            manifest URI
+	 * @return Research Object URI
 	 */
-	void createResearchObject(URI researchObjectURI);
+	void createResearchObject(URI manifestURI);
 
 	/**
-	 * Create a copy of an existing RO under a new URI.
+	 * Create a copy of an existing RO under a new URI. If the existing URI
+	 * cannot be found, an IllegalArgumentException is thrown.
 	 * 
-	 * @param researchObjectURI
-	 *            New Research Object URI
-	 * @param baseResearchObjectURI
+	 * Details to be added in the future
+	 * 
+	 * @param manifestURI
+	 *            New manifest URI
+	 * @param baseManifestURI
 	 *            Original Research Object URI
+	 * @return New research object URI
 	 */
-	void createResearchObjectAsCopy(URI researchObjectURI,
-			URI baseResearchObjectURI);
+	void createResearchObjectAsCopy(URI manifestURI, URI baseManifestURI);
 
 	/**
-	 * Remove all research objects that match the given URI (includes its
-	 * descendants).
+	 * Remove all research objects whose manifests match the given URI (includes
+	 * its descendants).
 	 * 
-	 * @param researchObjectURI
-	 *            Research Object URI
+	 * @param manifestURI
+	 *            manifest URI
 	 */
-	void removeResearchObject(URI researchObjectURI);
+	void removeResearchObject(URI manifestURI);
 
 	/**
 	 * Get the RO metadata (ro:ResearchObject, ore:Aggregation).
@@ -72,6 +79,19 @@ public interface SemanticMetadataService {
 	InputStream getManifest(URI manifestURI, Notation notation);
 
 	/**
+	 * Updates the manifest (ore:ResourceMap), which includes the RO metadata
+	 * and proxies.
+	 * 
+	 * @param manifestURI
+	 *            manifest URI
+	 * @param manifest
+	 *            manifest input stream
+	 * @param notation
+	 *            RDF/XML or Trig
+	 */
+	void updateManifest(URI manifestURI, InputStream manifest, Notation notation);
+
+	/**
 	 * Add an aggregated resource (ro:Resource).
 	 * 
 	 * @param resourceURI
@@ -79,7 +99,7 @@ public interface SemanticMetadataService {
 	 * @param resourceInfo
 	 *            resource name, file size and checksum
 	 */
-	void addResource(URI resourceURI, ResourceInfo resourceInfo);
+	void addResource(URI manifestURI, URI resourceURI, ResourceInfo resourceInfo);
 
 	/**
 	 * Remove an aggregated resource.
@@ -87,7 +107,7 @@ public interface SemanticMetadataService {
 	 * @param resourceURI
 	 *            resource URI
 	 */
-	void removeResource(URI resourceURI);
+	void removeResource(URI manifestURI, URI resourceURI);
 
 	/**
 	 * Get resource description (name, file size and checksum).
@@ -113,8 +133,8 @@ public interface SemanticMetadataService {
 	 * @param attributes
 	 *            map of attributes and attribute values
 	 */
-	void addAnnotation(URI annotationURI, URI annotationBodyURI,
-			URI annotatedResourceURI, Map<String, String> attributes);
+	void addAnnotation(URI annotationURI, URI annotationBodyURI, URI annotatedResourceURI,
+			Map<String, String> attributes);
 
 	/**
 	 * Delete all annotations bodies that match a given URI (including their
@@ -149,34 +169,12 @@ public interface SemanticMetadataService {
 	InputStream getAnnotationBody(URI annotationBodyURI, Notation notation);
 
 	/**
-	 * Add a proxy to the manifest.
+	 * To be defined in the future.
 	 * 
-	 * @param proxyURI
-	 *            must be a fragment of the manifest.
-	 * @param proxyForURI
-	 *            aggregated resource URI
-	 * @param proxyInURI
-	 *            research object URI
-	 */
-	void addProxy(URI proxyURI, URI proxyForURI, URI proxyInURI);
-
-	/**
-	 * Delete a proxy
-	 * 
-	 * @param proxyURI
-	 *            proxy URI
-	 */
-	void deleteProxy(URI proxyURI);
-
-	/**
-	 * Get a proxy.
-	 * 
-	 * @param proxyURI
-	 *            proxy URI
-	 * @param notation
-	 *            Notation of the result. In text/plain, the proxyFor is
-	 *            returned.
+	 * @param workspaceId
+	 * @param queryParameters
 	 * @return
 	 */
-	InputStream getProxy(URI proxyURI, Notation notation);
+	List<URI> findResearchObjects(String workspaceId, Map<String, List<String>> queryParameters);
+
 }
