@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
+import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 import pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation;
 
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
@@ -26,6 +27,8 @@ import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.vocabulary.DCTerms;
 
 /**
@@ -49,6 +52,11 @@ public class SemanticMetadataServiceImplTest {
 	private final URI researchObjectURI = URI
 			.create("http://example.org/ROs/ro1/manifest#ro");
 
+	private final UserProfile userProfile = new UserProfile("jank", "pass",
+			"Jan Kowalski", false);
+	private final Property foafName = ModelFactory.createDefaultModel()
+			.createProperty("http://xmlns.com/foaf/0.1/name");
+
 	/**
 	 * Test method for
 	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#SemanticMetadataServiceImpl()}
@@ -67,9 +75,9 @@ public class SemanticMetadataServiceImplTest {
 	@Test
 	public final void testCreateResearchObject() {
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
-		sms.createResearchObject(manifestURI);
+		sms.createResearchObject(manifestURI, userProfile);
 		try {
-			sms.createResearchObject(manifestURI);
+			sms.createResearchObject(manifestURI, userProfile);
 			fail("Should have thrown an exception");
 		} catch (IllegalArgumentException e) {
 			// good
@@ -94,7 +102,7 @@ public class SemanticMetadataServiceImplTest {
 	@Test
 	public final void testRemoveResearchObject() {
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
-		sms.createResearchObject(manifestURI);
+		sms.createResearchObject(manifestURI, userProfile);
 		sms.removeResearchObject(manifestURI);
 		try {
 			sms.removeResearchObject(manifestURI);
@@ -126,24 +134,39 @@ public class SemanticMetadataServiceImplTest {
 	public final void testGetManifest() throws IOException, ParseException {
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		Calendar before = Calendar.getInstance();
-		sms.createResearchObject(manifestURI);
+		sms.createResearchObject(manifestURI, userProfile);
 		Calendar after = Calendar.getInstance();
 		InputStream is = sms.getManifest(manifestURI, Notation.RDF_XML);
 		OntModel model = ModelFactory
 				.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
 		model.read(is, null);
+
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		Individual ro = model.getIndividual(researchObjectURI.toString());
 		Assert.assertNotNull("Manifest must contain ro:Manifest", manifest);
 		Assert.assertNotNull("Manifest must contain ro:ResearchObject", ro);
+
 		Literal createdLiteral = manifest.getPropertyValue(DCTerms.created)
 				.asLiteral();
+		Assert.assertNotNull("Manifest must contain dcterms:created",
+				createdLiteral);
 		Assert.assertEquals("Date type is xsd:dateTime",
 				XSDDatatype.XSDdateTime, createdLiteral.getDatatype());
 		Calendar created = ((XSDDateTime) createdLiteral.asLiteral().getValue())
 				.asCalendar();
 		Assert.assertTrue("Created is a valid date", !before.after(created)
 				&& !after.before(created));
+
+		Resource creatorResource = manifest
+				.getPropertyResourceValue(DCTerms.creator);
+		Assert.assertNotNull("Manifest must contain dcterms:creator",
+				creatorResource);
+		Individual creator = creatorResource.as(Individual.class);
+		Assert.assertTrue("Creator must be a foaf:Agent",
+				creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
+		Assert.assertEquals("Creator name must be correct",
+				userProfile.getName(), creator.getPropertyValue(foafName)
+						.asLiteral().getString());
 
 		InputStream is2 = sms.getManifest(manifestURI, Notation.TRIG);
 		log.debug(IOUtils.toString(is2, "UTF-8"));

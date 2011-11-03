@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
+import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
 import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
@@ -48,10 +49,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 	private static final String RO_NAMESPACE = "http://example.wf4ever-project.org/2011/ro.owl#";
 
+	private static final String FOAF_NAMESPACE = "http://xmlns.com/foaf/0.1/";
+
 	private static final PrefixMapping standardNamespaces = PrefixMapping.Factory
 			.create().setNsPrefix("ore", ORE_NAMESPACE)
 			.setNsPrefix("ro", RO_NAMESPACE).setNsPrefix("dcterms", DCTerms.NS)
-			.lock();
+			.setNsPrefix("foaf", FOAF_NAMESPACE).lock();
 
 	private final OntModel model;
 
@@ -59,7 +62,11 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 	private final OntClass manifestClass;
 
+	private final OntClass foafAgentClass;
+
 	private final Property describes;
+
+	private final Property name;
 
 	private final String getManifestQueryTmpl = "PREFIX ore: <http://www.openarchives.org/ore/terms/> DESCRIBE <%s> ?ro WHERE { <%<s> ore:describes ?ro. }";
 
@@ -67,12 +74,19 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 		InputStream modelIS = getClass().getClassLoader().getResourceAsStream(
 				"ro.owl");
 		model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-		model.read(modelIS, "");
+		model.read(modelIS, null);
+
+		OntModel foafModel = ModelFactory
+				.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		foafModel.read(FOAF_NAMESPACE, null);
+		model.addSubModel(foafModel);
 
 		researchObjectClass = model
 				.getOntClass(RO_NAMESPACE + "ResearchObject");
 		manifestClass = model.getOntClass(RO_NAMESPACE + "Manifest");
 		describes = model.getProperty(ORE_NAMESPACE + "describes");
+		foafAgentClass = model.getOntClass(FOAF_NAMESPACE + "Agent");
+		name = model.getProperty(FOAF_NAMESPACE + "name");
 
 		model.setNsPrefixes(standardNamespaces);
 	}
@@ -85,7 +99,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 	 * .net.URI)
 	 */
 	@Override
-	public void createResearchObject(URI manifestURI) {
+	public void createResearchObject(URI manifestURI, UserProfile userProfile) {
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		if (manifest != null) {
 			throw new IllegalArgumentException("URI already exists");
@@ -97,6 +111,10 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 		model.add(manifest, describes, ro);
 		model.add(manifest, DCTerms.created,
 				createDateLiteral(Calendar.getInstance()));
+
+		Individual agent = model.createIndividual(foafAgentClass);
+		model.add(agent, name, userProfile.getName());
+		model.add(manifest, DCTerms.creator, agent);
 	}
 
 	/*

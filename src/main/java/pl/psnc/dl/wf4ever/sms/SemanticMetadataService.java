@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
+import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 
 /**
  * @author piotrhol
@@ -28,9 +29,12 @@ public interface SemanticMetadataService {
 	 * 
 	 * @param manifestURI
 	 *            manifest URI
+	 * @param userProfile
+	 *            profile of the user creating the research object, will be
+	 *            saved as FOAF
 	 * @return Research Object URI
 	 */
-	void createResearchObject(URI manifestURI);
+	void createResearchObject(URI manifestURI, UserProfile userProfile);
 
 	/**
 	 * Create a copy of an existing RO under a new URI. If the existing URI
