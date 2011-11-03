@@ -6,11 +6,13 @@ package pl.psnc.dl.wf4ever.sms;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
@@ -65,6 +67,12 @@ public class SemanticMetadataServiceImplTest
 
 	private final Property foafName = ModelFactory.createDefaultModel()
 			.createProperty("http://xmlns.com/foaf/0.1/name");
+
+	private final Property name = ModelFactory.createDefaultModel().createProperty(RO_NAMESPACE + "name");
+
+	private final Property filesize = ModelFactory.createDefaultModel().createProperty(RO_NAMESPACE + "filesize");
+
+	private final Property checksum = ModelFactory.createDefaultModel().createProperty(RO_NAMESPACE + "checksum");
 
 
 	/**
@@ -148,9 +156,8 @@ public class SemanticMetadataServiceImplTest
 		Calendar before = Calendar.getInstance();
 		sms.createResearchObject(manifestURI, userProfile);
 		Calendar after = Calendar.getInstance();
-		InputStream is = sms.getManifest(manifestURI, Notation.RDF_XML);
 		OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-		model.read(is, null);
+		model.read(sms.getManifest(manifestURI, Notation.RDF_XML), null);
 
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		Individual ro = model.getIndividual(researchObjectURI.toString());
@@ -172,8 +179,7 @@ public class SemanticMetadataServiceImplTest
 		Assert.assertEquals("Creator name must be correct", userProfile.getName(), creator.getPropertyValue(foafName)
 				.asLiteral().getString());
 
-		InputStream is2 = sms.getManifest(manifestURI, Notation.TRIG);
-		log.debug(IOUtils.toString(is2, "UTF-8"));
+		log.debug(IOUtils.toString(sms.getManifest(manifestURI, Notation.TRIG), "UTF-8"));
 	}
 
 
@@ -222,11 +228,55 @@ public class SemanticMetadataServiceImplTest
 	 * Test method for
 	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getResource(java.net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)}
 	 * .
+	 * @throws URISyntaxException 
 	 */
 	@Test
 	public final void testGetResource()
+		throws URISyntaxException
 	{
-		fail("Not yet implemented");
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
+		sms.createResearchObject(manifestURI, userProfile);
+		sms.addResource(manifestURI, resource1URI, resource1Info);
+		sms.addResource(manifestURI, resource2URI, resource2Info);
+
+		OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		model.read(sms.getResource(resource1URI, Notation.RDF_XML), null);
+		verifyResource(model, resource1URI, resource1Info);
+
+		model.read(sms.getResource(resource2URI, Notation.RDF_XML), null);
+		verifyResource(model, resource2URI, resource2Info);
+	}
+
+
+	/**
+	 * @param model
+	 * @param resourceInfo 
+	 * @param resourceURI 
+	 * @throws URISyntaxException
+	 */
+	private void verifyResource(OntModel model, URI resourceURI, ResourceInfo resourceInfo)
+		throws URISyntaxException
+	{
+		Individual resource = model.getIndividual(resourceURI.toString());
+		Assert.assertNotNull("Resource cannot be null", resource);
+		Literal nameLiteral = resource.getPropertyValue(name).asLiteral();
+		Assert.assertNotNull("Resource must contain ro:name", nameLiteral);
+		Assert.assertEquals("Name type is xsd:string", XSDDatatype.XSDstring, nameLiteral.getDatatype());
+		Assert.assertEquals("Name is valid", resourceInfo.getName(), nameLiteral.asLiteral().getString());
+
+		Literal filesizeLiteral = resource.getPropertyValue(filesize).asLiteral();
+		Assert.assertNotNull("Resource must contain ro:filesize", filesizeLiteral);
+		Assert.assertEquals("Filesize type is xsd:long", XSDDatatype.XSDlong, filesizeLiteral.getDatatype());
+		Assert.assertEquals("Filesize is valid", resourceInfo.getSizeInBytes(), filesizeLiteral.asLiteral().getLong());
+
+		Resource checksumResource = resource.getPropertyValue(checksum).asResource();
+		Assert.assertNotNull("Resource must contain ro:checksum", checksumResource);
+		URI checksumURN = new URI(checksumResource.getURI());
+		Pattern p = Pattern.compile("urn:(\\w+):([0-9a-fA-F]+)");
+		Matcher m = p.matcher(checksumURN.toString());
+		Assert.assertTrue("Checksum can be parsed", m.matches());
+		Assert.assertEquals("Digest method is correct", resourceInfo.getDigestMethod(), m.group(1));
+		Assert.assertEquals("Checksum is correct", resourceInfo.getChecksum(), m.group(2));
 	}
 
 

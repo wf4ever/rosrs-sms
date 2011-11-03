@@ -77,6 +77,8 @@ public class SemanticMetadataServiceImpl
 
 	private final String getManifestQueryTmpl = "PREFIX ore: <http://www.openarchives.org/ore/terms/> DESCRIBE <%s> ?ro WHERE { <%<s> ore:describes ?ro. }";
 
+	private final String getResourceQueryTmpl = "DESCRIBE <%s> WHERE { }";
+
 
 	public SemanticMetadataServiceImpl()
 	{
@@ -235,9 +237,11 @@ public class SemanticMetadataServiceImpl
 			}
 			model.add(resource, filesize, model.createTypedLiteral(resourceInfo.getSizeInBytes()));
 			if (resourceInfo.getChecksum() != null && resourceInfo.getDigestMethod() != null) {
-				URI chk = URI.create(String.format("urn:%s:%s", resourceInfo.getDigestMethod(),
-					resourceInfo.getChecksum()));
-				model.add(resource, checksum, model.createTypedLiteral(chk));
+				model.add(
+					resource,
+					checksum,
+					model.createResource(String.format("urn:%s:%s", resourceInfo.getDigestMethod(),
+						resourceInfo.getChecksum())));
 			}
 		}
 	}
@@ -268,8 +272,20 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public InputStream getResource(URI resourceURI, Notation notation)
 	{
-		// TODO Auto-generated method stub
-		return null;
+		Individual resource = model.getIndividual(resourceURI.toString());
+		if (resource == null) {
+			throw new IllegalArgumentException("URI not found");
+		}
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+		String queryString = String.format(getResourceQueryTmpl, resourceURI.toString());
+		Query query = QueryFactory.create(queryString);
+		QueryExecution qexec = QueryExecutionFactory.create(query, model);
+		Model resultModel = qexec.execDescribe();
+		qexec.close();
+
+		resultModel.write(out, getJenaLang(notation));
+		return new ByteArrayInputStream(out.toByteArray());
 	}
 
 
