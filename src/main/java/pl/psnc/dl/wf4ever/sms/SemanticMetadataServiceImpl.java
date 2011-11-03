@@ -15,8 +15,6 @@ import java.util.Map;
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 
-import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
-import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
@@ -25,7 +23,6 @@ import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QueryFactory;
-import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
@@ -36,14 +33,15 @@ import com.hp.hpl.jena.vocabulary.DCTerms;
  * @author piotrhol
  * 
  */
-public class SemanticMetadataServiceImpl implements SemanticMetadataService {
+public class SemanticMetadataServiceImpl
+	implements SemanticMetadataService
+{
 
 	/**
 	 * Date format used for dates. This is NOT xsd:dateTime because of missing :
 	 * in time zone.
 	 */
-	public static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat(
-			"yyyy-MM-dd'T'HH:mm:ssZ");
+	public static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
 	private static final String ORE_NAMESPACE = "http://www.openarchives.org/ore/terms/";
 
@@ -51,9 +49,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 	private static final String FOAF_NAMESPACE = "http://xmlns.com/foaf/0.1/";
 
-	private static final PrefixMapping standardNamespaces = PrefixMapping.Factory
-			.create().setNsPrefix("ore", ORE_NAMESPACE)
-			.setNsPrefix("ro", RO_NAMESPACE).setNsPrefix("dcterms", DCTerms.NS)
+	private static final PrefixMapping standardNamespaces = PrefixMapping.Factory.create()
+			.setNsPrefix("ore", ORE_NAMESPACE).setNsPrefix("ro", RO_NAMESPACE).setNsPrefix("dcterms", DCTerms.NS)
 			.setNsPrefix("foaf", FOAF_NAMESPACE).lock();
 
 	private final OntModel model;
@@ -64,32 +61,47 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 	private final OntClass foafAgentClass;
 
+	private final OntClass resourceClass;
+
 	private final Property describes;
+
+	private final Property aggregates;
+
+	private final Property foafName;
 
 	private final Property name;
 
+	private final Property filesize;
+
+	private final Property checksum;
+
 	private final String getManifestQueryTmpl = "PREFIX ore: <http://www.openarchives.org/ore/terms/> DESCRIBE <%s> ?ro WHERE { <%<s> ore:describes ?ro. }";
 
-	public SemanticMetadataServiceImpl() {
-		InputStream modelIS = getClass().getClassLoader().getResourceAsStream(
-				"ro.owl");
+
+	public SemanticMetadataServiceImpl()
+	{
+		InputStream modelIS = getClass().getClassLoader().getResourceAsStream("ro.owl");
 		model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
 		model.read(modelIS, null);
 
-		OntModel foafModel = ModelFactory
-				.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		OntModel foafModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
 		foafModel.read(FOAF_NAMESPACE, null);
 		model.addSubModel(foafModel);
 
-		researchObjectClass = model
-				.getOntClass(RO_NAMESPACE + "ResearchObject");
+		researchObjectClass = model.getOntClass(RO_NAMESPACE + "ResearchObject");
 		manifestClass = model.getOntClass(RO_NAMESPACE + "Manifest");
+		resourceClass = model.getOntClass(RO_NAMESPACE + "Resource");
+		name = model.getProperty(RO_NAMESPACE + "name");
+		filesize = model.getProperty(RO_NAMESPACE + "filesize");
+		checksum = model.getProperty(RO_NAMESPACE + "checksum");
 		describes = model.getProperty(ORE_NAMESPACE + "describes");
+		aggregates = model.getProperty(ORE_NAMESPACE + "aggregates");
 		foafAgentClass = model.getOntClass(FOAF_NAMESPACE + "Agent");
-		name = model.getProperty(FOAF_NAMESPACE + "name");
+		foafName = model.getProperty(FOAF_NAMESPACE + "name");
 
 		model.setNsPrefixes(standardNamespaces);
 	}
+
 
 	/*
 	 * (non-Javadoc)
@@ -99,23 +111,22 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 	 * .net.URI)
 	 */
 	@Override
-	public void createResearchObject(URI manifestURI, UserProfile userProfile) {
+	public void createResearchObject(URI manifestURI, UserProfile userProfile)
+	{
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		if (manifest != null) {
 			throw new IllegalArgumentException("URI already exists");
 		}
-		manifest = model
-				.createIndividual(manifestURI.toString(), manifestClass);
-		Individual ro = model.createIndividual(manifestURI.toString() + "#ro",
-				researchObjectClass);
+		manifest = model.createIndividual(manifestURI.toString(), manifestClass);
+		Individual ro = model.createIndividual(manifestURI.toString() + "#ro", researchObjectClass);
 		model.add(manifest, describes, ro);
-		model.add(manifest, DCTerms.created,
-				createDateLiteral(Calendar.getInstance()));
+		model.add(manifest, DCTerms.created, model.createTypedLiteral(Calendar.getInstance()));
 
 		Individual agent = model.createIndividual(foafAgentClass);
-		model.add(agent, name, userProfile.getName());
+		model.add(agent, foafName, userProfile.getName());
 		model.add(manifest, DCTerms.creator, agent);
 	}
+
 
 	/*
 	 * (non-Javadoc)
@@ -125,10 +136,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 	 * (java.net.URI, java.net.URI)
 	 */
 	@Override
-	public void createResearchObjectAsCopy(URI manifestURI, URI baseManifestURI) {
+	public void createResearchObjectAsCopy(URI manifestURI, URI baseManifestURI)
+	{
 		// TODO Auto-generated method stub
 
 	}
+
 
 	/*
 	 * (non-Javadoc)
@@ -138,7 +151,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 	 * .net.URI)
 	 */
 	@Override
-	public void removeResearchObject(URI manifestURI) {
+	public void removeResearchObject(URI manifestURI)
+	{
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		if (manifest == null) {
 			throw new IllegalArgumentException("URI not found");
@@ -151,18 +165,6 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 		model.removeAll(ro, null, null);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService#getResearchObject(java
-	 * .net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
-	 */
-	@Override
-	public InputStream getResearchObject(URI manifestURI, Notation notation) {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	/*
 	 * (non-Javadoc)
@@ -172,15 +174,15 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
-	public InputStream getManifest(URI manifestURI, Notation notation) {
+	public InputStream getManifest(URI manifestURI, Notation notation)
+	{
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		if (manifest == null) {
 			throw new IllegalArgumentException("URI not found");
 		}
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 
-		String queryString = String.format(getManifestQueryTmpl,
-				manifestURI.toString());
+		String queryString = String.format(getManifestQueryTmpl, manifestURI.toString());
 		Query query = QueryFactory.create(queryString);
 		QueryExecution qexec = QueryExecutionFactory.create(query, model);
 		Model resultModel = qexec.execDescribe();
@@ -189,6 +191,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 		resultModel.write(out, getJenaLang(notation));
 		return new ByteArrayInputStream(out.toByteArray());
 	}
+
 
 	/*
 	 * (non-Javadoc)
@@ -199,11 +202,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
-	public void updateManifest(URI manifestURI, InputStream manifest,
-			Notation notation) {
+	public void updateManifest(URI manifestURI, InputStream manifest, Notation notation)
+	{
 		// TODO Auto-generated method stub
 
 	}
+
 
 	/*
 	 * (non-Javadoc)
@@ -213,11 +217,31 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 	 * java.net.URI, pl.psnc.dl.wf4ever.dlibra.ResourceInfo)
 	 */
 	@Override
-	public void addResource(URI manifestURI, URI resourceURI,
-			ResourceInfo resourceInfo) {
-		// TODO Auto-generated method stub
-
+	public void addResource(URI manifestURI, URI resourceURI, ResourceInfo resourceInfo)
+	{
+		Individual manifest = model.getIndividual(manifestURI.toString());
+		if (manifest == null) {
+			throw new IllegalArgumentException("URI not found");
+		}
+		Individual ro = model.getIndividual(manifestURI.toString() + "#ro");
+		if (ro == null) {
+			throw new IllegalArgumentException("URI not found");
+		}
+		Individual resource = model.createIndividual(resourceURI.toString(), resourceClass);
+		model.add(ro, aggregates, resource);
+		if (resourceInfo != null) {
+			if (resourceInfo.getName() != null) {
+				model.add(resource, name, model.createTypedLiteral(resourceInfo.getName()));
+			}
+			model.add(resource, filesize, model.createTypedLiteral(resourceInfo.getSizeInBytes()));
+			if (resourceInfo.getChecksum() != null && resourceInfo.getDigestMethod() != null) {
+				URI chk = URI.create(String.format("urn:%s:%s", resourceInfo.getDigestMethod(),
+					resourceInfo.getChecksum()));
+				model.add(resource, checksum, model.createTypedLiteral(chk));
+			}
+		}
 	}
+
 
 	/*
 	 * (non-Javadoc)
@@ -227,10 +251,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 	 * .URI, java.net.URI)
 	 */
 	@Override
-	public void removeResource(URI manifestURI, URI resourceURI) {
+	public void removeResource(URI manifestURI, URI resourceURI)
+	{
 		// TODO Auto-generated method stub
 
 	}
+
 
 	/*
 	 * (non-Javadoc)
@@ -240,10 +266,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
-	public InputStream getResource(URI resourceURI, Notation notation) {
+	public InputStream getResource(URI resourceURI, Notation notation)
+	{
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 
 	/*
 	 * (non-Javadoc)
@@ -253,11 +281,13 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 	 * .URI, java.net.URI, java.net.URI, java.util.Map)
 	 */
 	@Override
-	public void addAnnotation(URI annotationURI, URI annotationBodyURI,
-			URI annotatedResourceURI, Map<String, String> attributes) {
+	public void addAnnotation(URI annotationURI, URI annotationBodyURI, URI annotatedResourceURI,
+			Map<String, String> attributes)
+	{
 		// TODO Auto-generated method stub
 
 	}
+
 
 	/*
 	 * (non-Javadoc)
@@ -267,10 +297,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 	 * (java.net.URI)
 	 */
 	@Override
-	public void deleteAnnotationsWithBodies(URI annotationBodyURI) {
+	public void deleteAnnotationsWithBodies(URI annotationBodyURI)
+	{
 		// TODO Auto-generated method stub
 
 	}
+
 
 	/*
 	 * (non-Javadoc)
@@ -280,10 +312,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 	 * .URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
-	public InputStream getAnnotations(URI annotationsURI, Notation notation) {
+	public InputStream getAnnotations(URI annotationsURI, Notation notation)
+	{
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 
 	/*
 	 * (non-Javadoc)
@@ -293,11 +327,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 	 * .net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
-	public InputStream getAnnotationBody(URI annotationBodyURI,
-			Notation notation) {
+	public InputStream getAnnotationBody(URI annotationBodyURI, Notation notation)
+	{
 		// TODO Auto-generated method stub
 		return null;
 	}
+
 
 	/*
 	 * (non-Javadoc)
@@ -307,27 +342,23 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 	 * .lang.String, java.util.Map)
 	 */
 	@Override
-	public List<URI> findResearchObjects(String workspaceId,
-			Map<String, List<String>> queryParameters) {
+	public List<URI> findResearchObjects(String workspaceId, Map<String, List<String>> queryParameters)
+	{
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	private String getJenaLang(Notation notation) {
+
+	private String getJenaLang(Notation notation)
+	{
 		switch (notation) {
-		case RDF_XML:
-			return "RDF/XML";
-		case TRIG:
-			return "N3";
-		default:
-			return "RDF/XML";
+			case RDF_XML:
+				return "RDF/XML";
+			case TRIG:
+				return "N3";
+			default:
+				return "RDF/XML";
 		}
-	}
-
-	public Literal createDateLiteral(Calendar cal) {
-
-		return model.createTypedLiteral(new XSDDateTime(cal),
-				XSDDatatype.XSDdateTime);
 	}
 
 }

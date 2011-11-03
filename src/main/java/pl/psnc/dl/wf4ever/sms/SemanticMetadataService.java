@@ -60,17 +60,6 @@ public interface SemanticMetadataService {
 	void removeResearchObject(URI manifestURI);
 
 	/**
-	 * Get the RO metadata (ro:ResearchObject, ore:Aggregation).
-	 * 
-	 * @param manifestURI
-	 *            manifest URI
-	 * @param notation
-	 *            RDF/XML or Trig
-	 * @return
-	 */
-	InputStream getResearchObject(URI manifestURI, Notation notation);
-
-	/**
 	 * Get the manifest (ore:ResourceMap), which includes the RO metadata and
 	 * proxies.
 	 * 

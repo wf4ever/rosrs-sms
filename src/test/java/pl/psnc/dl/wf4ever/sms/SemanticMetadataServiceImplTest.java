@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
 
+import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 import pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation;
 
@@ -35,27 +36,36 @@ import com.hp.hpl.jena.vocabulary.DCTerms;
  * @author piotrhol
  * 
  */
-public class SemanticMetadataServiceImplTest {
+public class SemanticMetadataServiceImplTest
+{
 
-	private static final Logger log = Logger
-			.getLogger(SemanticMetadataServiceImplTest.class);
+	private static final Logger log = Logger.getLogger(SemanticMetadataServiceImplTest.class);
 
 	/**
 	 * Date format used for dates. This is NOT xsd:dateTime because of missing :
 	 * in time zone.
 	 */
-	public static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat(
-			"yyyy-MM-dd'T'HH:mm:ssZ");
+	public static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
-	private final URI manifestURI = URI
-			.create("http://example.org/ROs/ro1/manifest");
-	private final URI researchObjectURI = URI
-			.create("http://example.org/ROs/ro1/manifest#ro");
+	private final URI manifestURI = URI.create("http://example.org/ROs/ro1/manifest");
 
-	private final UserProfile userProfile = new UserProfile("jank", "pass",
-			"Jan Kowalski", false);
+	private final URI researchObjectURI = URI.create("http://example.org/ROs/ro1/manifest#ro");
+
+	private final URI resource1URI = URI.create("http://example.org/ROs/ro1/foo/bar.txt");
+
+	private final ResourceInfo resource1Info = new ResourceInfo("bar.txt", "ABC123455666344E", 646365L, "SHA1");
+
+	private final URI resource2URI = URI.create("http://workflows.org/a/workflow.scufl");
+
+	private final ResourceInfo resource2Info = new ResourceInfo("a workflow", "A0987654321EDCB", 6L, "MD5");
+
+	private final UserProfile userProfile = new UserProfile("jank", "pass", "Jan Kowalski", false);
+
+	private static final String RO_NAMESPACE = "http://example.wf4ever-project.org/2011/ro.owl#";
+
 	private final Property foafName = ModelFactory.createDefaultModel()
 			.createProperty("http://xmlns.com/foaf/0.1/name");
+
 
 	/**
 	 * Test method for
@@ -63,9 +73,11 @@ public class SemanticMetadataServiceImplTest {
 	 * .
 	 */
 	@Test
-	public final void testSemanticMetadataServiceImpl() {
+	public final void testSemanticMetadataServiceImpl()
+	{
 		new SemanticMetadataServiceImpl();
 	}
+
 
 	/**
 	 * Test method for
@@ -73,16 +85,19 @@ public class SemanticMetadataServiceImplTest {
 	 * .
 	 */
 	@Test
-	public final void testCreateResearchObject() {
+	public final void testCreateResearchObject()
+	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		sms.createResearchObject(manifestURI, userProfile);
 		try {
 			sms.createResearchObject(manifestURI, userProfile);
 			fail("Should have thrown an exception");
-		} catch (IllegalArgumentException e) {
+		}
+		catch (IllegalArgumentException e) {
 			// good
 		}
 	}
+
 
 	/**
 	 * Test method for
@@ -90,9 +105,11 @@ public class SemanticMetadataServiceImplTest {
 	 * .
 	 */
 	@Test
-	public final void testCreateResearchObjectAsCopy() {
+	public final void testCreateResearchObjectAsCopy()
+	{
 		fail("Not yet implemented");
 	}
+
 
 	/**
 	 * Test method for
@@ -100,27 +117,20 @@ public class SemanticMetadataServiceImplTest {
 	 * .
 	 */
 	@Test
-	public final void testRemoveResearchObject() {
+	public final void testRemoveResearchObject()
+	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		sms.createResearchObject(manifestURI, userProfile);
 		sms.removeResearchObject(manifestURI);
 		try {
 			sms.removeResearchObject(manifestURI);
 			fail("Should have thrown an exception");
-		} catch (IllegalArgumentException e) {
+		}
+		catch (IllegalArgumentException e) {
 			// good
 		}
 	}
 
-	/**
-	 * Test method for
-	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getResearchObject(java.net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)}
-	 * .
-	 */
-	@Test
-	public final void testGetResearchObject() {
-		fail("Not yet implemented");
-	}
 
 	/**
 	 * Test method for
@@ -131,46 +141,41 @@ public class SemanticMetadataServiceImplTest {
 	 * @throws ParseException
 	 */
 	@Test
-	public final void testGetManifest() throws IOException, ParseException {
+	public final void testGetManifest()
+		throws IOException, ParseException
+	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		Calendar before = Calendar.getInstance();
 		sms.createResearchObject(manifestURI, userProfile);
 		Calendar after = Calendar.getInstance();
 		InputStream is = sms.getManifest(manifestURI, Notation.RDF_XML);
-		OntModel model = ModelFactory
-				.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
 		model.read(is, null);
 
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		Individual ro = model.getIndividual(researchObjectURI.toString());
 		Assert.assertNotNull("Manifest must contain ro:Manifest", manifest);
 		Assert.assertNotNull("Manifest must contain ro:ResearchObject", ro);
+		Assert.assertTrue("Manifest must be a ro:Manifest", manifest.hasRDFType(RO_NAMESPACE + "Manifest"));
+		Assert.assertTrue("RO must be a ro:ResearchObject", ro.hasRDFType(RO_NAMESPACE + "ResearchObject"));
 
-		Literal createdLiteral = manifest.getPropertyValue(DCTerms.created)
-				.asLiteral();
-		Assert.assertNotNull("Manifest must contain dcterms:created",
-				createdLiteral);
-		Assert.assertEquals("Date type is xsd:dateTime",
-				XSDDatatype.XSDdateTime, createdLiteral.getDatatype());
-		Calendar created = ((XSDDateTime) createdLiteral.asLiteral().getValue())
-				.asCalendar();
-		Assert.assertTrue("Created is a valid date", !before.after(created)
-				&& !after.before(created));
+		Literal createdLiteral = manifest.getPropertyValue(DCTerms.created).asLiteral();
+		Assert.assertNotNull("Manifest must contain dcterms:created", createdLiteral);
+		Assert.assertEquals("Date type is xsd:dateTime", XSDDatatype.XSDdateTime, createdLiteral.getDatatype());
+		Calendar created = ((XSDDateTime) createdLiteral.asLiteral().getValue()).asCalendar();
+		Assert.assertTrue("Created is a valid date", !before.after(created) && !after.before(created));
 
-		Resource creatorResource = manifest
-				.getPropertyResourceValue(DCTerms.creator);
-		Assert.assertNotNull("Manifest must contain dcterms:creator",
-				creatorResource);
+		Resource creatorResource = manifest.getPropertyResourceValue(DCTerms.creator);
+		Assert.assertNotNull("Manifest must contain dcterms:creator", creatorResource);
 		Individual creator = creatorResource.as(Individual.class);
-		Assert.assertTrue("Creator must be a foaf:Agent",
-				creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
-		Assert.assertEquals("Creator name must be correct",
-				userProfile.getName(), creator.getPropertyValue(foafName)
-						.asLiteral().getString());
+		Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
+		Assert.assertEquals("Creator name must be correct", userProfile.getName(), creator.getPropertyValue(foafName)
+				.asLiteral().getString());
 
 		InputStream is2 = sms.getManifest(manifestURI, Notation.TRIG);
 		log.debug(IOUtils.toString(is2, "UTF-8"));
 	}
+
 
 	/**
 	 * Test method for
@@ -178,9 +183,11 @@ public class SemanticMetadataServiceImplTest {
 	 * .
 	 */
 	@Test
-	public final void testUpdateManifest() {
+	public final void testUpdateManifest()
+	{
 		fail("Not yet implemented");
 	}
+
 
 	/**
 	 * Test method for
@@ -188,9 +195,16 @@ public class SemanticMetadataServiceImplTest {
 	 * .
 	 */
 	@Test
-	public final void testAddResource() {
-		fail("Not yet implemented");
+	public final void testAddResource()
+	{
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
+		sms.createResearchObject(manifestURI, userProfile);
+		sms.addResource(manifestURI, resource1URI, resource1Info);
+		sms.addResource(manifestURI, resource2URI, resource2Info);
+		sms.addResource(manifestURI, resource1URI, null);
+		sms.addResource(manifestURI, resource1URI, new ResourceInfo(null, null, 0, null));
 	}
+
 
 	/**
 	 * Test method for
@@ -198,9 +212,11 @@ public class SemanticMetadataServiceImplTest {
 	 * .
 	 */
 	@Test
-	public final void testRemoveResource() {
+	public final void testRemoveResource()
+	{
 		fail("Not yet implemented");
 	}
+
 
 	/**
 	 * Test method for
@@ -208,9 +224,11 @@ public class SemanticMetadataServiceImplTest {
 	 * .
 	 */
 	@Test
-	public final void testGetResource() {
+	public final void testGetResource()
+	{
 		fail("Not yet implemented");
 	}
+
 
 	/**
 	 * Test method for
@@ -218,9 +236,11 @@ public class SemanticMetadataServiceImplTest {
 	 * .
 	 */
 	@Test
-	public final void testAddAnnotation() {
+	public final void testAddAnnotation()
+	{
 		fail("Not yet implemented");
 	}
+
 
 	/**
 	 * Test method for
@@ -228,9 +248,11 @@ public class SemanticMetadataServiceImplTest {
 	 * .
 	 */
 	@Test
-	public final void testDeleteAnnotationsWithBodies() {
+	public final void testDeleteAnnotationsWithBodies()
+	{
 		fail("Not yet implemented");
 	}
+
 
 	/**
 	 * Test method for
@@ -238,9 +260,11 @@ public class SemanticMetadataServiceImplTest {
 	 * .
 	 */
 	@Test
-	public final void testGetAnnotations() {
+	public final void testGetAnnotations()
+	{
 		fail("Not yet implemented");
 	}
+
 
 	/**
 	 * Test method for
@@ -248,9 +272,11 @@ public class SemanticMetadataServiceImplTest {
 	 * .
 	 */
 	@Test
-	public final void testGetAnnotationBody() {
+	public final void testGetAnnotationBody()
+	{
 		fail("Not yet implemented");
 	}
+
 
 	/**
 	 * Test method for
@@ -258,7 +284,8 @@ public class SemanticMetadataServiceImplTest {
 	 * .
 	 */
 	@Test
-	public final void testFindResearchObjects() {
+	public final void testFindResearchObjects()
+	{
 		fail("Not yet implemented");
 	}
 

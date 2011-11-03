@@ -3,27 +3,28 @@
 
 <!DOCTYPE rdf:RDF [
     <!ENTITY dcterms "http://purl.org/dc/terms/" >
+    <!ENTITY dcmitype "http://purl.org/dc/dcmitype/" >
     <!ENTITY owl "http://www.w3.org/2002/07/owl#" >
     <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
     <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
     <!ENTITY ore "http://www.openarchives.org/ore/terms/" >
+    <!ENTITY rdfg-1 "http://www.w3.org/2004/03/trix/rdfg-1/" >
     <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
-    <!ENTITY ro "http://example.wf4ever-project.org/2011/ro.owl#" >
 ]>
 
 
 <rdf:RDF xmlns="http://example.wf4ever-project.org/2011/ro.owl#"
      xml:base="http://example.wf4ever-project.org/2011/ro.owl"
+     xmlns:rdfg-1="http://www.w3.org/2004/03/trix/rdfg-1/"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
-     xmlns:ro="http://example.wf4ever-project.org/2011/ro.owl#"
-     xmlns:ore="http://www.openarchives.org/ore/terms/"
+     xmlns:dcmitype="http://purl.org/dc/dcmitype/"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:ore="http://www.openarchives.org/ore/terms/"
      xmlns:dcterms="http://purl.org/dc/terms/">
     <owl:Ontology rdf:about="http://example.wf4ever-project.org/2011/ro.owl">
         <dcterms:title>A stub of the RO ontology.</dcterms:title>
-        <owl:imports rdf:resource="http://www.openarchives.org/ore/terms/"/>
     </owl:Ontology>
     
 
@@ -42,6 +43,55 @@
     <!-- 
     ///////////////////////////////////////////////////////////////////////////////////////
     //
+    // Datatypes
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
+    // Data properties
+    //
+    ///////////////////////////////////////////////////////////////////////////////////////
+     -->
+
+    
+
+
+    <!-- http://example.wf4ever-project.org/2011/ro.owl#checksum -->
+
+    <owl:DatatypeProperty rdf:about="http://example.wf4ever-project.org/2011/ro.owl#checksum">
+        <rdfs:domain rdf:resource="http://example.wf4ever-project.org/2011/ro.owl#Resource"/>
+        <rdfs:range rdf:resource="&xsd;anyURI"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://example.wf4ever-project.org/2011/ro.owl#filesize -->
+
+    <owl:DatatypeProperty rdf:about="http://example.wf4ever-project.org/2011/ro.owl#filesize">
+        <rdfs:domain rdf:resource="http://example.wf4ever-project.org/2011/ro.owl#Resource"/>
+        <rdfs:range rdf:resource="&xsd;long"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- http://example.wf4ever-project.org/2011/ro.owl#name -->
+
+    <owl:DatatypeProperty rdf:about="http://example.wf4ever-project.org/2011/ro.owl#name">
+        <rdfs:domain rdf:resource="http://example.wf4ever-project.org/2011/ro.owl#Resource"/>
+        <rdfs:range rdf:resource="&xsd;string"/>
+    </owl:DatatypeProperty>
+    
+
+
+    <!-- 
+    ///////////////////////////////////////////////////////////////////////////////////////
+    //
     // Classes
     //
     ///////////////////////////////////////////////////////////////////////////////////////
@@ -52,15 +102,15 @@
 
     <!-- http://example.wf4ever-project.org/2011/ro.owl#Artifact -->
 
-    <owl:Class rdf:about="&ro;Artifact">
-        <rdfs:subClassOf rdf:resource="&ore;AggregatedResource"/>
+    <owl:Class rdf:about="http://example.wf4ever-project.org/2011/ro.owl#Artifact">
+        <rdfs:subClassOf rdf:resource="http://example.wf4ever-project.org/2011/ro.owl#Resource"/>
     </owl:Class>
     
 
 
     <!-- http://example.wf4ever-project.org/2011/ro.owl#Manifest -->
 
-    <owl:Class rdf:about="&ro;Manifest">
+    <owl:Class rdf:about="http://example.wf4ever-project.org/2011/ro.owl#Manifest">
         <rdfs:subClassOf rdf:resource="&ore;ResourceMap"/>
     </owl:Class>
     
@@ -68,10 +118,20 @@
 
     <!-- http://example.wf4ever-project.org/2011/ro.owl#ResearchObject -->
 
-    <owl:Class rdf:about="&ro;ResearchObject">
-        <rdfs:subClassOf rdf:resource="&ore;AggregatedResource"/>
+    <owl:Class rdf:about="http://example.wf4ever-project.org/2011/ro.owl#ResearchObject">
+        <rdfs:subClassOf rdf:resource="http://example.wf4ever-project.org/2011/ro.owl#Resource"/>
         <rdfs:subClassOf rdf:resource="&ore;Aggregation"/>
     </owl:Class>
+    
+
+
+    <!-- http://example.wf4ever-project.org/2011/ro.owl#Resource -->
+
+    <owl:Class rdf:about="http://example.wf4ever-project.org/2011/ro.owl#Resource">
+        <rdfs:subClassOf rdf:resource="&ore;AggregatedResource"/>
+    </owl:Class>
+    
+
 </rdf:RDF>
 
 
