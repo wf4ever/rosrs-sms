@@ -133,8 +133,8 @@ public interface SemanticMetadataService {
 	 * @param attributes
 	 *            map of attributes and attribute values
 	 */
-	void addAnnotation(URI annotationURI, URI annotationBodyURI, URI annotatedResourceURI,
-			Map<String, String> attributes);
+	void addAnnotation(URI annotationURI, URI annotationBodyURI,
+			URI annotatedResourceURI, Map<String, String> attributes);
 
 	/**
 	 * Delete all annotations bodies that match a given URI (including their
@@ -175,6 +175,7 @@ public interface SemanticMetadataService {
 	 * @param queryParameters
 	 * @return
 	 */
-	List<URI> findResearchObjects(String workspaceId, Map<String, List<String>> queryParameters);
+	List<URI> findResearchObjects(String workspaceId,
+			Map<String, List<String>> queryParameters);
 
 }

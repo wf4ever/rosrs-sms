@@ -7,18 +7,29 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URI;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 
+import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
+import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.QueryFactory;
+import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.shared.PrefixMapping;
+import com.hp.hpl.jena.vocabulary.DCTerms;
 
 /**
  * @author piotrhol
@@ -26,9 +37,21 @@ import com.hp.hpl.jena.rdf.model.Property;
  */
 public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
+	/**
+	 * Date format used for dates. This is NOT xsd:dateTime because of missing :
+	 * in time zone.
+	 */
+	public static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat(
+			"yyyy-MM-dd'T'HH:mm:ssZ");
+
 	private static final String ORE_NAMESPACE = "http://www.openarchives.org/ore/terms/";
 
 	private static final String RO_NAMESPACE = "http://example.wf4ever-project.org/2011/ro.owl#";
+
+	private static final PrefixMapping standardNamespaces = PrefixMapping.Factory
+			.create().setNsPrefix("ore", ORE_NAMESPACE)
+			.setNsPrefix("ro", RO_NAMESPACE).setNsPrefix("dcterms", DCTerms.NS)
+			.lock();
 
 	private final OntModel model;
 
@@ -38,19 +61,20 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 	private final Property describes;
 
+	private final String getManifestQueryTmpl = "PREFIX ore: <http://www.openarchives.org/ore/terms/> DESCRIBE <%s> ?ro WHERE { <%<s> ore:describes ?ro. }";
+
 	public SemanticMetadataServiceImpl() {
 		InputStream modelIS = getClass().getClassLoader().getResourceAsStream(
 				"ro.owl");
-		OntModel base = ModelFactory
-				.createOntologyModel(OntModelSpec.OWL_LITE_MEM_RULES_INF);
-		base.read(modelIS, "");
+		model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		model.read(modelIS, "");
 
-		researchObjectClass = base.getOntClass(RO_NAMESPACE + "ResearchObject");
-		manifestClass = base.getOntClass(RO_NAMESPACE + "Manifest");
-		describes = base.getProperty(ORE_NAMESPACE + "describes");
+		researchObjectClass = model
+				.getOntClass(RO_NAMESPACE + "ResearchObject");
+		manifestClass = model.getOntClass(RO_NAMESPACE + "Manifest");
+		describes = model.getProperty(ORE_NAMESPACE + "describes");
 
-		model = ModelFactory.createOntologyModel(
-				OntModelSpec.OWL_LITE_MEM_RULES_INF, base);
+		model.setNsPrefixes(standardNamespaces);
 	}
 
 	/*
@@ -70,7 +94,9 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 				.createIndividual(manifestURI.toString(), manifestClass);
 		Individual ro = model.createIndividual(manifestURI.toString() + "#ro",
 				researchObjectClass);
-		manifest.addProperty(describes, ro);
+		model.add(manifest, describes, ro);
+		model.add(manifest, DCTerms.created,
+				createDateLiteral(Calendar.getInstance()));
 	}
 
 	/*
@@ -134,9 +160,15 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 			throw new IllegalArgumentException("URI not found");
 		}
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		Model manifestModel = ModelFactory.createDefaultModel();
 
-		manifestModel.write(out, getJenaLang(notation));
+		String queryString = String.format(getManifestQueryTmpl,
+				manifestURI.toString());
+		Query query = QueryFactory.create(queryString);
+		QueryExecution qexec = QueryExecutionFactory.create(query, model);
+		Model resultModel = qexec.execDescribe();
+		qexec.close();
+
+		resultModel.write(out, getJenaLang(notation));
 		return new ByteArrayInputStream(out.toByteArray());
 	}
 
@@ -272,6 +304,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 		default:
 			return "RDF/XML";
 		}
+	}
+
+	public Literal createDateLiteral(Calendar cal) {
+
+		return model.createTypedLiteral(new XSDDateTime(cal),
+				XSDDatatype.XSDdateTime);
 	}
 
 }

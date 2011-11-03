@@ -2,11 +2,11 @@
 
 
 <!DOCTYPE rdf:RDF [
-    <!ENTITY terms2 "http://purl.org/dc/terms/" >
+    <!ENTITY dcterms "http://purl.org/dc/terms/" >
     <!ENTITY owl "http://www.w3.org/2002/07/owl#" >
     <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
     <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
-    <!ENTITY terms "http://www.openarchives.org/ore/terms/" >
+    <!ENTITY ore "http://www.openarchives.org/ore/terms/" >
     <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
     <!ENTITY ro "http://example.wf4ever-project.org/2011/ro.owl#" >
 ]>
@@ -16,13 +16,13 @@
      xml:base="http://example.wf4ever-project.org/2011/ro.owl"
      xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
      xmlns:ro="http://example.wf4ever-project.org/2011/ro.owl#"
-     xmlns:terms="http://www.openarchives.org/ore/terms/"
+     xmlns:ore="http://www.openarchives.org/ore/terms/"
      xmlns:owl="http://www.w3.org/2002/07/owl#"
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-     xmlns:terms2="http://purl.org/dc/terms/">
+     xmlns:dcterms="http://purl.org/dc/terms/">
     <owl:Ontology rdf:about="http://example.wf4ever-project.org/2011/ro.owl">
-        <terms2:title>A stub of the RO ontology.</terms2:title>
+        <dcterms:title>A stub of the RO ontology.</dcterms:title>
         <owl:imports rdf:resource="http://www.openarchives.org/ore/terms/"/>
     </owl:Ontology>
     
@@ -53,7 +53,7 @@
     <!-- http://example.wf4ever-project.org/2011/ro.owl#Artifact -->
 
     <owl:Class rdf:about="&ro;Artifact">
-        <rdfs:subClassOf rdf:resource="&terms;AggregatedResource"/>
+        <rdfs:subClassOf rdf:resource="&ore;AggregatedResource"/>
     </owl:Class>
     
 
@@ -61,7 +61,7 @@
     <!-- http://example.wf4ever-project.org/2011/ro.owl#Manifest -->
 
     <owl:Class rdf:about="&ro;Manifest">
-        <rdfs:subClassOf rdf:resource="&terms;ResourceMap"/>
+        <rdfs:subClassOf rdf:resource="&ore;ResourceMap"/>
     </owl:Class>
     
 
@@ -69,8 +69,8 @@
     <!-- http://example.wf4ever-project.org/2011/ro.owl#ResearchObject -->
 
     <owl:Class rdf:about="&ro;ResearchObject">
-        <rdfs:subClassOf rdf:resource="&terms;AggregatedResource"/>
-        <rdfs:subClassOf rdf:resource="&terms;Aggregation"/>
+        <rdfs:subClassOf rdf:resource="&ore;AggregatedResource"/>
+        <rdfs:subClassOf rdf:resource="&ore;Aggregation"/>
     </owl:Class>
 </rdf:RDF>
 
