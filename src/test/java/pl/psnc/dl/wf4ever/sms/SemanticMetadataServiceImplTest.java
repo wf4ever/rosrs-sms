@@ -220,7 +220,26 @@ public class SemanticMetadataServiceImplTest
 	@Test
 	public final void testRemoveResource()
 	{
-		fail("Not yet implemented");
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
+		sms.createResearchObject(manifestURI, userProfile);
+		sms.addResource(manifestURI, resource1URI, resource1Info);
+		sms.addResource(manifestURI, resource2URI, resource2Info);
+		sms.removeResource(manifestURI, resource1URI);
+		try {
+			sms.removeResource(manifestURI, resource1URI);
+			fail("Should have thrown an exception");
+		}
+		catch (IllegalArgumentException e) {
+			// good
+		}
+		sms.removeResource(manifestURI, resource2URI);
+		try {
+			sms.removeResource(manifestURI, resource2URI);
+			fail("Should have thrown an exception");
+		}
+		catch (IllegalArgumentException e) {
+			// good
+		}
 	}
 
 

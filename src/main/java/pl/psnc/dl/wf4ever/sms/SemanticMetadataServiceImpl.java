@@ -26,6 +26,7 @@ import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.shared.PrefixMapping;
 import com.hp.hpl.jena.vocabulary.DCTerms;
 
@@ -257,8 +258,20 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public void removeResource(URI manifestURI, URI resourceURI)
 	{
-		// TODO Auto-generated method stub
+		Individual ro = model.getIndividual(manifestURI.toString() + "#ro");
+		if (ro == null) {
+			throw new IllegalArgumentException("URI not found");
+		}
+		Individual resource = model.getIndividual(resourceURI.toString());
+		if (resource == null) {
+			throw new IllegalArgumentException("URI not found");
+		}
+		model.remove(ro, aggregates, resource);
 
+		StmtIterator it = model.listStatements(null, aggregates, resource);
+		if (!it.hasNext()) {
+			model.removeAll(resource, null, null);
+		}
 	}
 
 
