@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,15 +42,11 @@ public class SemanticMetadataServiceImplTest
 
 	private static final Logger log = Logger.getLogger(SemanticMetadataServiceImplTest.class);
 
-	/**
-	 * Date format used for dates. This is NOT xsd:dateTime because of missing :
-	 * in time zone.
-	 */
-	public static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
-
 	private final URI manifestURI = URI.create("http://example.org/ROs/ro1/manifest");
 
 	private final URI researchObjectURI = URI.create("http://example.org/ROs/ro1/manifest#ro");
+
+	private final URI annotationsURI = URI.create("http://example.org/ROs/ro1/annotations");
 
 	private final URI resource1URI = URI.create("http://example.org/ROs/ro1/foo/bar.txt");
 
@@ -178,6 +173,10 @@ public class SemanticMetadataServiceImplTest
 		Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
 		Assert.assertEquals("Creator name must be correct", userProfile.getName(), creator.getPropertyValue(foafName)
 				.asLiteral().getString());
+
+		Resource annotations = manifest.getSeeAlso();
+		Assert.assertNotNull("Manifest must contain reference to annotations", annotations);
+		Assert.assertEquals("Annotations URI must be correct", annotationsURI.toString(), annotations.getURI());
 
 		log.debug(IOUtils.toString(sms.getManifest(manifestURI, Notation.TRIG), "UTF-8"));
 	}

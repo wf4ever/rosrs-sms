@@ -7,7 +7,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URI;
-import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +25,7 @@ import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.shared.PrefixMapping;
 import com.hp.hpl.jena.vocabulary.DCTerms;
@@ -37,12 +37,6 @@ import com.hp.hpl.jena.vocabulary.DCTerms;
 public class SemanticMetadataServiceImpl
 	implements SemanticMetadataService
 {
-
-	/**
-	 * Date format used for dates. This is NOT xsd:dateTime because of missing :
-	 * in time zone.
-	 */
-	public static final SimpleDateFormat dateTimeFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZ");
 
 	private static final String ORE_NAMESPACE = "http://www.openarchives.org/ore/terms/";
 
@@ -64,6 +58,8 @@ public class SemanticMetadataServiceImpl
 
 	private final OntClass resourceClass;
 
+	//	private final OntClass annotationClass;
+	//
 	private final Property describes;
 
 	private final Property aggregates;
@@ -128,6 +124,9 @@ public class SemanticMetadataServiceImpl
 		Individual agent = model.createIndividual(foafAgentClass);
 		model.add(agent, foafName, userProfile.getName());
 		model.add(manifest, DCTerms.creator, agent);
+
+		Resource annotations = model.createResource(manifestURI.resolve("annotations").toString());
+		manifest.addSeeAlso(annotations);
 	}
 
 
