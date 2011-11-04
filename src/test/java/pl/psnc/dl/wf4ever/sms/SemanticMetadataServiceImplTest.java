@@ -6,10 +6,13 @@ package pl.psnc.dl.wf4ever.sms;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.util.Calendar;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,6 +30,11 @@ import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
+import com.hp.hpl.jena.query.Query;
+import com.hp.hpl.jena.query.QueryExecution;
+import com.hp.hpl.jena.query.QueryExecutionFactory;
+import com.hp.hpl.jena.query.QueryFactory;
+import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
@@ -69,6 +77,15 @@ public class SemanticMetadataServiceImplTest
 
 	private final Property checksum = ModelFactory.createDefaultModel().createProperty(RO_NAMESPACE + "checksum");
 
+	private final Property aggregates = ModelFactory.createDefaultModel().createProperty(
+		"http://www.openarchives.org/ore/terms/aggregates");
+
+	private final Property proxyFor = ModelFactory.createDefaultModel().createProperty(
+		"http://www.openarchives.org/ore/terms/proxyFor");
+
+	private final Property proxyIn = ModelFactory.createDefaultModel().createProperty(
+		"http://www.openarchives.org/ore/terms/proxyIn");
+
 
 	/**
 	 * Test method for
@@ -84,16 +101,16 @@ public class SemanticMetadataServiceImplTest
 
 	/**
 	 * Test method for
-	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#createResearchObject(java.net.URI)}
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#createManifest(java.net.URI)}
 	 * .
 	 */
 	@Test
-	public final void testCreateResearchObject()
+	public final void testCreateManifest()
 	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
-		sms.createResearchObject(manifestURI, userProfile);
+		sms.createManifest(manifestURI, userProfile);
 		try {
-			sms.createResearchObject(manifestURI, userProfile);
+			sms.createManifest(manifestURI, userProfile);
 			fail("Should have thrown an exception");
 		}
 		catch (IllegalArgumentException e) {
@@ -116,17 +133,17 @@ public class SemanticMetadataServiceImplTest
 
 	/**
 	 * Test method for
-	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#removeResearchObject(java.net.URI)}
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#removeManifest(java.net.URI)}
 	 * .
 	 */
 	@Test
-	public final void testRemoveResearchObject()
+	public final void testRemoveManifest()
 	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
-		sms.createResearchObject(manifestURI, userProfile);
-		sms.removeResearchObject(manifestURI);
+		sms.createManifest(manifestURI, userProfile);
+		sms.removeManifest(manifestURI);
 		try {
-			sms.removeResearchObject(manifestURI);
+			sms.removeManifest(manifestURI);
 			fail("Should have thrown an exception");
 		}
 		catch (IllegalArgumentException e) {
@@ -149,7 +166,7 @@ public class SemanticMetadataServiceImplTest
 	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		Calendar before = Calendar.getInstance();
-		sms.createResearchObject(manifestURI, userProfile);
+		sms.createManifest(manifestURI, userProfile);
 		Calendar after = Calendar.getInstance();
 		OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
 		model.read(sms.getManifest(manifestURI, Notation.RDF_XML), null);
@@ -164,7 +181,7 @@ public class SemanticMetadataServiceImplTest
 		Literal createdLiteral = manifest.getPropertyValue(DCTerms.created).asLiteral();
 		Assert.assertNotNull("Manifest must contain dcterms:created", createdLiteral);
 		Assert.assertEquals("Date type is xsd:dateTime", XSDDatatype.XSDdateTime, createdLiteral.getDatatype());
-		Calendar created = ((XSDDateTime) createdLiteral.asLiteral().getValue()).asCalendar();
+		Calendar created = ((XSDDateTime) createdLiteral.getValue()).asCalendar();
 		Assert.assertTrue("Created is a valid date", !before.after(created) && !after.before(created));
 
 		Resource creatorResource = manifest.getPropertyResourceValue(DCTerms.creator);
@@ -178,19 +195,80 @@ public class SemanticMetadataServiceImplTest
 		Assert.assertNotNull("Manifest must contain reference to annotations", annotations);
 		Assert.assertEquals("Annotations URI must be correct", annotationsURI.toString(), annotations.getURI());
 
-		log.debug(IOUtils.toString(sms.getManifest(manifestURI, Notation.TRIG), "UTF-8"));
+		log.debug(IOUtils.toString(sms.getManifest(manifestURI, Notation.TURTLE), "UTF-8"));
 	}
 
 
 	/**
 	 * Test method for
-	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#updateManifest(java.net.URI, java.io.InputStream, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)}
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#createManifest(java.net.URI, java.io.InputStream, pl.psnc.dl.wf4everdlibra.UserProfile)}
 	 * .
+	 * @throws IOException 
+	 * @throws ParseException 
 	 */
 	@Test
 	public final void testUpdateManifest()
+		throws IOException, ParseException
 	{
-		fail("Not yet implemented");
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
+		sms.createManifest(manifestURI, userProfile);
+		sms.addResource(manifestURI, resource1URI, resource1Info);
+		sms.addResource(manifestURI, resource2URI, resource2Info);
+
+		InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.n3");
+		sms.createManifest(manifestURI, is, Notation.TURTLE, userProfile);
+
+		log.debug(IOUtils.toString(sms.getManifest(manifestURI, Notation.TURTLE), "UTF-8"));
+
+		OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		model.read(sms.getManifest(manifestURI, Notation.RDF_XML), null);
+
+		Individual manifest = model.getIndividual(manifestURI.toString());
+		Individual ro = model.getIndividual(researchObjectURI.toString());
+
+		Assert.assertEquals("Created has been updated", "2011-07-14T15:01:14Z",
+			manifest.getPropertyValue(DCTerms.created).asLiteral().getString());
+
+		Set<String> creators = new HashSet<String>();
+		String creatorsQuery = String.format("PREFIX dcterms: <%s> PREFIX foaf: <%s> SELECT ?name "
+				+ "WHERE { <%s> dcterms:creator ?x . ?x foaf:name ?name . }", DCTerms.NS, "http://xmlns.com/foaf/0.1/",
+			manifestURI.toString());
+		Query query = QueryFactory.create(creatorsQuery);
+		QueryExecution qexec = QueryExecutionFactory.create(query, model);
+		try {
+			ResultSet results = qexec.execSelect();
+			while (results.hasNext()) {
+				creators.add(results.nextSolution().getLiteral("name").getString());
+			}
+		}
+		finally {
+			qexec.close();
+		}
+
+		Assert.assertTrue("New creator has been added", creators.contains("Stian Soiland-Reyes"));
+		Assert.assertTrue("Old creator has been preserved", creators.contains(userProfile.getName()));
+
+		Assert.assertTrue("RO must aggregate resources",
+			model.contains(ro, aggregates, model.createResource("http://example.com/workflow.scufl2")));
+		Assert.assertTrue("RO must aggregate resources",
+			model.contains(ro, aggregates, model.createResource("http://example.org/ROs/ro1/input.txt")));
+		Assert.assertTrue("RO must aggregate resources",
+			model.contains(ro, aggregates, model.createResource("http://example.org/ROs/ro1/output.txt")));
+		validateProxy(model, manifest, manifestURI.toString() + "#workflowProxy", "http://example.com/workflow.scufl2");
+		validateProxy(model, manifest, manifestURI.toString() + "#inputProxy", "http://example.org/ROs/ro1/input.txt");
+		validateProxy(model, manifest, manifestURI.toString() + "#outputProxy", "http://example.org/ROs/ro1/output.txt");
+	}
+
+
+	private void validateProxy(OntModel model, Individual manifest, String proxyURI, String proxyForURI)
+	{
+		Individual proxy = model.getIndividual(proxyURI);
+		Assert.assertNotNull("Manifest must contain " + proxyURI, proxy);
+		Assert.assertTrue(String.format("Proxy %s must be a ore:Proxy", proxyURI),
+			proxy.hasRDFType("http://www.openarchives.org/ore/terms/Proxy"));
+		Assert.assertEquals("Proxy for must be valid", proxyForURI, proxy.getPropertyResourceValue(proxyFor).getURI());
+		Assert.assertEquals("Proxy in must be valid", researchObjectURI.toString(),
+			proxy.getPropertyResourceValue(proxyIn).getURI());
 	}
 
 
@@ -203,7 +281,7 @@ public class SemanticMetadataServiceImplTest
 	public final void testAddResource()
 	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
-		sms.createResearchObject(manifestURI, userProfile);
+		sms.createManifest(manifestURI, userProfile);
 		sms.addResource(manifestURI, resource1URI, resource1Info);
 		sms.addResource(manifestURI, resource2URI, resource2Info);
 		sms.addResource(manifestURI, resource1URI, null);
@@ -220,7 +298,7 @@ public class SemanticMetadataServiceImplTest
 	public final void testRemoveResource()
 	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
-		sms.createResearchObject(manifestURI, userProfile);
+		sms.createManifest(manifestURI, userProfile);
 		sms.addResource(manifestURI, resource1URI, resource1Info);
 		sms.addResource(manifestURI, resource2URI, resource2Info);
 		sms.removeResource(manifestURI, resource1URI);
@@ -253,7 +331,7 @@ public class SemanticMetadataServiceImplTest
 		throws URISyntaxException
 	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
-		sms.createResearchObject(manifestURI, userProfile);
+		sms.createManifest(manifestURI, userProfile);
 		sms.addResource(manifestURI, resource1URI, resource1Info);
 		sms.addResource(manifestURI, resource2URI, resource2Info);
 

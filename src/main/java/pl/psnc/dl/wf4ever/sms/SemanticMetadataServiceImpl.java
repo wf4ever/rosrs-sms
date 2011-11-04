@@ -14,6 +14,7 @@ import java.util.Map;
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 
+import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
@@ -24,6 +25,7 @@ import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
+import com.hp.hpl.jena.rdf.model.NodeIterator;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
@@ -72,7 +74,9 @@ public class SemanticMetadataServiceImpl
 
 	private final Property checksum;
 
-	private final String getManifestQueryTmpl = "PREFIX ore: <http://www.openarchives.org/ore/terms/> DESCRIBE <%s> ?ro WHERE { <%<s> ore:describes ?ro. }";
+	private final String getManifestQueryTmpl = "PREFIX ore: <http://www.openarchives.org/ore/terms/> "
+			+ "DESCRIBE <%s> ?ro ?proxy ?resource "
+			+ "WHERE { <%<s> ore:describes ?ro. ?proxy ore:proxyIn ?ro. ?ro ore:aggregates ?resource. }";
 
 	private final String getResourceQueryTmpl = "DESCRIBE <%s> WHERE { }";
 
@@ -110,7 +114,7 @@ public class SemanticMetadataServiceImpl
 	 * .net.URI)
 	 */
 	@Override
-	public void createResearchObject(URI manifestURI, UserProfile userProfile)
+	public void createManifest(URI manifestURI, UserProfile userProfile)
 	{
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		if (manifest != null) {
@@ -127,6 +131,27 @@ public class SemanticMetadataServiceImpl
 
 		Resource annotations = model.createResource(manifestURI.resolve("annotations").toString());
 		manifest.addSeeAlso(annotations);
+	}
+
+
+	@Override
+	public void createManifest(URI manifestURI, InputStream is, Notation notation, UserProfile userProfile)
+	{
+		model.read(is, manifestURI.resolve(".").toString(), getJenaLang(notation));
+
+		// leave only one dcterms:created - the earliest
+		Individual manifest = model.getIndividual(manifestURI.toString());
+		NodeIterator it = model.listObjectsOfProperty(manifest, DCTerms.created);
+		Calendar earliest = null;
+		while (it.hasNext()) {
+			Calendar created = ((XSDDateTime) it.next().asLiteral().getValue()).asCalendar();
+			if (earliest == null || created.before(earliest))
+				earliest = created;
+		}
+		if (earliest != null) {
+			model.removeAll(manifest, DCTerms.created, null);
+			model.add(manifest, DCTerms.created, model.createTypedLiteral(earliest));
+		}
 	}
 
 
@@ -153,7 +178,7 @@ public class SemanticMetadataServiceImpl
 	 * .net.URI)
 	 */
 	@Override
-	public void removeResearchObject(URI manifestURI)
+	public void removeManifest(URI manifestURI)
 	{
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		if (manifest == null) {
@@ -192,22 +217,6 @@ public class SemanticMetadataServiceImpl
 
 		resultModel.write(out, getJenaLang(notation));
 		return new ByteArrayInputStream(out.toByteArray());
-	}
-
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService#updateManifest(java.net
-	 * .URI, java.io.InputStream,
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
-	 */
-	@Override
-	public void updateManifest(URI manifestURI, InputStream manifest, Notation notation)
-	{
-		// TODO Auto-generated method stub
-
 	}
 
 
@@ -382,8 +391,8 @@ public class SemanticMetadataServiceImpl
 		switch (notation) {
 			case RDF_XML:
 				return "RDF/XML";
-			case TRIG:
-				return "N3";
+			case TURTLE:
+				return "TURTLE";
 			default:
 				return "RDF/XML";
 		}

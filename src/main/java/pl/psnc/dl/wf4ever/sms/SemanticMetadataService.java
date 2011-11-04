@@ -15,17 +15,18 @@ import pl.psnc.dl.wf4ever.dlibra.UserProfile;
  * @author piotrhol
  * 
  */
-public interface SemanticMetadataService {
+public interface SemanticMetadataService
+{
 
 	public enum Notation {
-		RDF_XML, TRIG, TEXT_PLAIN
+		RDF_XML, TURTLE, TEXT_PLAIN
 	}
 
+
 	/**
-	 * Create a research object (ro:ResearchObject, ore:Aggregation) described
-	 * by a manifest with a given URI. Automatically creates a manifest as well
-	 * (ore:ResourceMap). If URI is used already, an IllegalArgumentException is
-	 * thrown.
+	 * Create a manifest (ore:ResourceMap) with a given URI. Automatically creates a 
+	 * research object (ro:ResearchObject, ore:Aggregation) described by it as well. 
+	 * If URI is used already, IllegalArgumentException is thrown.
 	 * 
 	 * @param manifestURI
 	 *            manifest URI
@@ -34,7 +35,24 @@ public interface SemanticMetadataService {
 	 *            saved as FOAF
 	 * @return Research Object URI
 	 */
-	void createResearchObject(URI manifestURI, UserProfile userProfile);
+	void createManifest(URI manifestURI, UserProfile userProfile);
+
+
+	/**
+	 * Create or update a manifest (ore:ResourceMap) with a given URI. Automatically creates a 
+	 * research object (ro:ResearchObject, ore:Aggregation) described by it as well. 
+	 * If URI is used already, the manifest is updated. If dcterms:created date has changed, 
+	 * the earlier of the two is preserved.
+	 * 
+	 * @param manifestURI
+	 *            manifest URI
+	 * @param userProfile
+	 *            profile of the user creating the research object, will be
+	 *            saved as FOAF
+	 * @return Research Object URI
+	 */
+	void createManifest(URI manifestURI, InputStream is, Notation notation, UserProfile userProfile);
+
 
 	/**
 	 * Create a copy of an existing RO under a new URI. If the existing URI
@@ -50,6 +68,7 @@ public interface SemanticMetadataService {
 	 */
 	void createResearchObjectAsCopy(URI manifestURI, URI baseManifestURI);
 
+
 	/**
 	 * Remove all research objects whose manifests match the given URI (includes
 	 * its descendants).
@@ -57,7 +76,8 @@ public interface SemanticMetadataService {
 	 * @param manifestURI
 	 *            manifest URI
 	 */
-	void removeResearchObject(URI manifestURI);
+	void removeManifest(URI manifestURI);
+
 
 	/**
 	 * Get the manifest (ore:ResourceMap), which includes the RO metadata and
@@ -71,18 +91,6 @@ public interface SemanticMetadataService {
 	 */
 	InputStream getManifest(URI manifestURI, Notation notation);
 
-	/**
-	 * Updates the manifest (ore:ResourceMap), which includes the RO metadata
-	 * and proxies.
-	 * 
-	 * @param manifestURI
-	 *            manifest URI
-	 * @param manifest
-	 *            manifest input stream
-	 * @param notation
-	 *            RDF/XML or Trig
-	 */
-	void updateManifest(URI manifestURI, InputStream manifest, Notation notation);
 
 	/**
 	 * Add an aggregated resource (ro:Resource).
@@ -94,6 +102,7 @@ public interface SemanticMetadataService {
 	 */
 	void addResource(URI manifestURI, URI resourceURI, ResourceInfo resourceInfo);
 
+
 	/**
 	 * Remove an aggregated resource.
 	 * 
@@ -101,6 +110,7 @@ public interface SemanticMetadataService {
 	 *            resource URI
 	 */
 	void removeResource(URI manifestURI, URI resourceURI);
+
 
 	/**
 	 * Get resource description (name, file size and checksum).
@@ -114,6 +124,7 @@ public interface SemanticMetadataService {
 	 */
 	InputStream getResource(URI resourceURI, Notation notation);
 
+
 	/**
 	 * Add an annotation (ro:GraphAnnotation, ao:Annotation).
 	 * 
@@ -126,8 +137,9 @@ public interface SemanticMetadataService {
 	 * @param attributes
 	 *            map of attributes and attribute values
 	 */
-	void addAnnotation(URI annotationURI, URI annotationBodyURI,
-			URI annotatedResourceURI, Map<String, String> attributes);
+	void addAnnotation(URI annotationURI, URI annotationBodyURI, URI annotatedResourceURI,
+			Map<String, String> attributes);
+
 
 	/**
 	 * Delete all annotations bodies that match a given URI (including their
@@ -137,6 +149,7 @@ public interface SemanticMetadataService {
 	 *            annotation body URI
 	 */
 	void deleteAnnotationsWithBodies(URI annotationBodyURI);
+
 
 	/**
 	 * Get a list of annotations that match a given URI.
@@ -148,6 +161,7 @@ public interface SemanticMetadataService {
 	 * @return
 	 */
 	InputStream getAnnotations(URI annotationsURI, Notation notation);
+
 
 	/**
 	 * Get an annotation body.
@@ -161,6 +175,7 @@ public interface SemanticMetadataService {
 	 */
 	InputStream getAnnotationBody(URI annotationBodyURI, Notation notation);
 
+
 	/**
 	 * To be defined in the future.
 	 * 
@@ -168,7 +183,6 @@ public interface SemanticMetadataService {
 	 * @param queryParameters
 	 * @return
 	 */
-	List<URI> findResearchObjects(String workspaceId,
-			Map<String, List<String>> queryParameters);
+	List<URI> findResearchObjects(String workspaceId, Map<String, List<String>> queryParameters);
 
 }
