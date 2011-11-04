@@ -135,10 +135,10 @@ public interface SemanticMetadataService
 	 * @param annotatedResourceURI
 	 *            annotated resource URI
 	 * @param attributes
-	 *            map of attributes and attribute values
+	 *            map of attributes and attribute values, e.g. {"http://purl.org/dc/terms/title" => "My title"}
 	 */
 	void addAnnotation(URI annotationURI, URI annotationBodyURI, URI annotatedResourceURI,
-			Map<String, String> attributes);
+			Map<String, String> attributes, UserProfile userProfile);
 
 
 	/**

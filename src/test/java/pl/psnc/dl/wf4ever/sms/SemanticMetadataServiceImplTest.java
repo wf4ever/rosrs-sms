@@ -12,11 +12,13 @@ import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
 import org.junit.Test;
@@ -61,6 +63,22 @@ public class SemanticMetadataServiceImplTest
 	private final ResourceInfo resource1Info = new ResourceInfo("bar.txt", "ABC123455666344E", 646365L, "SHA1");
 
 	private final URI resource2URI = URI.create("http://workflows.org/a/workflow.scufl");
+
+	private final URI annotation1URI = URI.create("http://example.org/ROs/ro1/annotations#myTitle");
+
+	private final URI annotationBody1URI = URI.create("http://example.org/ROs/ro1/annotations/myTitleContent");
+
+	@SuppressWarnings("unchecked")
+	private final Map<String, String> annotation1Body = ArrayUtils.toMap(new String[][] { {
+			"http://purl.org/dc/terms/title", "Foobar"}});
+
+	private final URI annotation2URI = URI.create("http://example.org/ROs/ro1/annotations#someComments");
+
+	private final URI annotationBody2URI = URI.create("http://example.org/ROs/ro1/annotations/someComments");
+
+	@SuppressWarnings("unchecked")
+	private final Map<String, String> annotation2Body = ArrayUtils.toMap(new String[][] {
+			{ "http://purl.org/dc/terms/description", "A test"}, { "http://purl.org/dc/terms/licence", "GPL"}});
 
 	private final ResourceInfo resource2Info = new ResourceInfo("a workflow", "A0987654321EDCB", 6L, "MD5");
 
@@ -215,7 +233,7 @@ public class SemanticMetadataServiceImplTest
 		sms.addResource(manifestURI, resource1URI, resource1Info);
 		sms.addResource(manifestURI, resource2URI, resource2Info);
 
-		InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.n3");
+		InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
 		sms.createManifest(manifestURI, is, Notation.TURTLE, userProfile);
 
 		log.debug(IOUtils.toString(sms.getManifest(manifestURI, Notation.TURTLE), "UTF-8"));
@@ -384,7 +402,12 @@ public class SemanticMetadataServiceImplTest
 	@Test
 	public final void testAddAnnotation()
 	{
-		fail("Not yet implemented");
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
+		sms.createManifest(manifestURI, userProfile);
+		sms.addResource(manifestURI, resource1URI, resource1Info);
+		sms.addResource(manifestURI, resource2URI, resource2Info);
+		sms.addAnnotation(annotation1URI, annotationBody1URI, resource1URI, annotation1Body, userProfile);
+		sms.addAnnotation(annotation2URI, annotationBody2URI, resource1URI, annotation2Body, userProfile);
 	}
 
 

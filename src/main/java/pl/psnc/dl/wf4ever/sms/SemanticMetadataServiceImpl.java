@@ -46,6 +46,8 @@ public class SemanticMetadataServiceImpl
 
 	private static final String FOAF_NAMESPACE = "http://xmlns.com/foaf/0.1/";
 
+	private static final String AO_NAMESPACE = "http://purl.org/ao/core/";
+
 	private static final PrefixMapping standardNamespaces = PrefixMapping.Factory.create()
 			.setNsPrefix("ore", ORE_NAMESPACE).setNsPrefix("ro", RO_NAMESPACE).setNsPrefix("dcterms", DCTerms.NS)
 			.setNsPrefix("foaf", FOAF_NAMESPACE).lock();
@@ -60,8 +62,8 @@ public class SemanticMetadataServiceImpl
 
 	private final OntClass resourceClass;
 
-	//	private final OntClass annotationClass;
-	//
+	private final OntClass annotationClass;
+
 	private final Property describes;
 
 	private final Property aggregates;
@@ -73,6 +75,8 @@ public class SemanticMetadataServiceImpl
 	private final Property filesize;
 
 	private final Property checksum;
+
+	private final Property annotatesResource;
 
 	private final String getManifestQueryTmpl = "PREFIX ore: <http://www.openarchives.org/ore/terms/> "
 			+ "DESCRIBE <%s> ?ro ?proxy ?resource "
@@ -94,6 +98,8 @@ public class SemanticMetadataServiceImpl
 		researchObjectClass = model.getOntClass(RO_NAMESPACE + "ResearchObject");
 		manifestClass = model.getOntClass(RO_NAMESPACE + "Manifest");
 		resourceClass = model.getOntClass(RO_NAMESPACE + "Resource");
+		annotationClass = model.getOntClass(RO_NAMESPACE + "GraphAnnotation");
+
 		name = model.getProperty(RO_NAMESPACE + "name");
 		filesize = model.getProperty(RO_NAMESPACE + "filesize");
 		checksum = model.getProperty(RO_NAMESPACE + "checksum");
@@ -101,6 +107,7 @@ public class SemanticMetadataServiceImpl
 		aggregates = model.getProperty(ORE_NAMESPACE + "aggregates");
 		foafAgentClass = model.getOntClass(FOAF_NAMESPACE + "Agent");
 		foafName = model.getProperty(FOAF_NAMESPACE + "name");
+		annotatesResource = model.getProperty(AO_NAMESPACE + "annotatesResource");
 
 		model.setNsPrefixes(standardNamespaces);
 	}
@@ -319,10 +326,16 @@ public class SemanticMetadataServiceImpl
 	 */
 	@Override
 	public void addAnnotation(URI annotationURI, URI annotationBodyURI, URI annotatedResourceURI,
-			Map<String, String> attributes)
+			Map<String, String> attributes, UserProfile userProfile)
 	{
-		// TODO Auto-generated method stub
+		Individual resource = model.getIndividual(annotatedResourceURI.toString());
+		if (resource == null) {
+			throw new IllegalArgumentException("Annotated resource URI not found");
+		}
+		Individual annotation = model.createIndividual(annotationURI.toString(), annotationClass);
+		model.add(annotation, annotatesResource, resource);
 
+		//		Individual annotation = model.crateIndividual(annotationBodyClass);
 	}
 
 

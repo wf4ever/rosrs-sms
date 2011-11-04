@@ -10,6 +10,7 @@
     <!ENTITY ore "http://www.openarchives.org/ore/terms/" >
     <!ENTITY rdfg-1 "http://www.w3.org/2004/03/trix/rdfg-1/" >
     <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+    <!ENTITY ao "http://purl.org/ao/core/" >
 ]>
 
 
@@ -22,6 +23,7 @@
      xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
      xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
      xmlns:ore="http://www.openarchives.org/ore/terms/"
+     xmlns:ao="http://purl.org/ao/core/"
      xmlns:dcterms="http://purl.org/dc/terms/">
     <owl:Ontology rdf:about="http://example.wf4ever-project.org/2011/ro.owl">
         <dcterms:title>A stub of the RO ontology.</dcterms:title>
@@ -103,6 +105,14 @@
 
     <owl:Class rdf:about="http://example.wf4ever-project.org/2011/ro.owl#Artifact">
         <rdfs:subClassOf rdf:resource="http://example.wf4ever-project.org/2011/ro.owl#Resource"/>
+    </owl:Class>
+    
+
+
+    <!-- http://example.wf4ever-project.org/2011/ro.owl#GraphAnnotation -->
+
+    <owl:Class rdf:about="http://example.wf4ever-project.org/2011/ro.owl#GraphAnnotation">
+        <rdfs:subClassOf rdf:resource="&ao;Annotation"/>
     </owl:Class>
     
 
