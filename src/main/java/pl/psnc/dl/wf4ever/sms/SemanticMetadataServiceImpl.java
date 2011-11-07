@@ -96,7 +96,7 @@ public class SemanticMetadataServiceImpl
 
 	private final String getManifestQueryTmpl = "PREFIX ore: <http://www.openarchives.org/ore/terms/> "
 			+ "DESCRIBE <%s> ?ro ?proxy ?resource "
-			+ "WHERE { <%<s> ore:describes ?ro. ?proxy ore:proxyIn ?ro. ?ro ore:aggregates ?resource. }";
+			+ "WHERE { <%<s> ore:describes ?ro. OPTIONAL { ?proxy ore:proxyIn ?ro. ?ro ore:aggregates ?resource. } }";
 
 	private final String getResourceQueryTmpl = "DESCRIBE <%s> WHERE { }";
 
