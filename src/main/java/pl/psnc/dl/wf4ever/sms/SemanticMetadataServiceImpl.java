@@ -386,6 +386,30 @@ public class SemanticMetadataServiceImpl
 	}
 
 
+	@Override
+	public void addAnnotation(URI annotationURI, URI annotationBodyURI, InputStream is, Notation notation,
+			UserProfile userProfile)
+	{
+		Individual annotation = model.createIndividual(annotationURI.toString(), annotationClass);
+		model.add(annotation, pavCreatedOn, model.createTypedLiteral(Calendar.getInstance()));
+
+		Individual agent = model.createIndividual(foafAgentClass);
+		model.add(agent, foafName, userProfile.getName());
+		model.add(annotation, pavCreatedBy, agent);
+
+		Resource annotationBodyRef = model.createResource(annotationBodyURI.toString());
+		model.add(annotation, hasTopic, annotationBodyRef);
+
+		NamedGraph annotationBody = (graphset.containsGraph(annotationBodyURI.toString()) ? graphset
+				.getGraph(annotationBodyURI.toString()) : graphset.createGraph(annotationBodyURI.toString()));
+		OntModel annotationModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
+			ModelFactory.createModelForGraph(annotationBody));
+		annotationModel.addSubModel(model);
+
+		annotationModel.read(is, annotationURI.resolve(".").toString(), getJenaLang(notation));
+	}
+
+
 	/*
 	 * (non-Javadoc)
 	 * 

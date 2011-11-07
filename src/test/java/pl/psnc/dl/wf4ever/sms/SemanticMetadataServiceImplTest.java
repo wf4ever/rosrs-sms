@@ -556,6 +556,34 @@ public class SemanticMetadataServiceImplTest
 	}
 
 
+	/**
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#addAnnotation(java.net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)}
+	 * .
+	 * @throws IOException 
+	 */
+	@Test
+	public final void testAddAnnotationFromGraph()
+		throws IOException
+	{
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
+		Assert.assertNull("Returns null when annotation body does not exist",
+			sms.getAnnotationBody(annotationBody1URI, Notation.RDF_XML));
+
+		InputStream is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
+		sms.createManifest(manifestURI, userProfile);
+		sms.addResource(manifestURI, resource1URI, resource1Info);
+		sms.addResource(manifestURI, resource2URI, resource2Info);
+		sms.addAnnotation(annotation2URI, annotationBody2URI, is, Notation.TURTLE, userProfile);
+
+		log.debug(IOUtils.toString(sms.getAnnotationBody(annotationBody2URI, Notation.TURTLE), "UTF-8"));
+
+		OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		model.read(sms.getAnnotationBody(annotationBody2URI, Notation.RDF_XML), null);
+		verifyAnnotationBody(model, annotation2Body);
+	}
+
+
 	private void verifyAnnotationBody(OntModel model, Map<URI, Map<URI, String>> annotationBody)
 	{
 		for (Map.Entry<URI, Map<URI, String>> entry : annotationBody.entrySet()) {

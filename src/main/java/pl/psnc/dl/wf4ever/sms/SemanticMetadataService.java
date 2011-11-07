@@ -126,7 +126,7 @@ public interface SemanticMetadataService
 
 
 	/**
-	 * Add an annotation (ro:GraphAnnotation, ao:Annotation).
+	 * Add an annotation (ro:GraphAnnotation, ao:Annotation) together with an annotation body.
 	 * 
 	 * @param annotationURI
 	 *            annotation URI
@@ -136,6 +136,22 @@ public interface SemanticMetadataService
 	 *            map of annotated resources, attributes and attribute values, e.g. {"input.txt" => {"http://purl.org/dc/terms/title" => "My title"}}
 	 */
 	void addAnnotation(URI annotationURI, URI annotationBodyURI, Map<URI, Map<URI, String>> triples,
+			UserProfile userProfile);
+
+
+	/**
+	 * Add an annotation (ro:GraphAnnotation, ao:Annotation) together with an annotation body.
+	 * 
+	 * @param annotationURI
+	 *            annotation URI
+	 * @param annotationBodyURI
+	 *            annotation body URI
+	 * @param is
+	 *            named graph with annotated resources, attributes and attribute values
+	 * @param notation
+	 * 			  named graph notation
+	 */
+	void addAnnotation(URI annotationURI, URI annotationBodyURI, InputStream is, Notation notation,
 			UserProfile userProfile);
 
 
