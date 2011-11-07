@@ -27,6 +27,8 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.NodeIterator;
 import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.shared.PrefixMapping;
@@ -394,8 +396,19 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public void deleteAnnotationsWithBodies(URI annotationBodyURI)
 	{
-		// TODO Auto-generated method stub
-
+		if (!graphset.containsGraph(annotationBodyURI.toString())) {
+			throw new IllegalArgumentException("URI not found");
+		}
+		graphset.removeGraph(annotationBodyURI.toString());
+		Resource annotationBodyRef = model.createResource(annotationBodyURI.toString());
+		ResIterator it = model.listSubjectsWithProperty(hasTopic, annotationBodyRef);
+		while (it.hasNext()) {
+			Resource annotation = it.next();
+			model.remove(annotation, hasTopic, annotationBodyRef);
+			if (!model.contains(annotation, hasTopic, (RDFNode) null)) {
+				model.removeAll(annotation, null, null);
+			}
+		}
 	}
 
 

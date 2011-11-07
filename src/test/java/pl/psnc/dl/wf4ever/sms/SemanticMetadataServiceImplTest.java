@@ -457,7 +457,17 @@ public class SemanticMetadataServiceImplTest
 	@Test
 	public final void testDeleteAnnotationsWithBodies()
 	{
-		fail("Not yet implemented");
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
+		sms.createManifest(manifestURI, userProfile);
+		sms.addResource(manifestURI, resource1URI, resource1Info);
+		sms.addResource(manifestURI, resource2URI, resource2Info);
+		sms.addAnnotation(annotation1URI, annotationBody1URI, annotation1Body, userProfile);
+
+		sms.deleteAnnotationsWithBodies(annotationBody1URI);
+		Assert.assertNull("Get deleted annotation must return null",
+			sms.getAnnotation(annotation1URI, Notation.RDF_XML));
+		Assert.assertNull("Get deleted annotation body must return null",
+			sms.getAnnotationBody(annotationBody1URI, Notation.RDF_XML));
 	}
 
 
