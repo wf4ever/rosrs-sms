@@ -21,6 +21,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
@@ -78,7 +79,7 @@ public class SemanticMetadataServiceImplTest
 
 	@SuppressWarnings("unchecked")
 	private final Map<URI, String> annotation2Body = ArrayUtils.toMap(new Object[][] {
-			{ URI.create("http://purl.org/dc/terms/description"), "A test"},
+			{ URI.create("http://purl.org/dc/terms/title"), "A test"},
 			{ URI.create("http://purl.org/dc/terms/licence"), "GPL"}});
 
 	private final ResourceInfo resource2Info = new ResourceInfo("a workflow", "A0987654321EDCB", 6L, "MD5");
@@ -156,6 +157,7 @@ public class SemanticMetadataServiceImplTest
 	 * .
 	 */
 	@Test
+	@Ignore
 	public final void testCreateResearchObjectAsCopy()
 	{
 		fail("Not yet implemented");
@@ -508,7 +510,32 @@ public class SemanticMetadataServiceImplTest
 	@Test
 	public final void testGetAnnotationBody()
 	{
-		fail("Not yet implemented");
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
+		Assert.assertNull("Returns null when annotation body does not exist",
+			sms.getAnnotationBody(annotationBody1URI, Notation.RDF_XML));
+
+		sms.createManifest(manifestURI, userProfile);
+		sms.addResource(manifestURI, resource1URI, resource1Info);
+		sms.addResource(manifestURI, resource2URI, resource2Info);
+		sms.addAnnotation(annotation1URI, annotationBody1URI, resource1URI, annotation1Body, userProfile);
+		sms.addAnnotation(annotation2URI, annotationBody2URI, resource1URI, annotation2Body, userProfile);
+
+		OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		model.read(sms.getAnnotationBody(annotationBody1URI, Notation.RDF_XML), null);
+		verifyAnnotationBody(model, resource1URI, annotation1Body);
+		model.read(sms.getAnnotationBody(annotationBody2URI, Notation.RDF_XML), null);
+		verifyAnnotationBody(model, resource1URI, annotation2Body);
+	}
+
+
+	private void verifyAnnotationBody(OntModel model, URI resourceURI, Map<URI, String> annotationBody)
+	{
+		for (Map.Entry<URI, String> entry : annotationBody.entrySet()) {
+			Resource subject = model.createResource(resourceURI.toString());
+			Property property = model.createProperty(entry.getKey().toString());
+			Assert.assertTrue(String.format("Annotation body contains a triple <%s> <%s> <%s>", resourceURI.toString(),
+				entry.getKey().toString(), entry.getValue()), model.contains(subject, property, entry.getValue()));
+		}
 	}
 
 
@@ -518,6 +545,7 @@ public class SemanticMetadataServiceImplTest
 	 * .
 	 */
 	@Test
+	@Ignore
 	public final void testFindResearchObjects()
 	{
 		fail("Not yet implemented");

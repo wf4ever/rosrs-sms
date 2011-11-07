@@ -432,8 +432,17 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public InputStream getAnnotationBody(URI annotationBodyURI, Notation notation)
 	{
-		// TODO Auto-generated method stub
-		return null;
+		if (!graphset.containsGraph(annotationBodyURI.toString())) {
+			return null;
+		}
+		NamedGraph annotationBody = graphset.getGraph(annotationBodyURI.toString());
+		OntModel annotationModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
+			ModelFactory.createModelForGraph(annotationBody));
+		annotationModel.addSubModel(model);
+
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		annotationModel.write(out, getJenaLang(notation));
+		return new ByteArrayInputStream(out.toByteArray());
 	}
 
 
