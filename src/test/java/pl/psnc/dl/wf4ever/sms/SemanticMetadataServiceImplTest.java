@@ -69,16 +69,17 @@ public class SemanticMetadataServiceImplTest
 	private final URI annotationBody1URI = URI.create("http://example.org/ROs/ro1/annotations/myTitleContent");
 
 	@SuppressWarnings("unchecked")
-	private final Map<String, String> annotation1Body = ArrayUtils.toMap(new String[][] { {
-			"http://purl.org/dc/terms/title", "Foobar"}});
+	private final Map<URI, String> annotation1Body = ArrayUtils.toMap(new Object[][] { {
+			URI.create("http://purl.org/dc/terms/title"), "Foobar"}});
 
 	private final URI annotation2URI = URI.create("http://example.org/ROs/ro1/annotations#someComments");
 
 	private final URI annotationBody2URI = URI.create("http://example.org/ROs/ro1/annotations/someComments");
 
 	@SuppressWarnings("unchecked")
-	private final Map<String, String> annotation2Body = ArrayUtils.toMap(new String[][] {
-			{ "http://purl.org/dc/terms/description", "A test"}, { "http://purl.org/dc/terms/licence", "GPL"}});
+	private final Map<URI, String> annotation2Body = ArrayUtils.toMap(new Object[][] {
+			{ URI.create("http://purl.org/dc/terms/description"), "A test"},
+			{ URI.create("http://purl.org/dc/terms/licence"), "GPL"}});
 
 	private final ResourceInfo resource2Info = new ResourceInfo("a workflow", "A0987654321EDCB", 6L, "MD5");
 
@@ -95,6 +96,12 @@ public class SemanticMetadataServiceImplTest
 
 	private final Property checksum = ModelFactory.createDefaultModel().createProperty(RO_NAMESPACE + "checksum");
 
+	private final Property annotatesResource = ModelFactory.createDefaultModel().createProperty(
+		"http://purl.org/ao/core/annotatesResource");
+
+	private final Property hasTopic = ModelFactory.createDefaultModel().createProperty(
+		"http://purl.org/ao/core/hasTopic");
+
 	private final Property aggregates = ModelFactory.createDefaultModel().createProperty(
 		"http://www.openarchives.org/ore/terms/aggregates");
 
@@ -103,6 +110,12 @@ public class SemanticMetadataServiceImplTest
 
 	private final Property proxyIn = ModelFactory.createDefaultModel().createProperty(
 		"http://www.openarchives.org/ore/terms/proxyIn");
+
+	private final Property pavCreatedOn = ModelFactory.createDefaultModel().createProperty(
+		"http://purl.org/pav/createdOn");
+
+	private final Property pavCreatedBy = ModelFactory.createDefaultModel().createProperty(
+		"http://purl.org/pav/createdBy");
 
 
 	/**
@@ -183,10 +196,12 @@ public class SemanticMetadataServiceImplTest
 		throws IOException, ParseException
 	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
+		Assert.assertNull("Returns null when manifest does not exist", sms.getManifest(manifestURI, Notation.RDF_XML));
+
 		Calendar before = Calendar.getInstance();
 		sms.createManifest(manifestURI, userProfile);
 		Calendar after = Calendar.getInstance();
-		OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM);
 		model.read(sms.getManifest(manifestURI, Notation.RDF_XML), null);
 
 		Individual manifest = model.getIndividual(manifestURI.toString());
@@ -349,6 +364,8 @@ public class SemanticMetadataServiceImplTest
 		throws URISyntaxException
 	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
+		Assert.assertNull("Returns null when resource does not exist", sms.getResource(resource1URI, Notation.RDF_XML));
+
 		sms.createManifest(manifestURI, userProfile);
 		sms.addResource(manifestURI, resource1URI, resource1Info);
 		sms.addResource(manifestURI, resource2URI, resource2Info);
@@ -373,6 +390,9 @@ public class SemanticMetadataServiceImplTest
 	{
 		Individual resource = model.getIndividual(resourceURI.toString());
 		Assert.assertNotNull("Resource cannot be null", resource);
+		Assert.assertTrue(String.format("Resource %s must be a ro:Resource", resourceURI),
+			resource.hasRDFType(RO_NAMESPACE + "Resource"));
+
 		Literal nameLiteral = resource.getPropertyValue(name).asLiteral();
 		Assert.assertNotNull("Resource must contain ro:name", nameLiteral);
 		Assert.assertEquals("Name type is xsd:string", XSDDatatype.XSDstring, nameLiteral.getDatatype());
@@ -425,13 +445,58 @@ public class SemanticMetadataServiceImplTest
 
 	/**
 	 * Test method for
-	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getAnnotations(java.net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)}
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getAnnotation(java.net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)}
 	 * .
 	 */
 	@Test
-	public final void testGetAnnotations()
+	public final void testGetAnnotation()
 	{
-		fail("Not yet implemented");
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
+		Assert.assertNull("Returns null when annotation does not exist",
+			sms.getAnnotation(annotation1URI, Notation.RDF_XML));
+
+		sms.createManifest(manifestURI, userProfile);
+		sms.addResource(manifestURI, resource1URI, resource1Info);
+		sms.addResource(manifestURI, resource2URI, resource2Info);
+		sms.addAnnotation(annotation1URI, annotationBody1URI, resource1URI, annotation1Body, userProfile);
+		sms.addAnnotation(annotation2URI, annotationBody2URI, resource1URI, annotation2Body, userProfile);
+
+		OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		model.read(sms.getAnnotation(annotation1URI, Notation.RDF_XML), null);
+		verifyAnnotation(model, annotation1URI, resource1URI, annotationBody1URI);
+		model.read(sms.getAnnotation(annotation2URI, Notation.RDF_XML), null);
+		verifyAnnotation(model, annotation2URI, resource1URI, annotationBody2URI);
+	}
+
+
+	private void verifyAnnotation(OntModel model, URI annotationURI, URI annotatedResourceURI, URI annotationBodyURI)
+	{
+		Individual annotation = model.getIndividual(annotationURI.toString());
+		Assert.assertNotNull("Annotation cannot be null", annotation);
+		Assert.assertTrue(String.format("Annotation %s must be a ro:GraphAnnotation", annotationURI),
+			annotation.hasRDFType(RO_NAMESPACE + "GraphAnnotation"));
+
+		Resource annotatedResource = annotation.getPropertyValue(annotatesResource).asResource();
+		Assert.assertNotNull("Annotation must contain ao:annotatesResource", annotatedResource);
+		Assert.assertEquals("Annotated resource must be valid", annotatedResourceURI.toString(),
+			annotatedResource.getURI());
+
+		Resource annotationBody = annotation.getPropertyValue(hasTopic).asResource();
+		Assert.assertNotNull("Annotation must contain annotation body", annotatedResource);
+		Assert.assertEquals("Annotation body must be valid", annotationBodyURI.toString(), annotationBody.getURI());
+
+		Literal createdLiteral = annotation.getPropertyValue(pavCreatedOn).asLiteral();
+		Assert.assertNotNull("Manifest must contain pav:createdOn", createdLiteral);
+		Assert.assertEquals("Date type is xsd:dateTime", XSDDatatype.XSDdateTime, createdLiteral.getDatatype());
+		//		Calendar created = ((XSDDateTime) createdLiteral.getValue()).asCalendar();
+		//		Assert.assertTrue("Created is a valid date", !before.after(created) && !after.before(created));
+
+		Resource creatorResource = annotation.getPropertyResourceValue(pavCreatedBy);
+		Assert.assertNotNull("Annotation must contain pav:createdBy", creatorResource);
+		Individual creator = creatorResource.as(Individual.class);
+		Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
+		Assert.assertEquals("Creator name must be correct", userProfile.getName(), creator.getPropertyValue(foafName)
+				.asLiteral().getString());
 	}
 
 

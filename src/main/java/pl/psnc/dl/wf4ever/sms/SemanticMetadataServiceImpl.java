@@ -32,6 +32,10 @@ import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.shared.PrefixMapping;
 import com.hp.hpl.jena.vocabulary.DCTerms;
 
+import de.fuberlin.wiwiss.ng4j.NamedGraph;
+import de.fuberlin.wiwiss.ng4j.NamedGraphSet;
+import de.fuberlin.wiwiss.ng4j.impl.NamedGraphSetImpl;
+
 /**
  * @author piotrhol
  * 
@@ -48,9 +52,15 @@ public class SemanticMetadataServiceImpl
 
 	private static final String AO_NAMESPACE = "http://purl.org/ao/core/";
 
+	private static final String PAV_NAMESPACE = "http://purl.org/pav/";
+
+	private static final String DEFAULT_NAMED_GRAPH_URI = "http://example.wf4ever-project.org/2011/defaultGraph";
+
 	private static final PrefixMapping standardNamespaces = PrefixMapping.Factory.create()
 			.setNsPrefix("ore", ORE_NAMESPACE).setNsPrefix("ro", RO_NAMESPACE).setNsPrefix("dcterms", DCTerms.NS)
 			.setNsPrefix("foaf", FOAF_NAMESPACE).lock();
+
+	private final NamedGraphSet graphset;
 
 	private final OntModel model;
 
@@ -78,6 +88,12 @@ public class SemanticMetadataServiceImpl
 
 	private final Property annotatesResource;
 
+	private final Property hasTopic;
+
+	private final Property pavCreatedBy;
+
+	private final Property pavCreatedOn;
+
 	private final String getManifestQueryTmpl = "PREFIX ore: <http://www.openarchives.org/ore/terms/> "
 			+ "DESCRIBE <%s> ?ro ?proxy ?resource "
 			+ "WHERE { <%<s> ore:describes ?ro. ?proxy ore:proxyIn ?ro. ?ro ore:aggregates ?resource. }";
@@ -87,11 +103,16 @@ public class SemanticMetadataServiceImpl
 
 	public SemanticMetadataServiceImpl()
 	{
-		InputStream modelIS = getClass().getClassLoader().getResourceAsStream("ro.owl");
-		model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-		model.read(modelIS, null);
+		graphset = new NamedGraphSetImpl();
+		NamedGraph defaultGraph = graphset.createGraph(DEFAULT_NAMED_GRAPH_URI);
+		Model defaultModel = ModelFactory.createModelForGraph(defaultGraph);
 
-		OntModel foafModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		InputStream modelIS = getClass().getClassLoader().getResourceAsStream("ro.owl");
+		defaultModel.read(modelIS, null);
+
+		model = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM, defaultModel);
+
+		OntModel foafModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM);
 		foafModel.read(FOAF_NAMESPACE, null);
 		model.addSubModel(foafModel);
 
@@ -108,6 +129,9 @@ public class SemanticMetadataServiceImpl
 		foafAgentClass = model.getOntClass(FOAF_NAMESPACE + "Agent");
 		foafName = model.getProperty(FOAF_NAMESPACE + "name");
 		annotatesResource = model.getProperty(AO_NAMESPACE + "annotatesResource");
+		hasTopic = model.getProperty(AO_NAMESPACE + "hasTopic");
+		pavCreatedBy = model.getProperty(PAV_NAMESPACE + "createdBy");
+		pavCreatedOn = model.getProperty(PAV_NAMESPACE + "createdOn");
 
 		model.setNsPrefixes(standardNamespaces);
 	}
@@ -212,7 +236,7 @@ public class SemanticMetadataServiceImpl
 	{
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		if (manifest == null) {
-			throw new IllegalArgumentException("URI not found");
+			return null;
 		}
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 
@@ -302,7 +326,7 @@ public class SemanticMetadataServiceImpl
 	{
 		Individual resource = model.getIndividual(resourceURI.toString());
 		if (resource == null) {
-			throw new IllegalArgumentException("URI not found");
+			return null;
 		}
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 
@@ -326,7 +350,7 @@ public class SemanticMetadataServiceImpl
 	 */
 	@Override
 	public void addAnnotation(URI annotationURI, URI annotationBodyURI, URI annotatedResourceURI,
-			Map<String, String> attributes, UserProfile userProfile)
+			Map<URI, String> attributes, UserProfile userProfile)
 	{
 		Individual resource = model.getIndividual(annotatedResourceURI.toString());
 		if (resource == null) {
@@ -334,8 +358,25 @@ public class SemanticMetadataServiceImpl
 		}
 		Individual annotation = model.createIndividual(annotationURI.toString(), annotationClass);
 		model.add(annotation, annotatesResource, resource);
+		model.add(annotation, pavCreatedOn, model.createTypedLiteral(Calendar.getInstance()));
 
-		//		Individual annotation = model.crateIndividual(annotationBodyClass);
+		Individual agent = model.createIndividual(foafAgentClass);
+		model.add(agent, foafName, userProfile.getName());
+		model.add(annotation, pavCreatedBy, agent);
+
+		Resource annotationBodyRef = model.createResource(annotationBodyURI.toString());
+		model.add(annotation, hasTopic, annotationBodyRef);
+
+		NamedGraph annotationBody = (graphset.containsGraph(annotationBodyURI.toString()) ? graphset
+				.getGraph(annotationBodyURI.toString()) : graphset.createGraph(annotationBodyURI.toString()));
+		OntModel annotationModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
+			ModelFactory.createModelForGraph(annotationBody));
+		annotationModel.addSubModel(model);
+
+		for (Map.Entry<URI, String> entry : attributes.entrySet()) {
+			annotationModel.add(resource, annotationModel.createProperty(entry.getKey().toString()), entry.getValue());
+		}
+
 	}
 
 
@@ -362,10 +403,22 @@ public class SemanticMetadataServiceImpl
 	 * .URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
-	public InputStream getAnnotations(URI annotationsURI, Notation notation)
+	public InputStream getAnnotation(URI annotationURI, Notation notation)
 	{
-		// TODO Auto-generated method stub
-		return null;
+		Individual annotation = model.getIndividual(annotationURI.toString());
+		if (annotation == null) {
+			return null;
+		}
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+
+		String queryString = String.format(getResourceQueryTmpl, annotationURI.toString());
+		Query query = QueryFactory.create(queryString);
+		QueryExecution qexec = QueryExecutionFactory.create(query, model);
+		Model resultModel = qexec.execDescribe();
+		qexec.close();
+
+		resultModel.write(out, getJenaLang(notation));
+		return new ByteArrayInputStream(out.toByteArray());
 	}
 
 

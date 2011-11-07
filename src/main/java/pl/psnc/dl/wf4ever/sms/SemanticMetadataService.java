@@ -87,7 +87,7 @@ public interface SemanticMetadataService
 	 *            manifest URI
 	 * @param notation
 	 *            RDF/XML or Trig
-	 * @return
+	 * @return manifest or null
 	 */
 	InputStream getManifest(URI manifestURI, Notation notation);
 
@@ -120,7 +120,7 @@ public interface SemanticMetadataService
 	 * @param notation
 	 *            Notation of the result. In text/plain, pairs
 	 *            attribute/attribute_values are returned.
-	 * @return
+	 * @return resource or null
 	 */
 	InputStream getResource(URI resourceURI, Notation notation);
 
@@ -137,8 +137,8 @@ public interface SemanticMetadataService
 	 * @param attributes
 	 *            map of attributes and attribute values, e.g. {"http://purl.org/dc/terms/title" => "My title"}
 	 */
-	void addAnnotation(URI annotationURI, URI annotationBodyURI, URI annotatedResourceURI,
-			Map<String, String> attributes, UserProfile userProfile);
+	void addAnnotation(URI annotationURI, URI annotationBodyURI, URI annotatedResourceURI, Map<URI, String> attributes,
+			UserProfile userProfile);
 
 
 	/**
@@ -152,15 +152,15 @@ public interface SemanticMetadataService
 
 
 	/**
-	 * Get a list of annotations that match a given URI.
+	 * Get an annotation with a given URI.
 	 * 
-	 * @param annotationsURI
-	 *            annotations URI
+	 * @param annotationURI
+	 *            annotation URI
 	 * @param notation
 	 *            Notation of the result
-	 * @return
+	 * @return annotation or null
 	 */
-	InputStream getAnnotations(URI annotationsURI, Notation notation);
+	InputStream getAnnotation(URI annotationURI, Notation notation);
 
 
 	/**
