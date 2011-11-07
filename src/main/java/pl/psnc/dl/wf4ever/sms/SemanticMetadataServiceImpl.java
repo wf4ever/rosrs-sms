@@ -349,15 +349,10 @@ public class SemanticMetadataServiceImpl
 	 * .URI, java.net.URI, java.net.URI, java.util.Map)
 	 */
 	@Override
-	public void addAnnotation(URI annotationURI, URI annotationBodyURI, URI annotatedResourceURI,
-			Map<URI, String> attributes, UserProfile userProfile)
+	public void addAnnotation(URI annotationURI, URI annotationBodyURI, Map<URI, Map<URI, String>> triples,
+			UserProfile userProfile)
 	{
-		Individual resource = model.getIndividual(annotatedResourceURI.toString());
-		if (resource == null) {
-			throw new IllegalArgumentException("Annotated resource URI not found");
-		}
 		Individual annotation = model.createIndividual(annotationURI.toString(), annotationClass);
-		model.add(annotation, annotatesResource, resource);
 		model.add(annotation, pavCreatedOn, model.createTypedLiteral(Calendar.getInstance()));
 
 		Individual agent = model.createIndividual(foafAgentClass);
@@ -373,8 +368,17 @@ public class SemanticMetadataServiceImpl
 			ModelFactory.createModelForGraph(annotationBody));
 		annotationModel.addSubModel(model);
 
-		for (Map.Entry<URI, String> entry : attributes.entrySet()) {
-			annotationModel.add(resource, annotationModel.createProperty(entry.getKey().toString()), entry.getValue());
+		for (Map.Entry<URI, Map<URI, String>> entry : triples.entrySet()) {
+			Individual resource = model.getIndividual(entry.getKey().toString());
+			if (resource == null) {
+				continue;
+			}
+			model.add(annotation, annotatesResource, resource);
+
+			for (Map.Entry<URI, String> attributes : entry.getValue().entrySet()) {
+				annotationModel.add(resource, annotationModel.createProperty(attributes.getKey().toString()),
+					attributes.getValue());
+			}
 		}
 
 	}

@@ -11,6 +11,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -21,6 +22,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.Logger;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -59,28 +61,23 @@ public class SemanticMetadataServiceImplTest
 
 	private final URI annotationsURI = URI.create("http://example.org/ROs/ro1/annotations");
 
-	private final URI resource1URI = URI.create("http://example.org/ROs/ro1/foo/bar.txt");
+	private final static URI resource1URI = URI.create("http://example.org/ROs/ro1/foo/bar.txt");
 
 	private final ResourceInfo resource1Info = new ResourceInfo("bar.txt", "ABC123455666344E", 646365L, "SHA1");
 
-	private final URI resource2URI = URI.create("http://workflows.org/a/workflow.scufl");
+	private final static URI resource2URI = URI.create("http://workflows.org/a/workflow.scufl");
 
 	private final URI annotation1URI = URI.create("http://example.org/ROs/ro1/annotations#myTitle");
 
 	private final URI annotationBody1URI = URI.create("http://example.org/ROs/ro1/annotations/myTitleContent");
 
-	@SuppressWarnings("unchecked")
-	private final Map<URI, String> annotation1Body = ArrayUtils.toMap(new Object[][] { {
-			URI.create("http://purl.org/dc/terms/title"), "Foobar"}});
+	private static Map<URI, Map<URI, String>> annotation1Body;
 
 	private final URI annotation2URI = URI.create("http://example.org/ROs/ro1/annotations#someComments");
 
 	private final URI annotationBody2URI = URI.create("http://example.org/ROs/ro1/annotations/someComments");
 
-	@SuppressWarnings("unchecked")
-	private final Map<URI, String> annotation2Body = ArrayUtils.toMap(new Object[][] {
-			{ URI.create("http://purl.org/dc/terms/title"), "A test"},
-			{ URI.create("http://purl.org/dc/terms/licence"), "GPL"}});
+	private static Map<URI, Map<URI, String>> annotation2Body;
 
 	private final ResourceInfo resource2Info = new ResourceInfo("a workflow", "A0987654321EDCB", 6L, "MD5");
 
@@ -117,6 +114,25 @@ public class SemanticMetadataServiceImplTest
 
 	private final Property pavCreatedBy = ModelFactory.createDefaultModel().createProperty(
 		"http://purl.org/pav/createdBy");
+
+
+	@SuppressWarnings("unchecked")
+	@BeforeClass
+	public static void setup()
+	{
+		annotation1Body = new HashMap<URI, Map<URI, String>>();
+		annotation1Body.put(resource1URI,
+			ArrayUtils.toMap(new Object[][] { { URI.create("http://purl.org/dc/terms/title"), "Foobar"}}));
+		annotation2Body = new HashMap<URI, Map<URI, String>>();
+		annotation2Body.put(
+			resource1URI,
+			ArrayUtils.toMap(new Object[][] { { URI.create("http://purl.org/dc/terms/title"), "A test"},
+					{ URI.create("http://purl.org/dc/terms/licence"), "GPL"}}));
+		annotation2Body.put(
+			resource2URI,
+			ArrayUtils.toMap(new Object[][] { { URI.create("http://purl.org/dc/terms/description"),
+					"Something interesting"}}));
+	}
 
 
 	/**
@@ -428,8 +444,8 @@ public class SemanticMetadataServiceImplTest
 		sms.createManifest(manifestURI, userProfile);
 		sms.addResource(manifestURI, resource1URI, resource1Info);
 		sms.addResource(manifestURI, resource2URI, resource2Info);
-		sms.addAnnotation(annotation1URI, annotationBody1URI, resource1URI, annotation1Body, userProfile);
-		sms.addAnnotation(annotation2URI, annotationBody2URI, resource1URI, annotation2Body, userProfile);
+		sms.addAnnotation(annotation1URI, annotationBody1URI, annotation1Body, userProfile);
+		sms.addAnnotation(annotation2URI, annotationBody2URI, annotation2Body, userProfile);
 	}
 
 
@@ -460,31 +476,33 @@ public class SemanticMetadataServiceImplTest
 		sms.createManifest(manifestURI, userProfile);
 		sms.addResource(manifestURI, resource1URI, resource1Info);
 		sms.addResource(manifestURI, resource2URI, resource2Info);
-		sms.addAnnotation(annotation1URI, annotationBody1URI, resource1URI, annotation1Body, userProfile);
-		sms.addAnnotation(annotation2URI, annotationBody2URI, resource1URI, annotation2Body, userProfile);
+		sms.addAnnotation(annotation1URI, annotationBody1URI, annotation1Body, userProfile);
+		sms.addAnnotation(annotation2URI, annotationBody2URI, annotation2Body, userProfile);
 
 		OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
 		model.read(sms.getAnnotation(annotation1URI, Notation.RDF_XML), null);
-		verifyAnnotation(model, annotation1URI, resource1URI, annotationBody1URI);
+		verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
 		model.read(sms.getAnnotation(annotation2URI, Notation.RDF_XML), null);
-		verifyAnnotation(model, annotation2URI, resource1URI, annotationBody2URI);
+		verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
 	}
 
 
-	private void verifyAnnotation(OntModel model, URI annotationURI, URI annotatedResourceURI, URI annotationBodyURI)
+	private void verifyAnnotation(OntModel model, URI annotationURI, URI annotationBodyURI,
+			Set<URI> annotatedResourcesURIs)
 	{
 		Individual annotation = model.getIndividual(annotationURI.toString());
 		Assert.assertNotNull("Annotation cannot be null", annotation);
 		Assert.assertTrue(String.format("Annotation %s must be a ro:GraphAnnotation", annotationURI),
 			annotation.hasRDFType(RO_NAMESPACE + "GraphAnnotation"));
 
-		Resource annotatedResource = annotation.getPropertyValue(annotatesResource).asResource();
-		Assert.assertNotNull("Annotation must contain ao:annotatesResource", annotatedResource);
-		Assert.assertEquals("Annotated resource must be valid", annotatedResourceURI.toString(),
-			annotatedResource.getURI());
+		for (URI annotatedResourceURI : annotatedResourcesURIs) {
+			Resource resource = model.createResource(annotatedResourceURI.toString());
+			Assert.assertTrue(String.format("Annotation annotates resource %s", annotatedResourceURI.toString()),
+				model.contains(annotation, annotatesResource, resource));
+		}
 
 		Resource annotationBody = annotation.getPropertyValue(hasTopic).asResource();
-		Assert.assertNotNull("Annotation must contain annotation body", annotatedResource);
+		Assert.assertNotNull("Annotation must contain annotation body", annotationBody);
 		Assert.assertEquals("Annotation body must be valid", annotationBodyURI.toString(), annotationBody.getURI());
 
 		Literal createdLiteral = annotation.getPropertyValue(pavCreatedOn).asLiteral();
@@ -517,24 +535,27 @@ public class SemanticMetadataServiceImplTest
 		sms.createManifest(manifestURI, userProfile);
 		sms.addResource(manifestURI, resource1URI, resource1Info);
 		sms.addResource(manifestURI, resource2URI, resource2Info);
-		sms.addAnnotation(annotation1URI, annotationBody1URI, resource1URI, annotation1Body, userProfile);
-		sms.addAnnotation(annotation2URI, annotationBody2URI, resource1URI, annotation2Body, userProfile);
+		sms.addAnnotation(annotation1URI, annotationBody1URI, annotation1Body, userProfile);
+		sms.addAnnotation(annotation2URI, annotationBody2URI, annotation2Body, userProfile);
 
 		OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
 		model.read(sms.getAnnotationBody(annotationBody1URI, Notation.RDF_XML), null);
-		verifyAnnotationBody(model, resource1URI, annotation1Body);
+		verifyAnnotationBody(model, annotation1Body);
 		model.read(sms.getAnnotationBody(annotationBody2URI, Notation.RDF_XML), null);
-		verifyAnnotationBody(model, resource1URI, annotation2Body);
+		verifyAnnotationBody(model, annotation2Body);
 	}
 
 
-	private void verifyAnnotationBody(OntModel model, URI resourceURI, Map<URI, String> annotationBody)
+	private void verifyAnnotationBody(OntModel model, Map<URI, Map<URI, String>> annotationBody)
 	{
-		for (Map.Entry<URI, String> entry : annotationBody.entrySet()) {
-			Resource subject = model.createResource(resourceURI.toString());
-			Property property = model.createProperty(entry.getKey().toString());
-			Assert.assertTrue(String.format("Annotation body contains a triple <%s> <%s> <%s>", resourceURI.toString(),
-				entry.getKey().toString(), entry.getValue()), model.contains(subject, property, entry.getValue()));
+		for (Map.Entry<URI, Map<URI, String>> entry : annotationBody.entrySet()) {
+			Resource subject = model.createResource(entry.getKey().toString());
+			for (Map.Entry<URI, String> entry2 : entry.getValue().entrySet()) {
+				Property property = model.createProperty(entry2.getKey().toString());
+				Assert.assertTrue(
+					String.format("Annotation body contains a triple <%s> <%s> <%s>", subject.getURI(),
+						property.getURI(), entry2.getValue()), model.contains(subject, property, entry2.getValue()));
+			}
 		}
 	}
 
