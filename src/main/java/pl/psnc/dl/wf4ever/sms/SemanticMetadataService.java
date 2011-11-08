@@ -19,7 +19,7 @@ public interface SemanticMetadataService
 {
 
 	public enum Notation {
-		RDF_XML, TURTLE, TEXT_PLAIN
+		RDF_XML, TURTLE, N3, TRIG, TRIX
 	}
 
 
@@ -156,13 +156,22 @@ public interface SemanticMetadataService
 
 
 	/**
-	 * Delete all annotations bodies that match a given URI (including their
-	 * descendants). All annotations with those bodies will also be deleted.
+	 * Delete an annotation and its body.
 	 * 
 	 * @param annotationBodyURI
 	 *            annotation body URI
 	 */
-	void deleteAnnotationsWithBodies(URI annotationBodyURI);
+	void deleteAnnotationWithBody(URI annotationBodyURI);
+
+
+	/**
+	 * Delete all annotations bodies that match a given URI (including their
+	 * descendants). All annotations with those bodies will also be deleted.
+	 * 
+	 * @param annotationsURI
+	 *            annotations URI
+	 */
+	void deleteAllAnnotationsWithBodies(URI annotationsURI);
 
 
 	/**
@@ -175,6 +184,32 @@ public interface SemanticMetadataService
 	 * @return annotation or null
 	 */
 	InputStream getAnnotation(URI annotationURI, Notation notation);
+
+
+	/**
+	 * Returns all annotation without annotation bodies.
+	 * 
+	 * @param annotationsURI
+	 * 				URI of all annotations
+	 * @param notation
+	 * 				Notation of the returned graph
+	 * @return annotations with bodies or null if URI is incorrect
+	 */
+	InputStream getAllAnnotations(URI annotationsURI, Notation notation);
+
+
+	/**
+	 * Returns all annotation and annotation bodies. If notation is TRIG or TRIX, bodies
+	 * are returned as named graphs, otherwise the graph is flattened and the information
+	 * about who annotated what is lost.
+	 * 
+	 * @param annotationsURI
+	 * 				URI of all annotations
+	 * @param notation
+	 * 				Notation of the returned graph
+	 * @return annotations with bodies or null if URI is incorrect
+	 */
+	InputStream getAllAnnotationsWithBodies(URI annotationsURI, Notation notation);
 
 
 	/**

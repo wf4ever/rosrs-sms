@@ -27,7 +27,6 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.NodeIterator;
 import com.hp.hpl.jena.rdf.model.Property;
-import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
@@ -354,21 +353,20 @@ public class SemanticMetadataServiceImpl
 	public void addAnnotation(URI annotationURI, URI annotationBodyURI, Map<URI, Map<URI, String>> triples,
 			UserProfile userProfile)
 	{
-		Individual annotation = model.createIndividual(annotationURI.toString(), annotationClass);
-		model.add(annotation, pavCreatedOn, model.createTypedLiteral(Calendar.getInstance()));
+		URI annotationsURI = annotationURI.resolve("annotations");
+		OntModel annotationsModel = createOntModelForNamedGraph(annotationsURI);
 
-		Individual agent = model.createIndividual(foafAgentClass);
-		model.add(agent, foafName, userProfile.getName());
-		model.add(annotation, pavCreatedBy, agent);
+		Individual annotation = annotationsModel.createIndividual(annotationURI.toString(), annotationClass);
+		annotationsModel.add(annotation, pavCreatedOn, annotationsModel.createTypedLiteral(Calendar.getInstance()));
 
-		Resource annotationBodyRef = model.createResource(annotationBodyURI.toString());
-		model.add(annotation, hasTopic, annotationBodyRef);
+		Individual agent = annotationsModel.createIndividual(foafAgentClass);
+		annotationsModel.add(agent, foafName, userProfile.getName());
+		annotationsModel.add(annotation, pavCreatedBy, agent);
 
-		NamedGraph annotationBody = (graphset.containsGraph(annotationBodyURI.toString()) ? graphset
-				.getGraph(annotationBodyURI.toString()) : graphset.createGraph(annotationBodyURI.toString()));
-		OntModel annotationModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
-			ModelFactory.createModelForGraph(annotationBody));
-		annotationModel.addSubModel(model);
+		Resource annotationBodyRef = annotationsModel.createResource(annotationBodyURI.toString());
+		annotationsModel.add(annotation, hasTopic, annotationBodyRef);
+
+		OntModel annotationBodyModel = createOntModelForNamedGraph(annotationBodyURI);
 
 		for (Map.Entry<URI, Map<URI, String>> entry : triples.entrySet()) {
 			Individual resource = model.getIndividual(entry.getKey().toString());
@@ -378,7 +376,7 @@ public class SemanticMetadataServiceImpl
 			model.add(annotation, annotatesResource, resource);
 
 			for (Map.Entry<URI, String> attributes : entry.getValue().entrySet()) {
-				annotationModel.add(resource, annotationModel.createProperty(attributes.getKey().toString()),
+				annotationBodyModel.add(resource, annotationBodyModel.createProperty(attributes.getKey().toString()),
 					attributes.getValue());
 			}
 		}
@@ -390,22 +388,20 @@ public class SemanticMetadataServiceImpl
 	public void addAnnotation(URI annotationURI, URI annotationBodyURI, InputStream is, Notation notation,
 			UserProfile userProfile)
 	{
-		Individual annotation = model.createIndividual(annotationURI.toString(), annotationClass);
-		model.add(annotation, pavCreatedOn, model.createTypedLiteral(Calendar.getInstance()));
+		URI annotationsURI = annotationURI.resolve("annotations");
+		OntModel annotationsModel = createOntModelForNamedGraph(annotationsURI);
 
-		Individual agent = model.createIndividual(foafAgentClass);
-		model.add(agent, foafName, userProfile.getName());
-		model.add(annotation, pavCreatedBy, agent);
+		Individual annotation = annotationsModel.createIndividual(annotationURI.toString(), annotationClass);
+		annotationsModel.add(annotation, pavCreatedOn, annotationsModel.createTypedLiteral(Calendar.getInstance()));
 
-		Resource annotationBodyRef = model.createResource(annotationBodyURI.toString());
+		Individual agent = annotationsModel.createIndividual(foafAgentClass);
+		annotationsModel.add(agent, foafName, userProfile.getName());
+		annotationsModel.add(annotation, pavCreatedBy, agent);
+
+		Resource annotationBodyRef = annotationsModel.createResource(annotationBodyURI.toString());
 		model.add(annotation, hasTopic, annotationBodyRef);
 
-		NamedGraph annotationBody = (graphset.containsGraph(annotationBodyURI.toString()) ? graphset
-				.getGraph(annotationBodyURI.toString()) : graphset.createGraph(annotationBodyURI.toString()));
-		OntModel annotationModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
-			ModelFactory.createModelForGraph(annotationBody));
-		annotationModel.addSubModel(model);
-
+		OntModel annotationModel = createOntModelForNamedGraph(annotationBodyURI);
 		annotationModel.read(is, annotationURI.resolve(".").toString(), getJenaLang(notation));
 	}
 
@@ -418,21 +414,28 @@ public class SemanticMetadataServiceImpl
 	 * (java.net.URI)
 	 */
 	@Override
-	public void deleteAnnotationsWithBodies(URI annotationBodyURI)
+	public void deleteAnnotationWithBody(URI annotationBodyURI)
 	{
 		if (!graphset.containsGraph(annotationBodyURI.toString())) {
 			throw new IllegalArgumentException("URI not found");
 		}
 		graphset.removeGraph(annotationBodyURI.toString());
-		Resource annotationBodyRef = model.createResource(annotationBodyURI.toString());
-		ResIterator it = model.listSubjectsWithProperty(hasTopic, annotationBodyRef);
+
+		OntModel commonModel = createOntModelForAllNamedGraphs();
+		Resource annotationBodyRef = commonModel.createResource(annotationBodyURI.toString());
+		ResIterator it = commonModel.listSubjectsWithProperty(hasTopic, annotationBodyRef);
 		while (it.hasNext()) {
 			Resource annotation = it.next();
-			model.remove(annotation, hasTopic, annotationBodyRef);
-			if (!model.contains(annotation, hasTopic, (RDFNode) null)) {
-				model.removeAll(annotation, null, null);
-			}
+			commonModel.removeAll(annotation, null, null);
 		}
+	}
+
+
+	@Override
+	public void deleteAllAnnotationsWithBodies(URI annotationsURI)
+	{
+		// TODO Auto-generated method stub
+
 	}
 
 
@@ -446,7 +449,10 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public InputStream getAnnotation(URI annotationURI, Notation notation)
 	{
-		Individual annotation = model.getIndividual(annotationURI.toString());
+		URI annotationsURI = annotationURI.resolve("annotations");
+		OntModel annotationModel = createOntModelForNamedGraph(annotationsURI);
+
+		Individual annotation = annotationModel.getIndividual(annotationURI.toString());
 		if (annotation == null) {
 			return null;
 		}
@@ -454,7 +460,7 @@ public class SemanticMetadataServiceImpl
 
 		String queryString = String.format(getResourceQueryTmpl, annotationURI.toString());
 		Query query = QueryFactory.create(queryString);
-		QueryExecution qexec = QueryExecutionFactory.create(query, model);
+		QueryExecution qexec = QueryExecutionFactory.create(query, annotationModel);
 		Model resultModel = qexec.execDescribe();
 		qexec.close();
 
@@ -487,6 +493,22 @@ public class SemanticMetadataServiceImpl
 	}
 
 
+	@Override
+	public InputStream getAllAnnotations(URI annotationsURI, Notation notation)
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
+	@Override
+	public InputStream getAllAnnotationsWithBodies(URI annotationsURI, Notation notation)
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -502,6 +524,34 @@ public class SemanticMetadataServiceImpl
 	}
 
 
+	/**
+	 * @param namedGraphURI
+	 * @return
+	 */
+	private OntModel createOntModelForNamedGraph(URI namedGraphURI)
+	{
+		NamedGraph namedGraph = (graphset.containsGraph(namedGraphURI.toString()) ? graphset.getGraph(namedGraphURI
+				.toString()) : graphset.createGraph(namedGraphURI.toString()));
+		OntModel ontModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
+			ModelFactory.createModelForGraph(namedGraph));
+		ontModel.addSubModel(model);
+		return ontModel;
+	}
+
+
+	/**
+	 * @param namedGraphURI
+	 * @return
+	 */
+	private OntModel createOntModelForAllNamedGraphs()
+	{
+		OntModel ontModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
+			graphset.asJenaModel(DEFAULT_NAMED_GRAPH_URI));
+		ontModel.addSubModel(model);
+		return ontModel;
+	}
+
+
 	private String getJenaLang(Notation notation)
 	{
 		switch (notation) {
@@ -509,6 +559,12 @@ public class SemanticMetadataServiceImpl
 				return "RDF/XML";
 			case TURTLE:
 				return "TURTLE";
+			case N3:
+				return "N3";
+			case TRIG:
+				return "TRIG";
+			case TRIX:
+				return "TRIX";
 			default:
 				return "RDF/XML";
 		}

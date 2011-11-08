@@ -451,7 +451,7 @@ public class SemanticMetadataServiceImplTest
 
 	/**
 	 * Test method for
-	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#deleteAnnotationsWithBodies(java.net.URI)}
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#deleteAnnotationWithBody(java.net.URI)}
 	 * .
 	 */
 	@Test
@@ -463,11 +463,23 @@ public class SemanticMetadataServiceImplTest
 		sms.addResource(manifestURI, resource2URI, resource2Info);
 		sms.addAnnotation(annotation1URI, annotationBody1URI, annotation1Body, userProfile);
 
-		sms.deleteAnnotationsWithBodies(annotationBody1URI);
+		sms.deleteAnnotationWithBody(annotationBody1URI);
 		Assert.assertNull("Get deleted annotation must return null",
 			sms.getAnnotation(annotation1URI, Notation.RDF_XML));
 		Assert.assertNull("Get deleted annotation body must return null",
 			sms.getAnnotationBody(annotationBody1URI, Notation.RDF_XML));
+	}
+
+
+	/**
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#deleteAllAnnotationsWithBodies(java.net.URI)}
+	 * .
+	 */
+	@Test
+	public final void testDeleteAllAnnotationsWithBodies()
+	{
+		fail("Not yet implemented");
 	}
 
 
@@ -595,6 +607,51 @@ public class SemanticMetadataServiceImplTest
 						property.getURI(), entry2.getValue()), model.contains(subject, property, entry2.getValue()));
 			}
 		}
+	}
+
+
+	/**
+	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getAllAnnotations(java.net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)}.
+	 */
+	@Test
+	public final void testGetAllAnnotations()
+	{
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
+		Assert.assertNull("Returns null when annotations do not exist",
+			sms.getAllAnnotations(annotationsURI, Notation.RDF_XML));
+
+		sms.createManifest(manifestURI, userProfile);
+		sms.addResource(manifestURI, resource1URI, resource1Info);
+		sms.addResource(manifestURI, resource2URI, resource2Info);
+		sms.addAnnotation(annotation1URI, annotationBody1URI, annotation1Body, userProfile);
+		sms.addAnnotation(annotation2URI, annotationBody2URI, annotation2Body, userProfile);
+
+		OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		model.read(sms.getAllAnnotations(annotationsURI, Notation.RDF_XML), null);
+		verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
+		verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
+
+		model.read(sms.getAllAnnotations(annotationsURI, Notation.TURTLE), null);
+		verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
+		verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
+
+		model.read(sms.getAllAnnotations(annotationsURI, Notation.TRIG), null);
+		verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
+		verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
+
+		model.read(sms.getAllAnnotations(annotationsURI, Notation.TRIX), null);
+		verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
+		verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
+	}
+
+
+	/**
+	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getAllAnnotationsWithBodies(java.net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)}.
+	 */
+	@Test
+	public final void testGetAllAnnotationsWithBodies()
+	{
+		fail("Not yet implemented");
 	}
 
 
