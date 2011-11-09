@@ -46,6 +46,9 @@ import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.vocabulary.DCTerms;
 
+import de.fuberlin.wiwiss.ng4j.NamedGraphSet;
+import de.fuberlin.wiwiss.ng4j.impl.NamedGraphSetImpl;
+
 /**
  * @author piotrhol
  * 
@@ -54,6 +57,8 @@ public class SemanticMetadataServiceImplTest
 {
 
 	private static final Logger log = Logger.getLogger(SemanticMetadataServiceImplTest.class);
+
+	private final URI baseURI = URI.create("http://example.org/ROs/ro1/");
 
 	private final URI manifestURI = URI.create("http://example.org/ROs/ro1/manifest");
 
@@ -519,8 +524,9 @@ public class SemanticMetadataServiceImplTest
 
 		for (URI annotatedResourceURI : annotatedResourcesURIs) {
 			Resource resource = model.createResource(annotatedResourceURI.toString());
-			Assert.assertTrue(String.format("Annotation annotates resource %s", annotatedResourceURI.toString()),
-				model.contains(annotation, annotatesResource, resource));
+			Assert.assertTrue(
+				String.format("Annotation %s must annotate resource %s", annotationURI.toString(),
+					annotatedResourceURI.toString()), model.contains(annotation, annotatesResource, resource));
 		}
 
 		Resource annotationBody = annotation.getPropertyValue(hasTopic).asResource();
@@ -612,9 +618,11 @@ public class SemanticMetadataServiceImplTest
 
 	/**
 	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getAllAnnotations(java.net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)}.
+	 * @throws IOException 
 	 */
 	@Test
 	public final void testGetAllAnnotations()
+		throws IOException
 	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		Assert.assertNull("Returns null when annotations do not exist",
@@ -631,15 +639,8 @@ public class SemanticMetadataServiceImplTest
 		verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
 		verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
 
-		model.read(sms.getAllAnnotations(annotationsURI, Notation.TURTLE), null);
-		verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
-		verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
-
-		model.read(sms.getAllAnnotations(annotationsURI, Notation.TRIG), null);
-		verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
-		verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
-
-		model.read(sms.getAllAnnotations(annotationsURI, Notation.TRIX), null);
+		model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		model.read(sms.getAllAnnotations(annotationsURI, Notation.TURTLE), null, "TURTLE");
 		verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
 		verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
 	}
@@ -651,7 +652,48 @@ public class SemanticMetadataServiceImplTest
 	@Test
 	public final void testGetAllAnnotationsWithBodies()
 	{
-		fail("Not yet implemented");
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
+		Assert.assertNull("Returns null when annotations do not exist",
+			sms.getAllAnnotations(annotationsURI, Notation.RDF_XML));
+
+		sms.createManifest(manifestURI, userProfile);
+		sms.addResource(manifestURI, resource1URI, resource1Info);
+		sms.addResource(manifestURI, resource2URI, resource2Info);
+		sms.addAnnotation(annotation1URI, annotationBody1URI, annotation1Body, userProfile);
+		sms.addAnnotation(annotation2URI, annotationBody2URI, annotation2Body, userProfile);
+
+		OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		model.read(sms.getAllAnnotationsWithBodies(annotationsURI, Notation.RDF_XML), null);
+		verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
+		verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
+		verifyAnnotationBody(model, annotation1Body);
+		verifyAnnotationBody(model, annotation2Body);
+
+		model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		model.read(sms.getAllAnnotationsWithBodies(annotationsURI, Notation.TURTLE), null, "TURTLE");
+		verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
+		verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
+		verifyAnnotationBody(model, annotation1Body);
+		verifyAnnotationBody(model, annotation2Body);
+
+		NamedGraphSet ngset = new NamedGraphSetImpl();
+		ngset.read(sms.getAllAnnotationsWithBodies(annotationsURI, Notation.TRIG), "TRIG", baseURI.toString());
+
+		Assert.assertTrue("Graphset contains annotations as default graph", ngset.containsGraph(baseURI.toString()));
+		OntModel graphModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
+			ModelFactory.createModelForGraph(ngset.getGraph(baseURI.toString())));
+		verifyAnnotation(graphModel, annotation1URI, annotationBody1URI, annotation1Body.keySet());
+		verifyAnnotation(graphModel, annotation2URI, annotationBody2URI, annotation2Body.keySet());
+
+		Assert.assertTrue("Graphset contains annotation body", ngset.containsGraph(annotationBody1URI.toString()));
+		OntModel graphModel1 = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
+			ModelFactory.createModelForGraph(ngset.getGraph(annotationBody1URI.toString())));
+		verifyAnnotationBody(graphModel1, annotation1Body);
+
+		Assert.assertTrue("Graphset contains annotation body", ngset.containsGraph(annotationBody2URI.toString()));
+		OntModel graphModel2 = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
+			ModelFactory.createModelForGraph(ngset.getGraph(annotationBody2URI.toString())));
+		verifyAnnotationBody(graphModel2, annotation2Body);
 	}
 
 

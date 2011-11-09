@@ -373,7 +373,7 @@ public class SemanticMetadataServiceImpl
 			if (resource == null) {
 				continue;
 			}
-			model.add(annotation, annotatesResource, resource);
+			annotationsModel.add(annotation, annotatesResource, resource);
 
 			for (Map.Entry<URI, String> attributes : entry.getValue().entrySet()) {
 				annotationBodyModel.add(resource, annotationBodyModel.createProperty(attributes.getKey().toString()),
@@ -482,10 +482,7 @@ public class SemanticMetadataServiceImpl
 		if (!graphset.containsGraph(annotationBodyURI.toString())) {
 			return null;
 		}
-		NamedGraph annotationBody = graphset.getGraph(annotationBodyURI.toString());
-		OntModel annotationModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
-			ModelFactory.createModelForGraph(annotationBody));
-		annotationModel.addSubModel(model);
+		OntModel annotationModel = createOntModelForNamedGraph(annotationBodyURI);
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		annotationModel.write(out, getJenaLang(notation));
@@ -496,8 +493,14 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public InputStream getAllAnnotations(URI annotationsURI, Notation notation)
 	{
-		// TODO Auto-generated method stub
-		return null;
+		if (!graphset.containsGraph(annotationsURI.toString())) {
+			return null;
+		}
+		OntModel annotationModel = createOntModelForNamedGraph(annotationsURI);
+
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		annotationModel.write(out, getJenaLang(notation));
+		return new ByteArrayInputStream(out.toByteArray());
 	}
 
 
