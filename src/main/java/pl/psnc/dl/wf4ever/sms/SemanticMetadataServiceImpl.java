@@ -48,7 +48,7 @@ public class SemanticMetadataServiceImpl
 
 	private static final String ORE_NAMESPACE = "http://www.openarchives.org/ore/terms/";
 
-	private static final String RO_NAMESPACE = "http://example.wf4ever-project.org/2011/ro.owl#";
+	private static final String RO_NAMESPACE = "http://www.wf4ever-project.org/vocab/ro#";
 
 	private static final String FOAF_NAMESPACE = "http://xmlns.com/foaf/0.1/";
 
@@ -109,8 +109,9 @@ public class SemanticMetadataServiceImpl
 		NamedGraph defaultGraph = graphset.createGraph(DEFAULT_NAMED_GRAPH_URI);
 		Model defaultModel = ModelFactory.createModelForGraph(defaultGraph);
 
-		InputStream modelIS = getClass().getClassLoader().getResourceAsStream("ro.owl");
+		InputStream modelIS = getClass().getClassLoader().getResourceAsStream("ro.rdf");
 		defaultModel.read(modelIS, null);
+		//		defaultModel.read("http://www.wf4ever-project.org/wiki/download/attachments/2064773/ro.rdf");
 
 		model = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM, defaultModel);
 
@@ -120,7 +121,7 @@ public class SemanticMetadataServiceImpl
 
 		researchObjectClass = model.getOntClass(RO_NAMESPACE + "ResearchObject");
 		manifestClass = model.getOntClass(RO_NAMESPACE + "Manifest");
-		resourceClass = model.getOntClass(RO_NAMESPACE + "Resource");
+		resourceClass = model.getOntClass(ORE_NAMESPACE + "AggregatedResource");
 		annotationClass = model.getOntClass(RO_NAMESPACE + "GraphAnnotation");
 
 		name = model.getProperty(RO_NAMESPACE + "name");

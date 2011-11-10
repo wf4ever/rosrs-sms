@@ -88,7 +88,7 @@ public class SemanticMetadataServiceImplTest
 
 	private final UserProfile userProfile = new UserProfile("jank", "pass", "Jan Kowalski", false);
 
-	private static final String RO_NAMESPACE = "http://example.wf4ever-project.org/2011/ro.owl#";
+	private static final String RO_NAMESPACE = "http://www.wf4ever-project.org/vocab/ro#";
 
 	private final Property foafName = ModelFactory.createDefaultModel()
 			.createProperty("http://xmlns.com/foaf/0.1/name");
@@ -413,8 +413,8 @@ public class SemanticMetadataServiceImplTest
 	{
 		Individual resource = model.getIndividual(resourceURI.toString());
 		Assert.assertNotNull("Resource cannot be null", resource);
-		Assert.assertTrue(String.format("Resource %s must be a ro:Resource", resourceURI),
-			resource.hasRDFType(RO_NAMESPACE + "Resource"));
+		Assert.assertTrue(String.format("Resource %s must be a ore:AggregatedResource", resourceURI),
+			resource.hasRDFType("http://www.openarchives.org/ore/terms/AggregatedResource"));
 
 		Literal nameLiteral = resource.getPropertyValue(name).asLiteral();
 		Assert.assertNotNull("Resource must contain ro:name", nameLiteral);
