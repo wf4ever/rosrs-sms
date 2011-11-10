@@ -435,8 +435,20 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public void deleteAllAnnotationsWithBodies(URI annotationsURI)
 	{
-		// TODO Auto-generated method stub
-
+		if (!graphset.containsGraph(annotationsURI.toString())) {
+			return;
+		}
+		OntModel annotationModel = createOntModelForNamedGraph(annotationsURI);
+		NodeIterator it = annotationModel.listObjectsOfProperty(hasTopic);
+		while (it.hasNext()) {
+			RDFNode annotationBodyRef = it.next();
+			if (graphset.containsGraph(annotationBodyRef.asResource().getURI())) {
+				graphset.removeGraph(annotationBodyRef.asResource().getURI());
+			}
+		}
+		graphset.removeGraph(annotationsURI.toString());
+		Resource annotationsRef = model.createResource(annotationsURI.toString());
+		model.removeAll(null, null, annotationsRef);
 	}
 
 

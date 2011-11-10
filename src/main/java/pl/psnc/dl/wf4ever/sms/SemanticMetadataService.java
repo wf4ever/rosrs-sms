@@ -165,8 +165,8 @@ public interface SemanticMetadataService
 
 
 	/**
-	 * Delete all annotations bodies that match a given URI (including their
-	 * descendants). All annotations with those bodies will also be deleted.
+	 * Delete all annotations found under specified named graph. 
+	 * All annotation bodies are also deleted. Removes manifest seeAlso annotations.
 	 * 
 	 * @param annotationsURI
 	 *            annotations URI
