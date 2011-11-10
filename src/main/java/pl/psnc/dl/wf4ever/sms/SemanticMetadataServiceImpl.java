@@ -27,6 +27,7 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.NodeIterator;
 import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
@@ -423,7 +424,7 @@ public class SemanticMetadataServiceImpl
 
 		OntModel commonModel = createOntModelForAllNamedGraphs();
 		Resource annotationBodyRef = commonModel.createResource(annotationBodyURI.toString());
-		ResIterator it = commonModel.listSubjectsWithProperty(hasTopic, annotationBodyRef);
+		ResIterator it = commonModel.listResourcesWithProperty(hasTopic, annotationBodyRef);
 		while (it.hasNext()) {
 			Resource annotation = it.next();
 			commonModel.removeAll(annotation, null, null);
@@ -507,8 +508,24 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public InputStream getAllAnnotationsWithBodies(URI annotationsURI, Notation notation)
 	{
-		// TODO Auto-generated method stub
-		return null;
+		if (!graphset.containsGraph(annotationsURI.toString())) {
+			return null;
+		}
+		NamedGraphSet annotationGraphSet = new NamedGraphSetImpl();
+		annotationGraphSet.addGraph(graphset.getGraph(annotationsURI.toString()));
+
+		OntModel annotationModel = createOntModelForNamedGraph(annotationsURI);
+		NodeIterator it = annotationModel.listObjectsOfProperty(hasTopic);
+		while (it.hasNext()) {
+			RDFNode annotationBodyRef = it.next();
+			if (graphset.containsGraph(annotationBodyRef.asResource().getURI())) {
+				annotationGraphSet.addGraph(graphset.getGraph(annotationBodyRef.asResource().getURI()));
+			}
+		}
+
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		graphset.write(out, getJenaLang(notation), null);
+		return new ByteArrayInputStream(out.toByteArray());
 	}
 
 

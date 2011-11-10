@@ -460,7 +460,7 @@ public class SemanticMetadataServiceImplTest
 	 * .
 	 */
 	@Test
-	public final void testDeleteAnnotationsWithBodies()
+	public final void testDeleteAnnotationWithBody()
 	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		sms.createManifest(manifestURI, userProfile);
@@ -609,7 +609,7 @@ public class SemanticMetadataServiceImplTest
 			for (Map.Entry<URI, String> entry2 : entry.getValue().entrySet()) {
 				Property property = model.createProperty(entry2.getKey().toString());
 				Assert.assertTrue(
-					String.format("Annotation body contains a triple <%s> <%s> <%s>", subject.getURI(),
+					String.format("Annotation body must contain a triple <%s> <%s> <%s>", subject.getURI(),
 						property.getURI(), entry2.getValue()), model.contains(subject, property, entry2.getValue()));
 			}
 		}
@@ -648,9 +648,11 @@ public class SemanticMetadataServiceImplTest
 
 	/**
 	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getAllAnnotationsWithBodies(java.net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)}.
+	 * @throws IOException 
 	 */
 	@Test
 	public final void testGetAllAnnotationsWithBodies()
+		throws IOException
 	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		Assert.assertNull("Returns null when annotations do not exist",
@@ -679,9 +681,10 @@ public class SemanticMetadataServiceImplTest
 		NamedGraphSet ngset = new NamedGraphSetImpl();
 		ngset.read(sms.getAllAnnotationsWithBodies(annotationsURI, Notation.TRIG), "TRIG", baseURI.toString());
 
-		Assert.assertTrue("Graphset contains annotations as default graph", ngset.containsGraph(baseURI.toString()));
+		Assert.assertTrue("Graphset contains annotations as default graph",
+			ngset.containsGraph(annotationsURI.toString()));
 		OntModel graphModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
-			ModelFactory.createModelForGraph(ngset.getGraph(baseURI.toString())));
+			ModelFactory.createModelForGraph(ngset.getGraph(annotationsURI.toString())));
 		verifyAnnotation(graphModel, annotation1URI, annotationBody1URI, annotation1Body.keySet());
 		verifyAnnotation(graphModel, annotation2URI, annotationBody2URI, annotation2Body.keySet());
 
