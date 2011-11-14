@@ -17,6 +17,30 @@
 			<organization>PSNC</organization>
 		</developer>
 	</developers>
+	<repositories>
+		<repository>
+			<id>maven2-repository.dev.java.net</id>
+			<name>Java.net Repository for Maven</name>
+			<url>http://download.java.net/maven/2/</url>
+		</repository>
+		<repository>
+			<id>openrdf</id>
+			<name>OpenRDF</name>
+			<url>http://repo.aduna-software.org/maven2/releases/</url>
+		</repository>
+		<repository>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<id>dlibra-releases</id>
+			<url>http://maven.man.poznan.pl/repository/dlibra-libs-releases-public/</url>
+		</repository>
+		<repository>
+			<snapshots />
+			<id>dlibra-snapshots</id>
+			<url>http://maven.man.poznan.pl/repository/dlibra-libs-snapshots-public/</url>
+		</repository>
+	</repositories>
 	<dependencies>
 		<dependency>
 			<groupId>pl.psnc.dl.wf4ever</groupId>
@@ -69,26 +93,12 @@
 			<artifactId>mysql-connector-java</artifactId>
 			<version>5.1.18</version>
 		</dependency>
+		<dependency>
+			<groupId>org.openrdf.sesame</groupId>
+			<artifactId>sesame-rio-api</artifactId>
+			<version>2.6.0</version>
+		</dependency>
 	</dependencies>
-	<repositories>
-		<repository>
-			<id>maven2-repository.dev.java.net</id>
-			<name>Java.net Repository for Maven</name>
-			<url>http://download.java.net/maven/2/</url>
-		</repository>
-		<repository>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<id>dlibra-releases</id>
-			<url>http://maven.man.poznan.pl/repository/dlibra-libs-releases-public/</url>
-		</repository>
-		<repository>
-			<snapshots />
-			<id>dlibra-snapshots</id>
-			<url>http://maven.man.poznan.pl/repository/dlibra-libs-snapshots-public/</url>
-		</repository>
-	</repositories>
 	<organization>
 		<name>PSNC</name>
 		<url>http://dl.psnc.pl/</url>

@@ -21,6 +21,8 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import org.openrdf.rio.RDFFormat;
+
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 
@@ -224,9 +226,9 @@ public class SemanticMetadataServiceImpl
 
 
 	@Override
-	public void createManifest(URI manifestURI, InputStream is, Notation notation, UserProfile userProfile)
+	public void createManifest(URI manifestURI, InputStream is, RDFFormat rdfFormat, UserProfile userProfile)
 	{
-		model.read(is, manifestURI.resolve(".").toString(), getJenaLang(notation));
+		model.read(is, manifestURI.resolve(".").toString(), rdfFormat.getName().toUpperCase());
 
 		// leave only one dcterms:created - the earliest
 		Individual manifest = model.getIndividual(manifestURI.toString());
@@ -290,7 +292,7 @@ public class SemanticMetadataServiceImpl
 	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
-	public InputStream getManifest(URI manifestURI, Notation notation)
+	public InputStream getManifest(URI manifestURI, RDFFormat rdfFormat)
 	{
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		if (manifest == null) {
@@ -304,7 +306,7 @@ public class SemanticMetadataServiceImpl
 		Model resultModel = qexec.execDescribe();
 		qexec.close();
 
-		resultModel.write(out, getJenaLang(notation));
+		resultModel.write(out, rdfFormat.getName().toUpperCase());
 		return new ByteArrayInputStream(out.toByteArray());
 	}
 
@@ -380,7 +382,7 @@ public class SemanticMetadataServiceImpl
 	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
-	public InputStream getResource(URI resourceURI, Notation notation)
+	public InputStream getResource(URI resourceURI, RDFFormat rdfFormat)
 	{
 		Individual resource = model.getIndividual(resourceURI.toString());
 		if (resource == null) {
@@ -394,7 +396,7 @@ public class SemanticMetadataServiceImpl
 		Model resultModel = qexec.execDescribe();
 		qexec.close();
 
-		resultModel.write(out, getJenaLang(notation));
+		resultModel.write(out, rdfFormat.getName().toUpperCase());
 		return new ByteArrayInputStream(out.toByteArray());
 	}
 
@@ -442,7 +444,7 @@ public class SemanticMetadataServiceImpl
 
 
 	@Override
-	public void addAnnotation(URI annotationURI, URI annotationBodyURI, InputStream is, Notation notation,
+	public void addAnnotation(URI annotationURI, URI annotationBodyURI, InputStream is, RDFFormat rdfFormat,
 			UserProfile userProfile)
 	{
 		URI annotationsURI = annotationURI.resolve("annotations");
@@ -459,7 +461,7 @@ public class SemanticMetadataServiceImpl
 		model.add(annotation, hasTopic, annotationBodyRef);
 
 		OntModel annotationModel = createOntModelForNamedGraph(annotationBodyURI);
-		annotationModel.read(is, annotationURI.resolve(".").toString(), getJenaLang(notation));
+		annotationModel.read(is, annotationURI.resolve(".").toString(), rdfFormat.getName().toUpperCase());
 	}
 
 
@@ -514,7 +516,7 @@ public class SemanticMetadataServiceImpl
 	 * .URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
-	public InputStream getAnnotation(URI annotationURI, Notation notation)
+	public InputStream getAnnotation(URI annotationURI, RDFFormat rdfFormat)
 	{
 		URI annotationsURI = annotationURI.resolve("annotations");
 		if (!graphset.containsGraph(annotationsURI.toString())) {
@@ -534,7 +536,7 @@ public class SemanticMetadataServiceImpl
 		Model resultModel = qexec.execDescribe();
 		qexec.close();
 
-		resultModel.write(out, getJenaLang(notation));
+		resultModel.write(out, rdfFormat.getName().toUpperCase());
 		return new ByteArrayInputStream(out.toByteArray());
 	}
 
@@ -547,7 +549,7 @@ public class SemanticMetadataServiceImpl
 	 * .net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
-	public InputStream getAnnotationBody(URI annotationBodyURI, Notation notation)
+	public InputStream getAnnotationBody(URI annotationBodyURI, RDFFormat rdfFormat)
 	{
 		if (!graphset.containsGraph(annotationBodyURI.toString())) {
 			return null;
@@ -555,13 +557,13 @@ public class SemanticMetadataServiceImpl
 		OntModel annotationModel = createOntModelForNamedGraph(annotationBodyURI);
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		annotationModel.write(out, getJenaLang(notation));
+		annotationModel.write(out, rdfFormat.getName().toUpperCase());
 		return new ByteArrayInputStream(out.toByteArray());
 	}
 
 
 	@Override
-	public InputStream getAllAnnotations(URI annotationsURI, Notation notation)
+	public InputStream getAllAnnotations(URI annotationsURI, RDFFormat rdfFormat)
 	{
 		if (!graphset.containsGraph(annotationsURI.toString())) {
 			return null;
@@ -569,13 +571,13 @@ public class SemanticMetadataServiceImpl
 		OntModel annotationModel = createOntModelForNamedGraph(annotationsURI);
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		annotationModel.write(out, getJenaLang(notation));
+		annotationModel.write(out, rdfFormat.getName().toUpperCase());
 		return new ByteArrayInputStream(out.toByteArray());
 	}
 
 
 	@Override
-	public InputStream getAllAnnotationsWithBodies(URI annotationsURI, Notation notation)
+	public InputStream getAllAnnotationsWithBodies(URI annotationsURI, RDFFormat rdfFormat)
 	{
 		if (!graphset.containsGraph(annotationsURI.toString())) {
 			return null;
@@ -593,7 +595,7 @@ public class SemanticMetadataServiceImpl
 		}
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		graphset.write(out, getJenaLang(notation), null);
+		graphset.write(out, rdfFormat.getName().toUpperCase(), null);
 		return new ByteArrayInputStream(out.toByteArray());
 	}
 
@@ -644,25 +646,6 @@ public class SemanticMetadataServiceImpl
 			graphset.asJenaModel(DEFAULT_NAMED_GRAPH_URI.toString()));
 		ontModel.addSubModel(model);
 		return ontModel;
-	}
-
-
-	private String getJenaLang(Notation notation)
-	{
-		switch (notation) {
-			case RDF_XML:
-				return "RDF/XML";
-			case TURTLE:
-				return "TURTLE";
-			case N3:
-				return "N3";
-			case TRIG:
-				return "TRIG";
-			case TRIX:
-				return "TRIX";
-			default:
-				return "RDF/XML";
-		}
 	}
 
 

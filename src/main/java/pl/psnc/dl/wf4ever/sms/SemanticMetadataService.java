@@ -8,6 +8,8 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Set;
 
+import org.openrdf.rio.RDFFormat;
+
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 
@@ -17,11 +19,6 @@ import pl.psnc.dl.wf4ever.dlibra.UserProfile;
  */
 public interface SemanticMetadataService
 {
-
-	public enum Notation {
-		RDF_XML, TURTLE, N3, TRIG, TRIX
-	}
-
 
 	/**
 	 * Create a manifest (ore:ResourceMap) with a given URI. Automatically creates a 
@@ -51,7 +48,7 @@ public interface SemanticMetadataService
 	 *            saved as FOAF
 	 * @return Research Object URI
 	 */
-	void createManifest(URI manifestURI, InputStream is, Notation notation, UserProfile userProfile);
+	void createManifest(URI manifestURI, InputStream is, RDFFormat rdfFormat, UserProfile userProfile);
 
 
 	/**
@@ -89,7 +86,7 @@ public interface SemanticMetadataService
 	 *            RDF/XML or Trig
 	 * @return manifest or null
 	 */
-	InputStream getManifest(URI manifestURI, Notation notation);
+	InputStream getManifest(URI manifestURI, RDFFormat rdfFormat);
 
 
 	/**
@@ -122,7 +119,7 @@ public interface SemanticMetadataService
 	 *            attribute/attribute_values are returned.
 	 * @return resource or null
 	 */
-	InputStream getResource(URI resourceURI, Notation notation);
+	InputStream getResource(URI resourceURI, RDFFormat rdfFormat);
 
 
 	/**
@@ -151,7 +148,7 @@ public interface SemanticMetadataService
 	 * @param notation
 	 * 			  named graph notation
 	 */
-	void addAnnotation(URI annotationURI, URI annotationBodyURI, InputStream is, Notation notation,
+	void addAnnotation(URI annotationURI, URI annotationBodyURI, InputStream is, RDFFormat rdfFormat,
 			UserProfile userProfile);
 
 
@@ -183,7 +180,7 @@ public interface SemanticMetadataService
 	 *            Notation of the result
 	 * @return annotation or null
 	 */
-	InputStream getAnnotation(URI annotationURI, Notation notation);
+	InputStream getAnnotation(URI annotationURI, RDFFormat rdfFormat);
 
 
 	/**
@@ -195,7 +192,7 @@ public interface SemanticMetadataService
 	 * 				Notation of the returned graph
 	 * @return annotations with bodies or null if URI is incorrect
 	 */
-	InputStream getAllAnnotations(URI annotationsURI, Notation notation);
+	InputStream getAllAnnotations(URI annotationsURI, RDFFormat rdfFormat);
 
 
 	/**
@@ -209,7 +206,7 @@ public interface SemanticMetadataService
 	 * 				Notation of the returned graph
 	 * @return annotations with bodies or null if URI is incorrect
 	 */
-	InputStream getAllAnnotationsWithBodies(URI annotationsURI, Notation notation);
+	InputStream getAllAnnotationsWithBodies(URI annotationsURI, RDFFormat rdfFormat);
 
 
 	/**
@@ -222,7 +219,7 @@ public interface SemanticMetadataService
 	 *            attribute/attribute_values are returned.
 	 * @return
 	 */
-	InputStream getAnnotationBody(URI annotationBodyURI, Notation notation);
+	InputStream getAnnotationBody(URI annotationBodyURI, RDFFormat rdfFormat);
 
 
 	/**

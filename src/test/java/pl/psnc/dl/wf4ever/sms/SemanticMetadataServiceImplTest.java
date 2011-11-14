@@ -30,10 +30,10 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.openrdf.rio.RDFFormat;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
-import pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation;
 
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
 import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
@@ -224,7 +224,7 @@ public class SemanticMetadataServiceImplTest
 		try {
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
 
-			model.read(sms2.getManifest(manifestURI, Notation.RDF_XML), null);
+			model.read(sms2.getManifest(manifestURI, RDFFormat.RDFXML), null);
 			Individual manifest = model.getIndividual(manifestURI.toString());
 			Individual ro = model.getIndividual(researchObjectURI.toString());
 			Assert.assertNotNull("Persistent manifest must contain ro:Manifest", manifest);
@@ -242,7 +242,7 @@ public class SemanticMetadataServiceImplTest
 			Assert.assertNotNull("Manifest must contain reference to annotations", annotations);
 			Assert.assertEquals("Annotations URI must be correct", annotationsURI.toString(), annotations.getURI());
 
-			model.read(sms2.getAllAnnotations(annotationsURI, Notation.RDF_XML), null);
+			model.read(sms2.getAllAnnotations(annotationsURI, RDFFormat.RDFXML), null);
 			verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
 			verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
 		}
@@ -344,13 +344,13 @@ public class SemanticMetadataServiceImplTest
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		try {
 			Assert.assertNull("Returns null when manifest does not exist",
-				sms.getManifest(manifestURI, Notation.RDF_XML));
+				sms.getManifest(manifestURI, RDFFormat.RDFXML));
 
 			Calendar before = Calendar.getInstance();
 			sms.createManifest(manifestURI, userProfile);
 			Calendar after = Calendar.getInstance();
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM);
-			model.read(sms.getManifest(manifestURI, Notation.RDF_XML), null);
+			model.read(sms.getManifest(manifestURI, RDFFormat.RDFXML), null);
 
 			Individual manifest = model.getIndividual(manifestURI.toString());
 			Individual ro = model.getIndividual(researchObjectURI.toString());
@@ -376,7 +376,7 @@ public class SemanticMetadataServiceImplTest
 			Assert.assertNotNull("Manifest must contain reference to annotations", annotations);
 			Assert.assertEquals("Annotations URI must be correct", annotationsURI.toString(), annotations.getURI());
 
-			log.debug(IOUtils.toString(sms.getManifest(manifestURI, Notation.TURTLE), "UTF-8"));
+			log.debug(IOUtils.toString(sms.getManifest(manifestURI, RDFFormat.TURTLE), "UTF-8"));
 		}
 		finally {
 			sms.close();
@@ -405,12 +405,12 @@ public class SemanticMetadataServiceImplTest
 			sms.addResource(manifestURI, resource2URI, resource2Info);
 
 			InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
-			sms.createManifest(manifestURI, is, Notation.TURTLE, userProfile);
+			sms.createManifest(manifestURI, is, RDFFormat.TURTLE, userProfile);
 
-			log.debug(IOUtils.toString(sms.getManifest(manifestURI, Notation.TURTLE), "UTF-8"));
+			log.debug(IOUtils.toString(sms.getManifest(manifestURI, RDFFormat.TURTLE), "UTF-8"));
 
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(sms.getManifest(manifestURI, Notation.RDF_XML), null);
+			model.read(sms.getManifest(manifestURI, RDFFormat.RDFXML), null);
 
 			Individual manifest = model.getIndividual(manifestURI.toString());
 			Individual ro = model.getIndividual(researchObjectURI.toString());
@@ -553,17 +553,17 @@ public class SemanticMetadataServiceImplTest
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		try {
 			Assert.assertNull("Returns null when resource does not exist",
-				sms.getResource(resource1URI, Notation.RDF_XML));
+				sms.getResource(resource1URI, RDFFormat.RDFXML));
 
 			sms.createManifest(manifestURI, userProfile);
 			sms.addResource(manifestURI, resource1URI, resource1Info);
 			sms.addResource(manifestURI, resource2URI, resource2Info);
 
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(sms.getResource(resource1URI, Notation.RDF_XML), null);
+			model.read(sms.getResource(resource1URI, RDFFormat.RDFXML), null);
 			verifyResource(model, resource1URI, resource1Info);
 
-			model.read(sms.getResource(resource2URI, Notation.RDF_XML), null);
+			model.read(sms.getResource(resource2URI, RDFFormat.RDFXML), null);
 			verifyResource(model, resource2URI, resource2Info);
 		}
 		finally {
@@ -656,9 +656,9 @@ public class SemanticMetadataServiceImplTest
 
 			sms.deleteAnnotationWithBody(annotationBody1URI);
 			Assert.assertNull("Get deleted annotation must return null",
-				sms.getAnnotation(annotation1URI, Notation.RDF_XML));
+				sms.getAnnotation(annotation1URI, RDFFormat.RDFXML));
 			Assert.assertNull("Get deleted annotation body must return null",
-				sms.getAnnotationBody(annotationBody1URI, Notation.RDF_XML));
+				sms.getAnnotationBody(annotationBody1URI, RDFFormat.RDFXML));
 		}
 		finally {
 			sms.close();
@@ -689,13 +689,13 @@ public class SemanticMetadataServiceImplTest
 
 			sms.deleteAllAnnotationsWithBodies(annotationsURI);
 			Assert.assertNull("Get deleted annotation must return null",
-				sms.getAnnotation(annotation1URI, Notation.RDF_XML));
+				sms.getAnnotation(annotation1URI, RDFFormat.RDFXML));
 			Assert.assertNull("Get deleted annotation body must return null",
-				sms.getAnnotationBody(annotationBody1URI, Notation.RDF_XML));
+				sms.getAnnotationBody(annotationBody1URI, RDFFormat.RDFXML));
 			Assert.assertNull("Get deleted annotation must return null",
-				sms.getAnnotation(annotation2URI, Notation.RDF_XML));
+				sms.getAnnotation(annotation2URI, RDFFormat.RDFXML));
 			Assert.assertNull("Get deleted annotation body must return null",
-				sms.getAnnotationBody(annotationBody2URI, Notation.RDF_XML));
+				sms.getAnnotationBody(annotationBody2URI, RDFFormat.RDFXML));
 		}
 		finally {
 			sms.close();
@@ -719,7 +719,7 @@ public class SemanticMetadataServiceImplTest
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		try {
 			Assert.assertNull("Returns null when annotation does not exist",
-				sms.getAnnotation(annotation1URI, Notation.RDF_XML));
+				sms.getAnnotation(annotation1URI, RDFFormat.RDFXML));
 
 			sms.createManifest(manifestURI, userProfile);
 			sms.addResource(manifestURI, resource1URI, resource1Info);
@@ -728,9 +728,9 @@ public class SemanticMetadataServiceImplTest
 			sms.addAnnotation(annotation2URI, annotationBody2URI, annotation2Body, userProfile);
 
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(sms.getAnnotation(annotation1URI, Notation.RDF_XML), null);
+			model.read(sms.getAnnotation(annotation1URI, RDFFormat.RDFXML), null);
 			verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
-			model.read(sms.getAnnotation(annotation2URI, Notation.RDF_XML), null);
+			model.read(sms.getAnnotation(annotation2URI, RDFFormat.RDFXML), null);
 			verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
 		}
 		finally {
@@ -789,7 +789,7 @@ public class SemanticMetadataServiceImplTest
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		try {
 			Assert.assertNull("Returns null when annotation body does not exist",
-				sms.getAnnotationBody(annotationBody1URI, Notation.RDF_XML));
+				sms.getAnnotationBody(annotationBody1URI, RDFFormat.RDFXML));
 
 			sms.createManifest(manifestURI, userProfile);
 			sms.addResource(manifestURI, resource1URI, resource1Info);
@@ -798,9 +798,9 @@ public class SemanticMetadataServiceImplTest
 			sms.addAnnotation(annotation2URI, annotationBody2URI, annotation2Body, userProfile);
 
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(sms.getAnnotationBody(annotationBody1URI, Notation.RDF_XML), null);
+			model.read(sms.getAnnotationBody(annotationBody1URI, RDFFormat.RDFXML), null);
 			verifyAnnotationBody(model, annotation1Body);
-			model.read(sms.getAnnotationBody(annotationBody2URI, Notation.RDF_XML), null);
+			model.read(sms.getAnnotationBody(annotationBody2URI, RDFFormat.RDFXML), null);
 			verifyAnnotationBody(model, annotation2Body);
 		}
 		finally {
@@ -825,18 +825,18 @@ public class SemanticMetadataServiceImplTest
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		try {
 			Assert.assertNull("Returns null when annotation body does not exist",
-				sms.getAnnotationBody(annotationBody1URI, Notation.RDF_XML));
+				sms.getAnnotationBody(annotationBody1URI, RDFFormat.RDFXML));
 
 			InputStream is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
 			sms.createManifest(manifestURI, userProfile);
 			sms.addResource(manifestURI, resource1URI, resource1Info);
 			sms.addResource(manifestURI, resource2URI, resource2Info);
-			sms.addAnnotation(annotation2URI, annotationBody2URI, is, Notation.TURTLE, userProfile);
+			sms.addAnnotation(annotation2URI, annotationBody2URI, is, RDFFormat.TURTLE, userProfile);
 
-			log.debug(IOUtils.toString(sms.getAnnotationBody(annotationBody2URI, Notation.TURTLE), "UTF-8"));
+			log.debug(IOUtils.toString(sms.getAnnotationBody(annotationBody2URI, RDFFormat.TURTLE), "UTF-8"));
 
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(sms.getAnnotationBody(annotationBody2URI, Notation.RDF_XML), null);
+			model.read(sms.getAnnotationBody(annotationBody2URI, RDFFormat.RDFXML), null);
 			verifyAnnotationBody(model, annotation2Body);
 		}
 		finally {
@@ -873,7 +873,7 @@ public class SemanticMetadataServiceImplTest
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		try {
 			Assert.assertNull("Returns null when annotations do not exist",
-				sms.getAllAnnotations(annotationsURI, Notation.RDF_XML));
+				sms.getAllAnnotations(annotationsURI, RDFFormat.RDFXML));
 
 			sms.createManifest(manifestURI, userProfile);
 			sms.addResource(manifestURI, resource1URI, resource1Info);
@@ -882,12 +882,12 @@ public class SemanticMetadataServiceImplTest
 			sms.addAnnotation(annotation2URI, annotationBody2URI, annotation2Body, userProfile);
 
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(sms.getAllAnnotations(annotationsURI, Notation.RDF_XML), null);
+			model.read(sms.getAllAnnotations(annotationsURI, RDFFormat.RDFXML), null);
 			verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
 			verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
 
 			model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(sms.getAllAnnotations(annotationsURI, Notation.TURTLE), null, "TURTLE");
+			model.read(sms.getAllAnnotations(annotationsURI, RDFFormat.TURTLE), null, "TURTLE");
 			verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
 			verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
 		}
@@ -911,7 +911,7 @@ public class SemanticMetadataServiceImplTest
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		try {
 			Assert.assertNull("Returns null when annotations do not exist",
-				sms.getAllAnnotations(annotationsURI, Notation.RDF_XML));
+				sms.getAllAnnotations(annotationsURI, RDFFormat.RDFXML));
 
 			sms.createManifest(manifestURI, userProfile);
 			sms.addResource(manifestURI, resource1URI, resource1Info);
@@ -920,21 +920,21 @@ public class SemanticMetadataServiceImplTest
 			sms.addAnnotation(annotation2URI, annotationBody2URI, annotation2Body, userProfile);
 
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(sms.getAllAnnotationsWithBodies(annotationsURI, Notation.RDF_XML), null);
+			model.read(sms.getAllAnnotationsWithBodies(annotationsURI, RDFFormat.RDFXML), null);
 			verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
 			verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
 			verifyAnnotationBody(model, annotation1Body);
 			verifyAnnotationBody(model, annotation2Body);
 
 			model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(sms.getAllAnnotationsWithBodies(annotationsURI, Notation.TURTLE), null, "TURTLE");
+			model.read(sms.getAllAnnotationsWithBodies(annotationsURI, RDFFormat.TURTLE), null, "TURTLE");
 			verifyAnnotation(model, annotation1URI, annotationBody1URI, annotation1Body.keySet());
 			verifyAnnotation(model, annotation2URI, annotationBody2URI, annotation2Body.keySet());
 			verifyAnnotationBody(model, annotation1Body);
 			verifyAnnotationBody(model, annotation2Body);
 
 			NamedGraphSet ngset = new NamedGraphSetImpl();
-			ngset.read(sms.getAllAnnotationsWithBodies(annotationsURI, Notation.TRIG), "TRIG", baseURI.toString());
+			ngset.read(sms.getAllAnnotationsWithBodies(annotationsURI, RDFFormat.TRIG), "TRIG", baseURI.toString());
 
 			Assert.assertTrue("Graphset contains annotations as default graph",
 				ngset.containsGraph(annotationsURI.toString()));
