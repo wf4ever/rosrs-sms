@@ -234,4 +234,11 @@ public interface SemanticMetadataService
 	 */
 	List<URI> findResearchObjects(String workspaceId, Map<String, List<String>> queryParameters);
 
+
+	/**
+	 * Closes the SemanticMetadataService and frees up resources held. Any subsequent calls to methods of 
+	 * the object have undefined results. 
+	 */
+	void close();
+
 }

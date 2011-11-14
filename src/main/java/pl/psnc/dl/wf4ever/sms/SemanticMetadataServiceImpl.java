@@ -5,11 +5,20 @@ package pl.psnc.dl.wf4ever.sms;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+
+import javax.naming.InitialContext;
+import javax.naming.NamingException;
+import javax.sql.DataSource;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
@@ -36,6 +45,7 @@ import com.hp.hpl.jena.vocabulary.DCTerms;
 
 import de.fuberlin.wiwiss.ng4j.NamedGraph;
 import de.fuberlin.wiwiss.ng4j.NamedGraphSet;
+import de.fuberlin.wiwiss.ng4j.db.NamedGraphSetDB;
 import de.fuberlin.wiwiss.ng4j.impl.NamedGraphSetImpl;
 
 /**
@@ -56,7 +66,8 @@ public class SemanticMetadataServiceImpl
 
 	private static final String PAV_NAMESPACE = "http://purl.org/pav/";
 
-	private static final String DEFAULT_NAMED_GRAPH_URI = "http://example.wf4ever-project.org/2011/defaultGraph";
+	private static final URI DEFAULT_NAMED_GRAPH_URI = URI
+			.create("http://example.wf4ever-project.org/2011/defaultGraph");
 
 	private static final PrefixMapping standardNamespaces = PrefixMapping.Factory.create()
 			.setNsPrefix("ore", ORE_NAMESPACE).setNsPrefix("ro", RO_NAMESPACE).setNsPrefix("dcterms", DCTerms.NS)
@@ -102,11 +113,19 @@ public class SemanticMetadataServiceImpl
 
 	private final String getResourceQueryTmpl = "DESCRIBE <%s> WHERE { }";
 
+	private final Connection connection;
+
 
 	public SemanticMetadataServiceImpl()
+		throws IOException, NamingException, SQLException, ClassNotFoundException
 	{
-		graphset = new NamedGraphSetImpl();
-		NamedGraph defaultGraph = graphset.createGraph(DEFAULT_NAMED_GRAPH_URI);
+		connection = getConnection("connection.properties");
+		if (connection == null) {
+			throw new RuntimeException("Connection could not be created");
+		}
+
+		graphset = new NamedGraphSetDB(connection, "sms");
+		NamedGraph defaultGraph = getOrCreateGraph(graphset, DEFAULT_NAMED_GRAPH_URI);
 		Model defaultModel = ModelFactory.createModelForGraph(defaultGraph);
 
 		InputStream modelIS = getClass().getClassLoader().getResourceAsStream("ro.rdf");
@@ -137,6 +156,36 @@ public class SemanticMetadataServiceImpl
 		pavCreatedOn = model.getProperty(PAV_NAMESPACE + "createdOn");
 
 		model.setNsPrefixes(standardNamespaces);
+	}
+
+
+	private Connection getConnection(String filename)
+		throws IOException, NamingException, SQLException, ClassNotFoundException
+	{
+		InputStream is = getClass().getClassLoader().getResourceAsStream(filename);
+		Properties props = new Properties();
+		props.load(is);
+
+		if (props.containsKey("datasource")) {
+			String datasource = props.getProperty("datasource");
+			if (datasource != null) {
+				InitialContext ctx = new InitialContext();
+				DataSource ds = (DataSource) ctx.lookup(datasource);
+				return ds.getConnection();
+			}
+		}
+		else {
+			String driver_class = props.getProperty("driver_class");
+			String url = props.getProperty("url");
+			String username = props.getProperty("username");
+			String password = props.getProperty("password");
+			if (driver_class != null && url != null && username != null && password != null) {
+				Class.forName(driver_class);
+				return DriverManager.getConnection(url, username, password);
+			}
+		}
+
+		return null;
 	}
 
 
@@ -464,6 +513,9 @@ public class SemanticMetadataServiceImpl
 	public InputStream getAnnotation(URI annotationURI, Notation notation)
 	{
 		URI annotationsURI = annotationURI.resolve("annotations");
+		if (!graphset.containsGraph(annotationsURI.toString())) {
+			return null;
+		}
 		OntModel annotationModel = createOntModelForNamedGraph(annotationsURI);
 
 		Individual annotation = annotationModel.getIndividual(annotationURI.toString());
@@ -563,8 +615,7 @@ public class SemanticMetadataServiceImpl
 	 */
 	private OntModel createOntModelForNamedGraph(URI namedGraphURI)
 	{
-		NamedGraph namedGraph = (graphset.containsGraph(namedGraphURI.toString()) ? graphset.getGraph(namedGraphURI
-				.toString()) : graphset.createGraph(namedGraphURI.toString()));
+		NamedGraph namedGraph = getOrCreateGraph(graphset, namedGraphURI);
 		OntModel ontModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
 			ModelFactory.createModelForGraph(namedGraph));
 		ontModel.addSubModel(model);
@@ -579,7 +630,7 @@ public class SemanticMetadataServiceImpl
 	private OntModel createOntModelForAllNamedGraphs()
 	{
 		OntModel ontModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
-			graphset.asJenaModel(DEFAULT_NAMED_GRAPH_URI));
+			graphset.asJenaModel(DEFAULT_NAMED_GRAPH_URI.toString()));
 		ontModel.addSubModel(model);
 		return ontModel;
 	}
@@ -601,6 +652,20 @@ public class SemanticMetadataServiceImpl
 			default:
 				return "RDF/XML";
 		}
+	}
+
+
+	private NamedGraph getOrCreateGraph(NamedGraphSet graphset, URI namedGraphURI)
+	{
+		return graphset.containsGraph(namedGraphURI.toString()) ? graphset.getGraph(namedGraphURI.toString())
+				: graphset.createGraph(namedGraphURI.toString());
+	}
+
+
+	@Override
+	public void close()
+	{
+		graphset.close();
 	}
 
 }
