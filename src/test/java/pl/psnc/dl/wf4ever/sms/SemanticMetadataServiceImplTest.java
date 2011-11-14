@@ -67,6 +67,8 @@ public class SemanticMetadataServiceImplTest
 
 	private final static URI manifestURI = URI.create("http://example.org/ROs/ro1/manifest");
 
+	private final static URI manifest2URI = URI.create("http://example.org/ROs/ro2/manifest");
+
 	private final URI researchObjectURI = URI.create("http://example.org/ROs/ro1/manifest#ro");
 
 	private final static URI annotationsURI = URI.create("http://example.org/ROs/ro1/annotations");
@@ -166,6 +168,12 @@ public class SemanticMetadataServiceImplTest
 			sms = new SemanticMetadataServiceImpl();
 			try {
 				sms.removeManifest(manifestURI);
+			}
+			catch (IllegalArgumentException e) {
+				// nothing
+			}
+			try {
+				sms.removeManifest(manifest2URI);
 			}
 			catch (IllegalArgumentException e) {
 				// nothing
@@ -955,12 +963,37 @@ public class SemanticMetadataServiceImplTest
 	 * Test method for
 	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#findResearchObjects(java.lang.String, java.util.Map)}
 	 * .
+	 * @throws SQLException 
+	 * @throws NamingException 
+	 * @throws IOException 
+	 * @throws ClassNotFoundException 
 	 */
 	@Test
-	@Ignore
-	public final void testFindResearchObjects()
+	public final void testFindManifests()
+		throws ClassNotFoundException, IOException, NamingException, SQLException
 	{
-		fail("Not yet implemented");
-	}
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
+		try {
+			sms.createManifest(manifestURI, userProfile);
+			sms.createManifest(manifest2URI, userProfile);
+			sms.addResource(manifestURI, resource1URI, resource1Info);
+			sms.addResource(manifestURI, resource2URI, resource2Info);
 
+			Set<URI> expected = new HashSet<URI>();
+			expected.add(manifestURI);
+			Assert.assertEquals("Find with manifest URI", expected, sms.findManifests(manifestURI));
+
+			expected.clear();
+			expected.add(manifestURI);
+			Assert.assertEquals("Find with base URI", expected, sms.findManifests(manifestURI.resolve(".")));
+
+			expected.clear();
+			expected.add(manifestURI);
+			expected.add(manifest2URI);
+			Assert.assertEquals("Find with base of base URI", expected, sms.findManifests(manifestURI.resolve("..")));
+		}
+		finally {
+			sms.close();
+		}
+	}
 }

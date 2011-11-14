@@ -12,9 +12,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Calendar;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
@@ -32,6 +33,8 @@ import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QueryFactory;
+import com.hp.hpl.jena.query.QuerySolution;
+import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.NodeIterator;
@@ -112,6 +115,9 @@ public class SemanticMetadataServiceImpl
 			+ "WHERE { <%<s> ore:describes ?ro. OPTIONAL { ?proxy ore:proxyIn ?ro. ?ro ore:aggregates ?resource. } }";
 
 	private final String getResourceQueryTmpl = "DESCRIBE <%s> WHERE { }";
+
+	private final String findManifestsQueryTmpl = "PREFIX ro: <" + RO_NAMESPACE + "> SELECT ?manifest "
+			+ "WHERE { ?manifest a ro:Manifest. FILTER regex(str(?manifest), \"^%s\") . }";
 
 	private final Connection connection;
 
@@ -497,8 +503,6 @@ public class SemanticMetadataServiceImpl
 			}
 		}
 		graphset.removeGraph(annotationsURI.toString());
-		Resource annotationsRef = model.createResource(annotationsURI.toString());
-		model.removeAll(null, null, annotationsRef);
 	}
 
 
@@ -594,18 +598,25 @@ public class SemanticMetadataServiceImpl
 	}
 
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService#findResearchObjects(java
-	 * .lang.String, java.util.Map)
-	 */
 	@Override
-	public List<URI> findResearchObjects(String workspaceId, Map<String, List<String>> queryParameters)
+	public Set<URI> findManifests(URI partialURI)
 	{
-		// TODO Auto-generated method stub
-		return null;
+		String queryString = String.format(findManifestsQueryTmpl, partialURI.toString());
+		Query query = QueryFactory.create(queryString);
+
+		// Execute the query and obtain results
+		QueryExecution qe = QueryExecutionFactory.create(query, model);
+		ResultSet results = qe.execSelect();
+		Set<URI> uris = new HashSet<URI>();
+		while (results.hasNext()) {
+			QuerySolution solution = results.nextSolution();
+			Resource manifest = solution.getResource("manifest");
+			uris.add(URI.create(manifest.getURI()));
+		}
+
+		// Important - free up resources used running the query
+		qe.close();
+		return uris;
 	}
 
 

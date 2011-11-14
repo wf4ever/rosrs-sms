@@ -5,8 +5,8 @@ package pl.psnc.dl.wf4ever.sms;
 
 import java.io.InputStream;
 import java.net.URI;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
@@ -226,13 +226,13 @@ public interface SemanticMetadataService
 
 
 	/**
-	 * To be defined in the future.
+	 * List manifest resources that start with the given URI.
 	 * 
-	 * @param workspaceId
-	 * @param queryParameters
-	 * @return
+	 * @param partialURI URI with which the manifest URI must start
+	 * 
+	 * @return list of manifest URIs
 	 */
-	List<URI> findResearchObjects(String workspaceId, Map<String, List<String>> queryParameters);
+	Set<URI> findManifests(URI partialURI);
 
 
 	/**
