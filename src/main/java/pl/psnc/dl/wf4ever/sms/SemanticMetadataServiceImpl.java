@@ -222,6 +222,7 @@ public class SemanticMetadataServiceImpl
 
 		Resource annotations = model.createResource(manifestURI.resolve("annotations").toString());
 		manifest.addSeeAlso(annotations);
+		graphset.createGraph(annotations.getURI());
 	}
 
 
@@ -242,6 +243,10 @@ public class SemanticMetadataServiceImpl
 		if (earliest != null) {
 			model.removeAll(manifest, DCTerms.created, null);
 			model.add(manifest, DCTerms.created, model.createTypedLiteral(earliest));
+		}
+
+		if (!graphset.containsGraph(manifestURI.resolve("annotations").toString())) {
+			graphset.createGraph(manifestURI.resolve("annotations").toString());
 		}
 	}
 
@@ -281,6 +286,7 @@ public class SemanticMetadataServiceImpl
 			throw new IllegalArgumentException("URI not found");
 		}
 		model.removeAll(ro, null, null);
+		deleteAllAnnotationsWithBodies(manifestURI.resolve("annotations"));
 	}
 
 

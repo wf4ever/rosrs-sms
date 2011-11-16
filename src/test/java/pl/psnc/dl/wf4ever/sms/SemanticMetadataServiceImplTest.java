@@ -275,6 +275,8 @@ public class SemanticMetadataServiceImplTest
 			catch (IllegalArgumentException e) {
 				// good
 			}
+			Assert.assertNotNull("Annotations after creating a manifest must not be null",
+				sms.getAllAnnotations(annotationsURI, RDFFormat.RDFXML));
 		}
 		finally {
 			sms.close();
@@ -311,6 +313,11 @@ public class SemanticMetadataServiceImplTest
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		try {
 			sms.createManifest(manifestURI, userProfile);
+			sms.addResource(manifestURI, resource1URI, resource1Info);
+			sms.addResource(manifestURI, resource2URI, resource2Info);
+			sms.addAnnotation(annotation1URI, annotationBody1URI, annotation1Body, userProfile);
+			sms.addAnnotation(annotation2URI, annotationBody2URI, annotation2Body, userProfile);
+
 			sms.removeManifest(manifestURI);
 			try {
 				sms.removeManifest(manifestURI);
@@ -319,6 +326,15 @@ public class SemanticMetadataServiceImplTest
 			catch (IllegalArgumentException e) {
 				// good
 			}
+
+			Assert.assertNull("Get deleted annotation must return null",
+				sms.getAnnotation(annotation1URI, RDFFormat.RDFXML));
+			Assert.assertNull("Get deleted annotation body must return null",
+				sms.getAnnotationBody(annotationBody1URI, RDFFormat.RDFXML));
+			Assert.assertNull("Get deleted annotation must return null",
+				sms.getAnnotation(annotation2URI, RDFFormat.RDFXML));
+			Assert.assertNull("Get deleted annotation body must return null",
+				sms.getAnnotationBody(annotationBody2URI, RDFFormat.RDFXML));
 		}
 		finally {
 			sms.close();
