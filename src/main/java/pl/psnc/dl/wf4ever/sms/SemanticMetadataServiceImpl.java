@@ -21,6 +21,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import org.apache.log4j.Logger;
 import org.openrdf.rio.RDFFormat;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
@@ -60,6 +61,8 @@ import de.fuberlin.wiwiss.ng4j.impl.NamedGraphSetImpl;
 public class SemanticMetadataServiceImpl
 	implements SemanticMetadataService
 {
+
+	private static final Logger log = Logger.getLogger(SemanticMetadataServiceImpl.class);
 
 	private static final String ORE_NAMESPACE = "http://www.openarchives.org/ore/terms/";
 
@@ -447,6 +450,7 @@ public class SemanticMetadataServiceImpl
 		for (Map.Entry<URI, Map<URI, String>> entry : triples.entrySet()) {
 			Individual resource = model.getIndividual(entry.getKey().toString());
 			if (resource == null) {
+				log.warn(String.format("Could not find resource %s, ignoring.", entry.getKey().toString()));
 				continue;
 			}
 			annotationsModel.add(annotation, annotatesResource, resource);
