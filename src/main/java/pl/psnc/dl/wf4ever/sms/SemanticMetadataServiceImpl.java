@@ -207,6 +207,7 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public void createManifest(URI manifestURI, UserProfile userProfile)
 	{
+		manifestURI = manifestURI.normalize();
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		if (manifest != null) {
 			throw new IllegalArgumentException("URI already exists");
@@ -229,6 +230,7 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public void createManifest(URI manifestURI, InputStream is, RDFFormat rdfFormat, UserProfile userProfile)
 	{
+		manifestURI = manifestURI.normalize();
 		model.read(is, manifestURI.resolve(".").toString(), rdfFormat.getName().toUpperCase());
 
 		// leave only one dcterms:created - the earliest
@@ -276,6 +278,7 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public void removeManifest(URI manifestURI)
 	{
+		manifestURI = manifestURI.normalize();
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		if (manifest == null) {
 			throw new IllegalArgumentException("URI not found");
@@ -300,6 +303,7 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public InputStream getManifest(URI manifestURI, RDFFormat rdfFormat)
 	{
+		manifestURI = manifestURI.normalize();
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		if (manifest == null) {
 			return null;
@@ -327,6 +331,8 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public void addResource(URI manifestURI, URI resourceURI, ResourceInfo resourceInfo)
 	{
+		manifestURI = manifestURI.normalize();
+		resourceURI = resourceURI.normalize();
 		Individual manifest = model.getIndividual(manifestURI.toString());
 		if (manifest == null) {
 			throw new IllegalArgumentException("URI not found");
@@ -363,6 +369,8 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public void removeResource(URI manifestURI, URI resourceURI)
 	{
+		manifestURI = manifestURI.normalize();
+		resourceURI = resourceURI.normalize();
 		Individual ro = model.getIndividual(manifestURI.toString() + "#ro");
 		if (ro == null) {
 			throw new IllegalArgumentException("URI not found");
@@ -390,6 +398,7 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public InputStream getResource(URI resourceURI, RDFFormat rdfFormat)
 	{
+		resourceURI = resourceURI.normalize();
 		Individual resource = model.getIndividual(resourceURI.toString());
 		if (resource == null) {
 			return null;
@@ -418,6 +427,8 @@ public class SemanticMetadataServiceImpl
 	public void addAnnotation(URI annotationURI, URI annotationBodyURI, Map<URI, Map<URI, String>> triples,
 			UserProfile userProfile)
 	{
+		annotationURI = annotationURI.normalize();
+		annotationBodyURI = annotationBodyURI.normalize();
 		URI annotationsURI = annotationURI.resolve("annotations");
 		OntModel annotationsModel = createOntModelForNamedGraph(annotationsURI);
 
@@ -453,6 +464,8 @@ public class SemanticMetadataServiceImpl
 	public void addAnnotation(URI annotationURI, URI annotationBodyURI, InputStream is, RDFFormat rdfFormat,
 			UserProfile userProfile)
 	{
+		annotationURI = annotationURI.normalize();
+		annotationBodyURI = annotationBodyURI.normalize();
 		URI annotationsURI = annotationURI.resolve("annotations");
 		OntModel annotationsModel = createOntModelForNamedGraph(annotationsURI);
 
@@ -481,6 +494,7 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public void deleteAnnotationWithBody(URI annotationBodyURI)
 	{
+		annotationBodyURI = annotationBodyURI.normalize();
 		if (!graphset.containsGraph(annotationBodyURI.toString())) {
 			throw new IllegalArgumentException("URI not found");
 		}
@@ -499,6 +513,7 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public void deleteAllAnnotationsWithBodies(URI annotationsURI)
 	{
+		annotationsURI = annotationsURI.normalize();
 		if (!graphset.containsGraph(annotationsURI.toString())) {
 			return;
 		}
@@ -524,6 +539,7 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public InputStream getAnnotation(URI annotationURI, RDFFormat rdfFormat)
 	{
+		annotationURI = annotationURI.normalize();
 		URI annotationsURI = annotationURI.resolve("annotations");
 		if (!graphset.containsGraph(annotationsURI.toString())) {
 			return null;
@@ -557,6 +573,7 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public InputStream getAnnotationBody(URI annotationBodyURI, RDFFormat rdfFormat)
 	{
+		annotationBodyURI = annotationBodyURI.normalize();
 		if (!graphset.containsGraph(annotationBodyURI.toString())) {
 			return null;
 		}
@@ -571,6 +588,7 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public InputStream getAllAnnotations(URI annotationsURI, RDFFormat rdfFormat)
 	{
+		annotationsURI = annotationsURI.normalize();
 		if (!graphset.containsGraph(annotationsURI.toString())) {
 			return null;
 		}
@@ -585,6 +603,7 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public InputStream getAllAnnotationsWithBodies(URI annotationsURI, RDFFormat rdfFormat)
 	{
+		annotationsURI = annotationsURI.normalize();
 		if (!graphset.containsGraph(annotationsURI.toString())) {
 			return null;
 		}
@@ -609,6 +628,7 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public Set<URI> findManifests(URI partialURI)
 	{
+		partialURI = partialURI.normalize();
 		String queryString = String.format(findManifestsQueryTmpl, partialURI.toString());
 		Query query = QueryFactory.create(queryString);
 
