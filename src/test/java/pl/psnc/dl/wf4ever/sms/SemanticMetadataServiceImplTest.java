@@ -796,15 +796,21 @@ public class SemanticMetadataServiceImplTest
 			sms.addResource(manifestURI, resource2URI, resource2Info);
 			sms.addAnnotation(annotation1URI, annotationBody1URI, annotation1Body, userProfile);
 			sms.addAnnotation(annotation2URI, annotationBody2URI, annotation2Body, userProfile);
-
-			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(sms.getAnnotationBody(annotationBody1URI, RDFFormat.RDFXML), null);
-			verifyAnnotationBody(model, annotation1Body);
-			model.read(sms.getAnnotationBody(annotationBody2URI, RDFFormat.RDFXML), null);
-			verifyAnnotationBody(model, annotation2Body);
 		}
 		finally {
 			sms.close();
+		}
+
+		SemanticMetadataService sms2 = new SemanticMetadataServiceImpl();
+		try {
+			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+			model.read(sms2.getAnnotationBody(annotationBody1URI, RDFFormat.RDFXML), null);
+			verifyAnnotationBody(model, annotation1Body);
+			model.read(sms2.getAnnotationBody(annotationBody2URI, RDFFormat.RDFXML), null);
+			verifyAnnotationBody(model, annotation2Body);
+		}
+		finally {
+			sms2.close();
 		}
 	}
 
