@@ -5,13 +5,11 @@ package pl.psnc.dl.wf4ever.sms;
 
 import java.io.InputStream;
 import java.net.URI;
-import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.rio.RDFFormat;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
-import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 
 /**
  * @author piotrhol
@@ -27,12 +25,9 @@ public interface SemanticMetadataService
 	 * 
 	 * @param manifestURI
 	 *            manifest URI
-	 * @param userProfile
-	 *            profile of the user creating the research object, will be
-	 *            saved as FOAF
 	 * @return Research Object URI
 	 */
-	void createManifest(URI manifestURI, UserProfile userProfile);
+	void createManifest(URI manifestURI);
 
 
 	/**
@@ -43,27 +38,9 @@ public interface SemanticMetadataService
 	 * 
 	 * @param manifestURI
 	 *            manifest URI
-	 * @param userProfile
-	 *            profile of the user creating the research object, will be
-	 *            saved as FOAF
 	 * @return Research Object URI
 	 */
-	void createManifest(URI manifestURI, InputStream is, RDFFormat rdfFormat, UserProfile userProfile);
-
-
-	/**
-	 * Create a copy of an existing RO under a new URI. If the existing URI
-	 * cannot be found, an IllegalArgumentException is thrown.
-	 * 
-	 * Details to be added in the future
-	 * 
-	 * @param manifestURI
-	 *            New manifest URI
-	 * @param baseManifestURI
-	 *            Original Research Object URI
-	 * @return New research object URI
-	 */
-	void createResearchObjectAsCopy(URI manifestURI, URI baseManifestURI);
+	void createManifest(URI manifestURI, InputStream is, RDFFormat rdfFormat);
 
 
 	/**
@@ -72,8 +49,9 @@ public interface SemanticMetadataService
 	 * 
 	 * @param manifestURI
 	 *            manifest URI
+	 * @param baseURI the base URI of RO, used for distinguishing internal resources from external
 	 */
-	void removeManifest(URI manifestURI);
+	void removeManifest(URI manifestURI, URI baseURI);
 
 
 	/**
@@ -110,7 +88,8 @@ public interface SemanticMetadataService
 
 
 	/**
-	 * Get resource description (name, file size and checksum).
+	 * Get an RDF resource. If the RDF format supports 
+	 * named graphs, referenced named graphs will be included as well.
 	 * 
 	 * @param resourceURI
 	 *            resource URI
@@ -123,103 +102,48 @@ public interface SemanticMetadataService
 
 
 	/**
-	 * Add an annotation (ro:GraphAnnotation, ao:Annotation) together with an annotation body.
-	 * 
-	 * @param annotationURI
-	 *            annotation URI
-	 * @param annotationBodyURI
-	 *            annotation body URI
-	 * @param triples
-	 *            map of annotated resources, attributes and attribute values, e.g. {"input.txt" => {"http://purl.org/dc/terms/title" => "My title"}}
-	 */
-	void addAnnotation(URI annotationURI, URI annotationBodyURI, Map<URI, Map<URI, String>> triples,
-			UserProfile userProfile);
-
-
-	/**
-	 * Add an annotation (ro:GraphAnnotation, ao:Annotation) together with an annotation body.
-	 * 
-	 * @param annotationURI
-	 *            annotation URI
-	 * @param annotationBodyURI
-	 *            annotation body URI
-	 * @param is
-	 *            named graph with annotated resources, attributes and attribute values
-	 * @param notation
-	 * 			  named graph notation
-	 */
-	void addAnnotation(URI annotationURI, URI annotationBodyURI, InputStream is, RDFFormat rdfFormat,
-			UserProfile userProfile);
-
-
-	/**
-	 * Delete an annotation and its body.
-	 * 
-	 * @param annotationBodyURI
-	 *            annotation body URI
-	 */
-	void deleteAnnotationWithBody(URI annotationBodyURI);
-
-
-	/**
-	 * Delete all annotations found under specified named graph. 
-	 * All annotation bodies are also deleted. Removes manifest seeAlso annotations.
-	 * 
-	 * @param annotationsURI
-	 *            annotations URI
-	 */
-	void deleteAllAnnotationsWithBodies(URI annotationsURI);
-
-
-	/**
-	 * Get an annotation with a given URI.
-	 * 
-	 * @param annotationURI
-	 *            annotation URI
-	 * @param notation
-	 *            Notation of the result
-	 * @return annotation or null
-	 */
-	InputStream getAnnotation(URI annotationURI, RDFFormat rdfFormat);
-
-
-	/**
-	 * Returns all annotation without annotation bodies.
-	 * 
-	 * @param annotationsURI
-	 * 				URI of all annotations
-	 * @param notation
-	 * 				Notation of the returned graph
-	 * @return annotations with bodies or null if URI is incorrect
-	 */
-	InputStream getAllAnnotations(URI annotationsURI, RDFFormat rdfFormat);
-
-
-	/**
-	 * Returns all annotation and annotation bodies. If notation is TRIG or TRIX, bodies
-	 * are returned as named graphs, otherwise the graph is flattened and the information
-	 * about who annotated what is lost.
-	 * 
-	 * @param annotationsURI
-	 * 				URI of all annotations
-	 * @param notation
-	 * 				Notation of the returned graph
-	 * @return annotations with bodies or null if URI is incorrect
-	 */
-	InputStream getAllAnnotationsWithBodies(URI annotationsURI, RDFFormat rdfFormat);
-
-
-	/**
-	 * Get an annotation body.
-	 * 
-	 * @param annotationBodyURI
-	 *            annotation body URI
-	 * @param notation
-	 *            Notation of the result. In text/plain, pairs
-	 *            attribute/attribute_values are returned.
+	 * Return true if the resource exists and belongs to class ro:Folder
+	 * @param resourceURI resource URI
 	 * @return
 	 */
-	InputStream getAnnotationBody(URI annotationBodyURI, RDFFormat rdfFormat);
+	boolean isRoFolder(URI resourceURI);
+
+
+	/**
+	 * Add a named graph to the quadstore
+	 * @param graphURI named graph URI
+	 * @param inputStream named graph content
+	 * @param rdfFormat graph content format
+	 */
+	void addNamedGraph(URI graphURI, InputStream inputStream, RDFFormat rdfFormat);
+
+
+	/**
+	 * Return true if a named graph with given URI exists.
+	 * @param graphURI graph URI
+	 * @return
+	 */
+	boolean isNamedGraph(URI graphURI);
+
+
+	/**
+	 * Get a named graph. If the named graph references other named graphs and the RDF format
+	 * is TriG or TriX, referenced named graphs are returned as well.
+	 * 
+	 * @param graphURI
+	 *            graph URI
+	 * @param rdfFormat response format
+	 * @return
+	 */
+	InputStream getNamedGraph(URI graphURI, RDFFormat rdfFormat);
+
+
+	/**
+	 * Delete a named graph from the quadstore.
+	 * @param graphURI graph URI
+	 * @param baseURI the base URI of RO, used for distinguishing internal resources from external
+	 */
+	void removeNamedGraph(URI graphURI, URI baseURI);
 
 
 	/**

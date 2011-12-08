@@ -13,7 +13,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -43,7 +42,6 @@ import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.NodeIterator;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.shared.PrefixMapping;
@@ -62,20 +60,18 @@ public class SemanticMetadataServiceImpl
 	implements SemanticMetadataService
 {
 
+	@SuppressWarnings("unused")
 	private static final Logger log = Logger.getLogger(SemanticMetadataServiceImpl.class);
 
 	private static final String ORE_NAMESPACE = "http://www.openarchives.org/ore/terms/";
 
-	private static final String RO_NAMESPACE = "http://www.wf4ever-project.org/vocab/ro#";
+	private static final String RO_NAMESPACE = "http://purl.org/wf4ever/ro#";
 
 	private static final String FOAF_NAMESPACE = "http://xmlns.com/foaf/0.1/";
 
 	private static final String AO_NAMESPACE = "http://purl.org/ao/core/";
 
-	private static final String PAV_NAMESPACE = "http://purl.org/pav/";
-
-	private static final URI DEFAULT_NAMED_GRAPH_URI = URI
-			.create("http://example.wf4ever-project.org/2011/defaultGraph");
+	private static final URI DEFAULT_NAMED_GRAPH_URI = URI.create("sms");
 
 	private static final PrefixMapping standardNamespaces = PrefixMapping.Factory.create()
 			.setNsPrefix("ore", ORE_NAMESPACE).setNsPrefix("ro", RO_NAMESPACE).setNsPrefix("dcterms", DCTerms.NS)
@@ -83,7 +79,10 @@ public class SemanticMetadataServiceImpl
 
 	private final NamedGraphSet graphset;
 
-	private final OntModel model;
+	/**
+	 * For storing triples that don't belong to any RO, the default graph. 
+	 */
+	private final OntModel defaultModel;
 
 	private final OntClass researchObjectClass;
 
@@ -92,8 +91,6 @@ public class SemanticMetadataServiceImpl
 	private final OntClass foafAgentClass;
 
 	private final OntClass resourceClass;
-
-	private final OntClass annotationClass;
 
 	private final Property describes;
 
@@ -107,17 +104,7 @@ public class SemanticMetadataServiceImpl
 
 	private final Property checksum;
 
-	private final Property annotatesResource;
-
 	private final Property hasTopic;
-
-	private final Property pavCreatedBy;
-
-	private final Property pavCreatedOn;
-
-	private final String getManifestQueryTmpl = "PREFIX ore: <http://www.openarchives.org/ore/terms/> "
-			+ "DESCRIBE <%s> ?ro ?proxy ?resource "
-			+ "WHERE { <%<s> ore:describes ?ro. OPTIONAL { ?proxy ore:proxyIn ?ro. ?ro ore:aggregates ?resource. } }";
 
 	private final String getResourceQueryTmpl = "DESCRIBE <%s> WHERE { }";
 
@@ -126,47 +113,46 @@ public class SemanticMetadataServiceImpl
 
 	private final Connection connection;
 
+	private final UserProfile user;
 
-	public SemanticMetadataServiceImpl()
+
+	public SemanticMetadataServiceImpl(UserProfile user)
 		throws IOException, NamingException, SQLException, ClassNotFoundException
 	{
 		connection = getConnection("connection.properties");
 		if (connection == null) {
 			throw new RuntimeException("Connection could not be created");
 		}
+		this.user = user;
 
 		graphset = new NamedGraphSetDB(connection, "sms");
 		NamedGraph defaultGraph = getOrCreateGraph(graphset, DEFAULT_NAMED_GRAPH_URI);
-		Model defaultModel = ModelFactory.createModelForGraph(defaultGraph);
+		Model tmpModel = ModelFactory.createModelForGraph(defaultGraph);
 
-		InputStream modelIS = getClass().getClassLoader().getResourceAsStream("ro.rdf");
-		defaultModel.read(modelIS, null);
-		//		defaultModel.read("http://www.wf4ever-project.org/wiki/download/attachments/2064773/ro.rdf");
+		//		InputStream modelIS = getClass().getClassLoader().getResourceAsStream("ro.rdf");
+		//		defaultModel.read(modelIS, null);
+		tmpModel.read(RO_NAMESPACE);
 
-		model = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM, defaultModel);
+		defaultModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM, tmpModel);
 
 		OntModel foafModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM);
 		foafModel.read(FOAF_NAMESPACE, null);
-		model.addSubModel(foafModel);
+		defaultModel.addSubModel(foafModel);
 
-		researchObjectClass = model.getOntClass(RO_NAMESPACE + "ResearchObject");
-		manifestClass = model.getOntClass(RO_NAMESPACE + "Manifest");
-		resourceClass = model.getOntClass(ORE_NAMESPACE + "AggregatedResource");
-		annotationClass = model.getOntClass(RO_NAMESPACE + "GraphAnnotation");
+		researchObjectClass = defaultModel.getOntClass(RO_NAMESPACE + "ResearchObject");
+		manifestClass = defaultModel.getOntClass(RO_NAMESPACE + "Manifest");
+		resourceClass = defaultModel.getOntClass(ORE_NAMESPACE + "AggregatedResource");
 
-		name = model.getProperty(RO_NAMESPACE + "name");
-		filesize = model.getProperty(RO_NAMESPACE + "filesize");
-		checksum = model.getProperty(RO_NAMESPACE + "checksum");
-		describes = model.getProperty(ORE_NAMESPACE + "describes");
-		aggregates = model.getProperty(ORE_NAMESPACE + "aggregates");
-		foafAgentClass = model.getOntClass(FOAF_NAMESPACE + "Agent");
-		foafName = model.getProperty(FOAF_NAMESPACE + "name");
-		annotatesResource = model.getProperty(AO_NAMESPACE + "annotatesResource");
-		hasTopic = model.getProperty(AO_NAMESPACE + "hasTopic");
-		pavCreatedBy = model.getProperty(PAV_NAMESPACE + "createdBy");
-		pavCreatedOn = model.getProperty(PAV_NAMESPACE + "createdOn");
+		name = defaultModel.getProperty(RO_NAMESPACE + "name");
+		filesize = defaultModel.getProperty(RO_NAMESPACE + "filesize");
+		checksum = defaultModel.getProperty(RO_NAMESPACE + "checksum");
+		describes = defaultModel.getProperty(ORE_NAMESPACE + "describes");
+		aggregates = defaultModel.getProperty(ORE_NAMESPACE + "aggregates");
+		foafAgentClass = defaultModel.getOntClass(FOAF_NAMESPACE + "Agent");
+		foafName = defaultModel.getProperty(FOAF_NAMESPACE + "name");
+		hasTopic = defaultModel.getProperty(AO_NAMESPACE + "hasTopic");
 
-		model.setNsPrefixes(standardNamespaces);
+		defaultModel.setNsPrefixes(standardNamespaces);
 	}
 
 
@@ -208,37 +194,35 @@ public class SemanticMetadataServiceImpl
 	 * .net.URI)
 	 */
 	@Override
-	public void createManifest(URI manifestURI, UserProfile userProfile)
+	public void createManifest(URI manifestURI)
 	{
 		manifestURI = manifestURI.normalize();
-		Individual manifest = model.getIndividual(manifestURI.toString());
+		OntModel manifestModel = createOntModelForNamedGraph(manifestURI);
+		Individual manifest = manifestModel.getIndividual(manifestURI.toString());
 		if (manifest != null) {
 			throw new IllegalArgumentException("URI already exists");
 		}
-		manifest = model.createIndividual(manifestURI.toString(), manifestClass);
-		Individual ro = model.createIndividual(manifestURI.toString() + "#ro", researchObjectClass);
-		model.add(manifest, describes, ro);
-		model.add(manifest, DCTerms.created, model.createTypedLiteral(Calendar.getInstance()));
+		manifest = manifestModel.createIndividual(manifestURI.toString(), manifestClass);
+		Individual ro = manifestModel.createIndividual(manifestURI.toString() + "#ro", researchObjectClass);
+		manifestModel.add(manifest, describes, ro);
+		manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
 
-		Individual agent = model.createIndividual(foafAgentClass);
-		model.add(agent, foafName, userProfile.getName());
-		model.add(manifest, DCTerms.creator, agent);
-
-		Resource annotations = model.createResource(manifestURI.resolve("annotations").toString());
-		manifest.addSeeAlso(annotations);
-		graphset.createGraph(annotations.getURI());
+		Individual agent = manifestModel.createIndividual(foafAgentClass);
+		manifestModel.add(agent, foafName, user.getName());
+		manifestModel.add(manifest, DCTerms.creator, agent);
 	}
 
 
 	@Override
-	public void createManifest(URI manifestURI, InputStream is, RDFFormat rdfFormat, UserProfile userProfile)
+	public void createManifest(URI manifestURI, InputStream is, RDFFormat rdfFormat)
 	{
 		manifestURI = manifestURI.normalize();
-		model.read(is, manifestURI.resolve(".").toString(), rdfFormat.getName().toUpperCase());
+		OntModel manifestModel = createOntModelForNamedGraph(manifestURI);
+		manifestModel.read(is, manifestURI.resolve(".").toString(), rdfFormat.getName().toUpperCase());
 
 		// leave only one dcterms:created - the earliest
-		Individual manifest = model.getIndividual(manifestURI.toString());
-		NodeIterator it = model.listObjectsOfProperty(manifest, DCTerms.created);
+		Individual manifest = manifestModel.getIndividual(manifestURI.toString());
+		NodeIterator it = manifestModel.listObjectsOfProperty(manifest, DCTerms.created);
 		Calendar earliest = null;
 		while (it.hasNext()) {
 			Calendar created = ((XSDDateTime) it.next().asLiteral().getValue()).asCalendar();
@@ -246,28 +230,9 @@ public class SemanticMetadataServiceImpl
 				earliest = created;
 		}
 		if (earliest != null) {
-			model.removeAll(manifest, DCTerms.created, null);
-			model.add(manifest, DCTerms.created, model.createTypedLiteral(earliest));
+			manifestModel.removeAll(manifest, DCTerms.created, null);
+			manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(earliest));
 		}
-
-		if (!graphset.containsGraph(manifestURI.resolve("annotations").toString())) {
-			graphset.createGraph(manifestURI.resolve("annotations").toString());
-		}
-	}
-
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService#createResearchObjectAsCopy
-	 * (java.net.URI, java.net.URI)
-	 */
-	@Override
-	public void createResearchObjectAsCopy(URI manifestURI, URI baseManifestURI)
-	{
-		// TODO Auto-generated method stub
-
 	}
 
 
@@ -279,20 +244,8 @@ public class SemanticMetadataServiceImpl
 	 * .net.URI)
 	 */
 	@Override
-	public void removeManifest(URI manifestURI)
+	public void removeManifest(URI manifestURI, URI baseURI)
 	{
-		manifestURI = manifestURI.normalize();
-		Individual manifest = model.getIndividual(manifestURI.toString());
-		if (manifest == null) {
-			throw new IllegalArgumentException("URI not found");
-		}
-		model.removeAll(manifest, null, null);
-		Individual ro = model.getIndividual(manifestURI.toString() + "#ro");
-		if (ro == null) {
-			throw new IllegalArgumentException("URI not found");
-		}
-		model.removeAll(ro, null, null);
-		deleteAllAnnotationsWithBodies(manifestURI.resolve("annotations"));
 	}
 
 
@@ -306,21 +259,7 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public InputStream getManifest(URI manifestURI, RDFFormat rdfFormat)
 	{
-		manifestURI = manifestURI.normalize();
-		Individual manifest = model.getIndividual(manifestURI.toString());
-		if (manifest == null) {
-			return null;
-		}
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-		String queryString = String.format(getManifestQueryTmpl, manifestURI.toString());
-		Query query = QueryFactory.create(queryString);
-		QueryExecution qexec = QueryExecutionFactory.create(query, model);
-		Model resultModel = qexec.execDescribe();
-		qexec.close();
-
-		resultModel.write(out, rdfFormat.getName().toUpperCase());
-		return new ByteArrayInputStream(out.toByteArray());
+		return getNamedGraph(manifestURI, rdfFormat);
 	}
 
 
@@ -336,26 +275,26 @@ public class SemanticMetadataServiceImpl
 	{
 		manifestURI = manifestURI.normalize();
 		resourceURI = resourceURI.normalize();
-		Individual manifest = model.getIndividual(manifestURI.toString());
+		Individual manifest = defaultModel.getIndividual(manifestURI.toString());
 		if (manifest == null) {
 			throw new IllegalArgumentException("URI not found");
 		}
-		Individual ro = model.getIndividual(manifestURI.toString() + "#ro");
+		Individual ro = defaultModel.getIndividual(manifestURI.toString() + "#ro");
 		if (ro == null) {
 			throw new IllegalArgumentException("URI not found");
 		}
-		Individual resource = model.createIndividual(resourceURI.toString(), resourceClass);
-		model.add(ro, aggregates, resource);
+		Individual resource = defaultModel.createIndividual(resourceURI.toString(), resourceClass);
+		defaultModel.add(ro, aggregates, resource);
 		if (resourceInfo != null) {
 			if (resourceInfo.getName() != null) {
-				model.add(resource, name, model.createTypedLiteral(resourceInfo.getName()));
+				defaultModel.add(resource, name, defaultModel.createTypedLiteral(resourceInfo.getName()));
 			}
-			model.add(resource, filesize, model.createTypedLiteral(resourceInfo.getSizeInBytes()));
+			defaultModel.add(resource, filesize, defaultModel.createTypedLiteral(resourceInfo.getSizeInBytes()));
 			if (resourceInfo.getChecksum() != null && resourceInfo.getDigestMethod() != null) {
-				model.add(
+				defaultModel.add(
 					resource,
 					checksum,
-					model.createResource(String.format("urn:%s:%s", resourceInfo.getDigestMethod(),
+					defaultModel.createResource(String.format("urn:%s:%s", resourceInfo.getDigestMethod(),
 						resourceInfo.getChecksum())));
 			}
 		}
@@ -374,19 +313,19 @@ public class SemanticMetadataServiceImpl
 	{
 		manifestURI = manifestURI.normalize();
 		resourceURI = resourceURI.normalize();
-		Individual ro = model.getIndividual(manifestURI.toString() + "#ro");
+		Individual ro = defaultModel.getIndividual(manifestURI.toString() + "#ro");
 		if (ro == null) {
 			throw new IllegalArgumentException("URI not found");
 		}
-		Individual resource = model.getIndividual(resourceURI.toString());
+		Individual resource = defaultModel.getIndividual(resourceURI.toString());
 		if (resource == null) {
 			throw new IllegalArgumentException("URI not found");
 		}
-		model.remove(ro, aggregates, resource);
+		defaultModel.remove(ro, aggregates, resource);
 
-		StmtIterator it = model.listStatements(null, aggregates, resource);
+		StmtIterator it = defaultModel.listStatements(null, aggregates, resource);
 		if (!it.hasNext()) {
-			model.removeAll(resource, null, null);
+			defaultModel.removeAll(resource, null, null);
 		}
 	}
 
@@ -402,7 +341,7 @@ public class SemanticMetadataServiceImpl
 	public InputStream getResource(URI resourceURI, RDFFormat rdfFormat)
 	{
 		resourceURI = resourceURI.normalize();
-		Individual resource = model.getIndividual(resourceURI.toString());
+		Individual resource = defaultModel.getIndividual(resourceURI.toString());
 		if (resource == null) {
 			return null;
 		}
@@ -410,155 +349,7 @@ public class SemanticMetadataServiceImpl
 
 		String queryString = String.format(getResourceQueryTmpl, resourceURI.toString());
 		Query query = QueryFactory.create(queryString);
-		QueryExecution qexec = QueryExecutionFactory.create(query, model);
-		Model resultModel = qexec.execDescribe();
-		qexec.close();
-
-		resultModel.write(out, rdfFormat.getName().toUpperCase());
-		return new ByteArrayInputStream(out.toByteArray());
-	}
-
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService#addAnnotation(java.net
-	 * .URI, java.net.URI, java.net.URI, java.util.Map)
-	 */
-	@Override
-	public void addAnnotation(URI annotationURI, URI annotationBodyURI, Map<URI, Map<URI, String>> triples,
-			UserProfile userProfile)
-	{
-		annotationURI = annotationURI.normalize();
-		annotationBodyURI = annotationBodyURI.normalize();
-		URI annotationsURI = annotationURI.resolve("annotations");
-		OntModel annotationsModel = createOntModelForNamedGraph(annotationsURI);
-
-		Individual annotation = annotationsModel.createIndividual(annotationURI.toString(), annotationClass);
-		annotationsModel.add(annotation, pavCreatedOn, annotationsModel.createTypedLiteral(Calendar.getInstance()));
-
-		Individual agent = annotationsModel.createIndividual(foafAgentClass);
-		annotationsModel.add(agent, foafName, userProfile.getName());
-		annotationsModel.add(annotation, pavCreatedBy, agent);
-
-		Resource annotationBodyRef = annotationsModel.createResource(annotationBodyURI.toString());
-		annotationsModel.add(annotation, hasTopic, annotationBodyRef);
-
-		OntModel annotationBodyModel = createOntModelForNamedGraph(annotationBodyURI);
-
-		for (Map.Entry<URI, Map<URI, String>> entry : triples.entrySet()) {
-			Individual resource = model.getIndividual(entry.getKey().toString());
-			if (resource == null) {
-				log.warn(String.format("Could not find resource %s, ignoring.", entry.getKey().toString()));
-				continue;
-			}
-			annotationsModel.add(annotation, annotatesResource, resource);
-
-			for (Map.Entry<URI, String> attributes : entry.getValue().entrySet()) {
-				annotationBodyModel.add(resource, annotationBodyModel.createProperty(attributes.getKey().toString()),
-					attributes.getValue());
-			}
-		}
-
-	}
-
-
-	@Override
-	public void addAnnotation(URI annotationURI, URI annotationBodyURI, InputStream is, RDFFormat rdfFormat,
-			UserProfile userProfile)
-	{
-		annotationURI = annotationURI.normalize();
-		annotationBodyURI = annotationBodyURI.normalize();
-		URI annotationsURI = annotationURI.resolve("annotations");
-		OntModel annotationsModel = createOntModelForNamedGraph(annotationsURI);
-
-		Individual annotation = annotationsModel.createIndividual(annotationURI.toString(), annotationClass);
-		annotationsModel.add(annotation, pavCreatedOn, annotationsModel.createTypedLiteral(Calendar.getInstance()));
-
-		Individual agent = annotationsModel.createIndividual(foafAgentClass);
-		annotationsModel.add(agent, foafName, userProfile.getName());
-		annotationsModel.add(annotation, pavCreatedBy, agent);
-
-		Resource annotationBodyRef = annotationsModel.createResource(annotationBodyURI.toString());
-		model.add(annotation, hasTopic, annotationBodyRef);
-
-		OntModel annotationModel = createOntModelForNamedGraph(annotationBodyURI);
-		annotationModel.read(is, annotationURI.resolve(".").toString(), rdfFormat.getName().toUpperCase());
-	}
-
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService#deleteAnnotationsWithBodies
-	 * (java.net.URI)
-	 */
-	@Override
-	public void deleteAnnotationWithBody(URI annotationBodyURI)
-	{
-		annotationBodyURI = annotationBodyURI.normalize();
-		if (!graphset.containsGraph(annotationBodyURI.toString())) {
-			throw new IllegalArgumentException("URI not found");
-		}
-		graphset.removeGraph(annotationBodyURI.toString());
-
-		OntModel commonModel = createOntModelForAllNamedGraphs();
-		Resource annotationBodyRef = commonModel.createResource(annotationBodyURI.toString());
-		ResIterator it = commonModel.listResourcesWithProperty(hasTopic, annotationBodyRef);
-		while (it.hasNext()) {
-			Resource annotation = it.next();
-			commonModel.removeAll(annotation, null, null);
-		}
-	}
-
-
-	@Override
-	public void deleteAllAnnotationsWithBodies(URI annotationsURI)
-	{
-		annotationsURI = annotationsURI.normalize();
-		if (!graphset.containsGraph(annotationsURI.toString())) {
-			return;
-		}
-		OntModel annotationModel = createOntModelForNamedGraph(annotationsURI);
-		NodeIterator it = annotationModel.listObjectsOfProperty(hasTopic);
-		while (it.hasNext()) {
-			RDFNode annotationBodyRef = it.next();
-			if (graphset.containsGraph(annotationBodyRef.asResource().getURI())) {
-				graphset.removeGraph(annotationBodyRef.asResource().getURI());
-			}
-		}
-		graphset.removeGraph(annotationsURI.toString());
-	}
-
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService#getAnnotations(java.net
-	 * .URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
-	 */
-	@Override
-	public InputStream getAnnotation(URI annotationURI, RDFFormat rdfFormat)
-	{
-		annotationURI = annotationURI.normalize();
-		URI annotationsURI = annotationURI.resolve("annotations");
-		if (!graphset.containsGraph(annotationsURI.toString())) {
-			return null;
-		}
-		OntModel annotationModel = createOntModelForNamedGraph(annotationsURI);
-
-		Individual annotation = annotationModel.getIndividual(annotationURI.toString());
-		if (annotation == null) {
-			return null;
-		}
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-		String queryString = String.format(getResourceQueryTmpl, annotationURI.toString());
-		Query query = QueryFactory.create(queryString);
-		QueryExecution qexec = QueryExecutionFactory.create(query, annotationModel);
+		QueryExecution qexec = QueryExecutionFactory.create(query, defaultModel);
 		Model resultModel = qexec.execDescribe();
 		qexec.close();
 
@@ -575,57 +366,34 @@ public class SemanticMetadataServiceImpl
 	 * .net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
-	public InputStream getAnnotationBody(URI annotationBodyURI, RDFFormat rdfFormat)
+	public InputStream getNamedGraph(URI namedGraphURI, RDFFormat rdfFormat)
 	{
-		annotationBodyURI = annotationBodyURI.normalize();
-		if (!graphset.containsGraph(annotationBodyURI.toString())) {
+		namedGraphURI = namedGraphURI.normalize();
+		if (!graphset.containsGraph(namedGraphURI.toString())) {
 			return null;
 		}
-		OntModel annotationModel = createOntModelForNamedGraph(annotationBodyURI);
-
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		annotationModel.write(out, rdfFormat.getName().toUpperCase());
-		return new ByteArrayInputStream(out.toByteArray());
-	}
-
-
-	@Override
-	public InputStream getAllAnnotations(URI annotationsURI, RDFFormat rdfFormat)
-	{
-		annotationsURI = annotationsURI.normalize();
-		if (!graphset.containsGraph(annotationsURI.toString())) {
-			return null;
-		}
-		OntModel annotationModel = createOntModelForNamedGraph(annotationsURI);
-
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		annotationModel.write(out, rdfFormat.getName().toUpperCase());
-		return new ByteArrayInputStream(out.toByteArray());
-	}
-
-
-	@Override
-	public InputStream getAllAnnotationsWithBodies(URI annotationsURI, RDFFormat rdfFormat)
-	{
-		annotationsURI = annotationsURI.normalize();
-		if (!graphset.containsGraph(annotationsURI.toString())) {
-			return null;
-		}
-		NamedGraphSet annotationGraphSet = new NamedGraphSetImpl();
-		annotationGraphSet.addGraph(graphset.getGraph(annotationsURI.toString()));
-
-		OntModel annotationModel = createOntModelForNamedGraph(annotationsURI);
-		NodeIterator it = annotationModel.listObjectsOfProperty(hasTopic);
-		while (it.hasNext()) {
-			RDFNode annotationBodyRef = it.next();
-			if (graphset.containsGraph(annotationBodyRef.asResource().getURI())) {
-				annotationGraphSet.addGraph(graphset.getGraph(annotationBodyRef.asResource().getURI()));
-			}
-		}
+		NamedGraphSet tmpGraphSet = new NamedGraphSetImpl();
+		addGraphsRecursively(tmpGraphSet, namedGraphURI);
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		graphset.write(out, rdfFormat.getName().toUpperCase(), null);
 		return new ByteArrayInputStream(out.toByteArray());
+	}
+
+
+	private void addGraphsRecursively(NamedGraphSet tmpGraphSet, URI namedGraphURI)
+	{
+		tmpGraphSet.addGraph(graphset.getGraph(namedGraphURI.toString()));
+
+		OntModel annotationModel = createOntModelForNamedGraph(namedGraphURI);
+		NodeIterator it = annotationModel.listObjectsOfProperty(hasTopic);
+		while (it.hasNext()) {
+			RDFNode annotationBodyRef = it.next();
+			URI childURI = URI.create(annotationBodyRef.asResource().getURI());
+			if (graphset.containsGraph(childURI.toString()) && !tmpGraphSet.containsGraph(childURI.toString())) {
+				addGraphsRecursively(tmpGraphSet, childURI);
+			}
+		}
 	}
 
 
@@ -637,7 +405,7 @@ public class SemanticMetadataServiceImpl
 		Query query = QueryFactory.create(queryString);
 
 		// Execute the query and obtain results
-		QueryExecution qe = QueryExecutionFactory.create(query, model);
+		QueryExecution qe = QueryExecutionFactory.create(query, defaultModel);
 		ResultSet results = qe.execSelect();
 		Set<URI> uris = new HashSet<URI>();
 		while (results.hasNext()) {
@@ -661,20 +429,7 @@ public class SemanticMetadataServiceImpl
 		NamedGraph namedGraph = getOrCreateGraph(graphset, namedGraphURI);
 		OntModel ontModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
 			ModelFactory.createModelForGraph(namedGraph));
-		ontModel.addSubModel(model);
-		return ontModel;
-	}
-
-
-	/**
-	 * @param namedGraphURI
-	 * @return
-	 */
-	private OntModel createOntModelForAllNamedGraphs()
-	{
-		OntModel ontModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
-			graphset.asJenaModel(DEFAULT_NAMED_GRAPH_URI.toString()));
-		ontModel.addSubModel(model);
+		ontModel.addSubModel(defaultModel);
 		return ontModel;
 	}
 
@@ -690,6 +445,50 @@ public class SemanticMetadataServiceImpl
 	public void close()
 	{
 		graphset.close();
+	}
+
+
+	@Override
+	public boolean isRoFolder(URI resourceURI)
+	{
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+
+	@Override
+	public void addNamedGraph(URI graphURI, InputStream inputStream, RDFFormat rdfFormat)
+	{
+		OntModel namedGraphModel = createOntModelForNamedGraph(graphURI);
+		namedGraphModel.read(inputStream, graphURI.resolve(".").toString(), rdfFormat.getName().toUpperCase());
+	}
+
+
+	@Override
+	public boolean isNamedGraph(URI graphURI)
+	{
+		return graphset.containsGraph(graphURI.toString());
+	}
+
+
+	@Override
+	public void removeNamedGraph(URI graphURI, URI baseURI)
+	{
+		graphURI = graphURI.normalize();
+		if (!graphset.containsGraph(graphURI.toString())) {
+			throw new IllegalArgumentException("URI not found");
+		}
+		OntModel manifestModel = createOntModelForNamedGraph(graphURI);
+
+		NodeIterator it = manifestModel.listObjectsOfProperty(hasTopic);
+		while (it.hasNext()) {
+			RDFNode annotationBodyRef = it.next();
+			//TODO make sure that this named graph is internal
+			if (graphset.containsGraph(annotationBodyRef.asResource().getURI())) {
+				removeNamedGraph(URI.create(annotationBodyRef.asResource().getURI()), baseURI);
+			}
+		}
+		graphset.removeGraph(graphURI.toString());
 	}
 
 }

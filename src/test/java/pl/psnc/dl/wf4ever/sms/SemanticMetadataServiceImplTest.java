@@ -330,11 +330,11 @@ public class SemanticMetadataServiceImplTest
 			Assert.assertNull("Get deleted annotation must return null",
 				sms.getAnnotation(annotation1URI, RDFFormat.RDFXML));
 			Assert.assertNull("Get deleted annotation body must return null",
-				sms.getAnnotationBody(annotationBody1URI, RDFFormat.RDFXML));
+				sms.getNamedGraph(annotationBody1URI, RDFFormat.RDFXML));
 			Assert.assertNull("Get deleted annotation must return null",
 				sms.getAnnotation(annotation2URI, RDFFormat.RDFXML));
 			Assert.assertNull("Get deleted annotation body must return null",
-				sms.getAnnotationBody(annotationBody2URI, RDFFormat.RDFXML));
+				sms.getNamedGraph(annotationBody2URI, RDFFormat.RDFXML));
 		}
 		finally {
 			sms.close();
@@ -674,7 +674,7 @@ public class SemanticMetadataServiceImplTest
 			Assert.assertNull("Get deleted annotation must return null",
 				sms.getAnnotation(annotation1URI, RDFFormat.RDFXML));
 			Assert.assertNull("Get deleted annotation body must return null",
-				sms.getAnnotationBody(annotationBody1URI, RDFFormat.RDFXML));
+				sms.getNamedGraph(annotationBody1URI, RDFFormat.RDFXML));
 		}
 		finally {
 			sms.close();
@@ -707,11 +707,11 @@ public class SemanticMetadataServiceImplTest
 			Assert.assertNull("Get deleted annotation must return null",
 				sms.getAnnotation(annotation1URI, RDFFormat.RDFXML));
 			Assert.assertNull("Get deleted annotation body must return null",
-				sms.getAnnotationBody(annotationBody1URI, RDFFormat.RDFXML));
+				sms.getNamedGraph(annotationBody1URI, RDFFormat.RDFXML));
 			Assert.assertNull("Get deleted annotation must return null",
 				sms.getAnnotation(annotation2URI, RDFFormat.RDFXML));
 			Assert.assertNull("Get deleted annotation body must return null",
-				sms.getAnnotationBody(annotationBody2URI, RDFFormat.RDFXML));
+				sms.getNamedGraph(annotationBody2URI, RDFFormat.RDFXML));
 		}
 		finally {
 			sms.close();
@@ -791,7 +791,7 @@ public class SemanticMetadataServiceImplTest
 
 	/**
 	 * Test method for
-	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getAnnotationBody(java.net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)}
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getNamedGraph(java.net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)}
 	 * .
 	 * @throws SQLException 
 	 * @throws NamingException 
@@ -805,7 +805,7 @@ public class SemanticMetadataServiceImplTest
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		try {
 			Assert.assertNull("Returns null when annotation body does not exist",
-				sms.getAnnotationBody(annotationBody1URI, RDFFormat.RDFXML));
+				sms.getNamedGraph(annotationBody1URI, RDFFormat.RDFXML));
 
 			sms.createManifest(manifestURI, userProfile);
 			sms.addResource(manifestURI, resource1URI, resource1Info);
@@ -820,9 +820,9 @@ public class SemanticMetadataServiceImplTest
 		SemanticMetadataService sms2 = new SemanticMetadataServiceImpl();
 		try {
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(sms2.getAnnotationBody(annotationBody1URI, RDFFormat.RDFXML), null);
+			model.read(sms2.getNamedGraph(annotationBody1URI, RDFFormat.RDFXML), null);
 			verifyAnnotationBody(model, annotation1Body);
-			model.read(sms2.getAnnotationBody(annotationBody2URI, RDFFormat.RDFXML), null);
+			model.read(sms2.getNamedGraph(annotationBody2URI, RDFFormat.RDFXML), null);
 			verifyAnnotationBody(model, annotation2Body);
 		}
 		finally {
@@ -847,7 +847,7 @@ public class SemanticMetadataServiceImplTest
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl();
 		try {
 			Assert.assertNull("Returns null when annotation body does not exist",
-				sms.getAnnotationBody(annotationBody1URI, RDFFormat.RDFXML));
+				sms.getNamedGraph(annotationBody1URI, RDFFormat.RDFXML));
 
 			InputStream is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
 			sms.createManifest(manifestURI, userProfile);
@@ -855,10 +855,10 @@ public class SemanticMetadataServiceImplTest
 			sms.addResource(manifestURI, resource2URI, resource2Info);
 			sms.addAnnotation(annotation2URI, annotationBody2URI, is, RDFFormat.TURTLE, userProfile);
 
-			log.debug(IOUtils.toString(sms.getAnnotationBody(annotationBody2URI, RDFFormat.TURTLE), "UTF-8"));
+			log.debug(IOUtils.toString(sms.getNamedGraph(annotationBody2URI, RDFFormat.TURTLE), "UTF-8"));
 
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(sms.getAnnotationBody(annotationBody2URI, RDFFormat.RDFXML), null);
+			model.read(sms.getNamedGraph(annotationBody2URI, RDFFormat.RDFXML), null);
 			verifyAnnotationBody(model, annotation2Body);
 		}
 		finally {
