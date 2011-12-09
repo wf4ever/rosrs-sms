@@ -26,7 +26,6 @@ import org.openrdf.rio.RDFFormat;
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 
-import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
@@ -77,6 +76,8 @@ public class SemanticMetadataServiceImpl
 			.setNsPrefix("ore", ORE_NAMESPACE).setNsPrefix("ro", RO_NAMESPACE).setNsPrefix("dcterms", DCTerms.NS)
 			.setNsPrefix("foaf", FOAF_NAMESPACE).lock();
 
+	private static final String SERVICE_NAME = "RODL";
+
 	private final NamedGraphSet graphset;
 
 	/**
@@ -92,7 +93,11 @@ public class SemanticMetadataServiceImpl
 
 	private final OntClass resourceClass;
 
+	private final OntClass roFolderClass;
+
 	private final Property describes;
+
+	private final Property isDescribedBy;
 
 	private final Property aggregates;
 
@@ -108,8 +113,8 @@ public class SemanticMetadataServiceImpl
 
 	private final String getResourceQueryTmpl = "DESCRIBE <%s> WHERE { }";
 
-	private final String findManifestsQueryTmpl = "PREFIX ro: <" + RO_NAMESPACE + "> SELECT ?manifest "
-			+ "WHERE { ?manifest a ro:Manifest. FILTER regex(str(?manifest), \"^%s\") . }";
+	private final String findResearchObjectsQueryTmpl = "PREFIX ro: <" + RO_NAMESPACE + "> SELECT ?ro "
+			+ "WHERE { ?ro a ro:ResearchObject. FILTER regex(str(?ro), \"^%s\") . }";
 
 	private final Connection connection;
 
@@ -131,7 +136,7 @@ public class SemanticMetadataServiceImpl
 
 		//		InputStream modelIS = getClass().getClassLoader().getResourceAsStream("ro.rdf");
 		//		defaultModel.read(modelIS, null);
-		tmpModel.read(RO_NAMESPACE);
+		tmpModel.read(RO_NAMESPACE, "TTL");
 
 		defaultModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM, tmpModel);
 
@@ -142,11 +147,13 @@ public class SemanticMetadataServiceImpl
 		researchObjectClass = defaultModel.getOntClass(RO_NAMESPACE + "ResearchObject");
 		manifestClass = defaultModel.getOntClass(RO_NAMESPACE + "Manifest");
 		resourceClass = defaultModel.getOntClass(ORE_NAMESPACE + "AggregatedResource");
+		roFolderClass = defaultModel.getOntClass(RO_NAMESPACE + "Folder");
 
 		name = defaultModel.getProperty(RO_NAMESPACE + "name");
 		filesize = defaultModel.getProperty(RO_NAMESPACE + "filesize");
 		checksum = defaultModel.getProperty(RO_NAMESPACE + "checksum");
 		describes = defaultModel.getProperty(ORE_NAMESPACE + "describes");
+		isDescribedBy = defaultModel.getProperty(ORE_NAMESPACE + "isDescribedBy");
 		aggregates = defaultModel.getProperty(ORE_NAMESPACE + "aggregates");
 		foafAgentClass = defaultModel.getOntClass(FOAF_NAMESPACE + "Agent");
 		foafName = defaultModel.getProperty(FOAF_NAMESPACE + "name");
@@ -194,58 +201,51 @@ public class SemanticMetadataServiceImpl
 	 * .net.URI)
 	 */
 	@Override
-	public void createManifest(URI manifestURI)
+	public void createResearchObject(URI researchObjectURI)
 	{
-		manifestURI = manifestURI.normalize();
+		URI manifestURI = getManifestURI(researchObjectURI.normalize());
 		OntModel manifestModel = createOntModelForNamedGraph(manifestURI);
 		Individual manifest = manifestModel.getIndividual(manifestURI.toString());
 		if (manifest != null) {
 			throw new IllegalArgumentException("URI already exists");
 		}
 		manifest = manifestModel.createIndividual(manifestURI.toString(), manifestClass);
-		Individual ro = manifestModel.createIndividual(manifestURI.toString() + "#ro", researchObjectClass);
-		manifestModel.add(manifest, describes, ro);
-		manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
+		Individual ro = manifestModel.createIndividual(researchObjectURI.toString(), researchObjectClass);
 
+		manifestModel.add(ro, isDescribedBy, manifest);
+		manifestModel.add(ro, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
 		Individual agent = manifestModel.createIndividual(foafAgentClass);
 		manifestModel.add(agent, foafName, user.getName());
+		manifestModel.add(ro, DCTerms.creator, agent);
+
+		manifestModel.add(manifest, describes, ro);
+		manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
+		agent = manifestModel.createIndividual(foafAgentClass);
+		manifestModel.add(agent, foafName, SERVICE_NAME);
 		manifestModel.add(manifest, DCTerms.creator, agent);
 	}
 
 
 	@Override
-	public void createManifest(URI manifestURI, InputStream is, RDFFormat rdfFormat)
+	public void updateManifest(URI manifestURI, InputStream is, RDFFormat rdfFormat)
 	{
-		manifestURI = manifestURI.normalize();
-		OntModel manifestModel = createOntModelForNamedGraph(manifestURI);
-		manifestModel.read(is, manifestURI.resolve(".").toString(), rdfFormat.getName().toUpperCase());
+		//TODO validate the manifest?
+		addNamedGraph(manifestURI, is, rdfFormat);
 
-		// leave only one dcterms:created - the earliest
-		Individual manifest = manifestModel.getIndividual(manifestURI.toString());
-		NodeIterator it = manifestModel.listObjectsOfProperty(manifest, DCTerms.created);
-		Calendar earliest = null;
-		while (it.hasNext()) {
-			Calendar created = ((XSDDateTime) it.next().asLiteral().getValue()).asCalendar();
-			if (earliest == null || created.before(earliest))
-				earliest = created;
-		}
-		if (earliest != null) {
-			manifestModel.removeAll(manifest, DCTerms.created, null);
-			manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(earliest));
-		}
-	}
-
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService#removeResearchObject(java
-	 * .net.URI)
-	 */
-	@Override
-	public void removeManifest(URI manifestURI, URI baseURI)
-	{
+		//
+		//		// leave only one dcterms:created - the earliest
+		//		Individual manifest = manifestModel.getIndividual(manifestURI.toString());
+		//		NodeIterator it = manifestModel.listObjectsOfProperty(manifest, DCTerms.created);
+		//		Calendar earliest = null;
+		//		while (it.hasNext()) {
+		//			Calendar created = ((XSDDateTime) it.next().asLiteral().getValue()).asCalendar();
+		//			if (earliest == null || created.before(earliest))
+		//				earliest = created;
+		//		}
+		//		if (earliest != null) {
+		//			manifestModel.removeAll(manifest, DCTerms.created, null);
+		//			manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(earliest));
+		//		}
 	}
 
 
@@ -271,31 +271,24 @@ public class SemanticMetadataServiceImpl
 	 * java.net.URI, pl.psnc.dl.wf4ever.dlibra.ResourceInfo)
 	 */
 	@Override
-	public void addResource(URI manifestURI, URI resourceURI, ResourceInfo resourceInfo)
+	public void addResource(URI roURI, URI resourceURI, ResourceInfo resourceInfo)
 	{
-		manifestURI = manifestURI.normalize();
 		resourceURI = resourceURI.normalize();
-		Individual manifest = defaultModel.getIndividual(manifestURI.toString());
-		if (manifest == null) {
-			throw new IllegalArgumentException("URI not found");
-		}
-		Individual ro = defaultModel.getIndividual(manifestURI.toString() + "#ro");
+		OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(roURI.normalize()));
+		Individual ro = manifestModel.getIndividual(roURI.toString());
 		if (ro == null) {
 			throw new IllegalArgumentException("URI not found");
 		}
-		Individual resource = defaultModel.createIndividual(resourceURI.toString(), resourceClass);
-		defaultModel.add(ro, aggregates, resource);
+		Individual resource = manifestModel.createIndividual(resourceURI.toString(), resourceClass);
+		manifestModel.add(ro, aggregates, resource);
 		if (resourceInfo != null) {
 			if (resourceInfo.getName() != null) {
-				defaultModel.add(resource, name, defaultModel.createTypedLiteral(resourceInfo.getName()));
+				manifestModel.add(resource, name, manifestModel.createTypedLiteral(resourceInfo.getName()));
 			}
-			defaultModel.add(resource, filesize, defaultModel.createTypedLiteral(resourceInfo.getSizeInBytes()));
+			manifestModel.add(resource, filesize, manifestModel.createTypedLiteral(resourceInfo.getSizeInBytes()));
 			if (resourceInfo.getChecksum() != null && resourceInfo.getDigestMethod() != null) {
-				defaultModel.add(
-					resource,
-					checksum,
-					defaultModel.createResource(String.format("urn:%s:%s", resourceInfo.getDigestMethod(),
-						resourceInfo.getChecksum())));
+				manifestModel.add(resource, checksum, manifestModel.createResource(String.format("urn:%s:%s",
+					resourceInfo.getDigestMethod(), resourceInfo.getChecksum())));
 			}
 		}
 	}
@@ -309,23 +302,23 @@ public class SemanticMetadataServiceImpl
 	 * .URI, java.net.URI)
 	 */
 	@Override
-	public void removeResource(URI manifestURI, URI resourceURI)
+	public void removeResource(URI roURI, URI resourceURI)
 	{
-		manifestURI = manifestURI.normalize();
 		resourceURI = resourceURI.normalize();
-		Individual ro = defaultModel.getIndividual(manifestURI.toString() + "#ro");
+		OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(roURI.normalize()));
+		Individual ro = manifestModel.getIndividual(roURI.toString());
 		if (ro == null) {
 			throw new IllegalArgumentException("URI not found");
 		}
-		Individual resource = defaultModel.getIndividual(resourceURI.toString());
+		Individual resource = manifestModel.getIndividual(resourceURI.toString());
 		if (resource == null) {
 			throw new IllegalArgumentException("URI not found");
 		}
-		defaultModel.remove(ro, aggregates, resource);
+		manifestModel.remove(ro, aggregates, resource);
 
-		StmtIterator it = defaultModel.listStatements(null, aggregates, resource);
+		StmtIterator it = manifestModel.listStatements(null, aggregates, resource);
 		if (!it.hasNext()) {
-			defaultModel.removeAll(resource, null, null);
+			manifestModel.removeAll(resource, null, null);
 		}
 	}
 
@@ -338,10 +331,11 @@ public class SemanticMetadataServiceImpl
 	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
-	public InputStream getResource(URI resourceURI, RDFFormat rdfFormat)
+	public InputStream getResource(URI roURI, URI resourceURI, RDFFormat rdfFormat)
 	{
 		resourceURI = resourceURI.normalize();
-		Individual resource = defaultModel.getIndividual(resourceURI.toString());
+		OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(roURI.normalize()));
+		Individual resource = manifestModel.getIndividual(resourceURI.toString());
 		if (resource == null) {
 			return null;
 		}
@@ -349,11 +343,11 @@ public class SemanticMetadataServiceImpl
 
 		String queryString = String.format(getResourceQueryTmpl, resourceURI.toString());
 		Query query = QueryFactory.create(queryString);
-		QueryExecution qexec = QueryExecutionFactory.create(query, defaultModel);
+		QueryExecution qexec = QueryExecutionFactory.create(query, manifestModel);
 		Model resultModel = qexec.execDescribe();
 		qexec.close();
 
-		resultModel.write(out, rdfFormat.getName().toUpperCase());
+		resultModel.write(out, rdfFormat.getName().toUpperCase(), roURI.toString());
 		return new ByteArrayInputStream(out.toByteArray());
 	}
 
@@ -373,10 +367,15 @@ public class SemanticMetadataServiceImpl
 			return null;
 		}
 		NamedGraphSet tmpGraphSet = new NamedGraphSetImpl();
-		addGraphsRecursively(tmpGraphSet, namedGraphURI);
+		if (rdfFormat.supportsContexts()) {
+			addGraphsRecursively(tmpGraphSet, namedGraphURI);
+		}
+		else {
+			tmpGraphSet.addGraph(graphset.getGraph(namedGraphURI.toString()));
+		}
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		graphset.write(out, rdfFormat.getName().toUpperCase(), null);
+		tmpGraphSet.write(out, rdfFormat.getName().toUpperCase(), null);
 		return new ByteArrayInputStream(out.toByteArray());
 	}
 
@@ -398,19 +397,19 @@ public class SemanticMetadataServiceImpl
 
 
 	@Override
-	public Set<URI> findManifests(URI partialURI)
+	public Set<URI> findResearchObjects(URI partialURI)
 	{
 		partialURI = partialURI.normalize();
-		String queryString = String.format(findManifestsQueryTmpl, partialURI.toString());
+		String queryString = String.format(findResearchObjectsQueryTmpl, partialURI.toString());
 		Query query = QueryFactory.create(queryString);
 
 		// Execute the query and obtain results
-		QueryExecution qe = QueryExecutionFactory.create(query, defaultModel);
+		QueryExecution qe = QueryExecutionFactory.create(query, createOntModelForAllNamedGraphs());
 		ResultSet results = qe.execSelect();
 		Set<URI> uris = new HashSet<URI>();
 		while (results.hasNext()) {
 			QuerySolution solution = results.nextSolution();
-			Resource manifest = solution.getResource("manifest");
+			Resource manifest = solution.getResource("ro");
 			uris.add(URI.create(manifest.getURI()));
 		}
 
@@ -449,10 +448,15 @@ public class SemanticMetadataServiceImpl
 
 
 	@Override
-	public boolean isRoFolder(URI resourceURI)
+	public boolean isRoFolder(URI researchObjectURI, URI resourceURI)
 	{
-		// TODO Auto-generated method stub
-		return false;
+		resourceURI = resourceURI.normalize();
+		OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(researchObjectURI.normalize()));
+		Individual resource = manifestModel.getIndividual(resourceURI.toString());
+		if (resource == null) {
+			return false;
+		}
+		return resource.hasRDFType(roFolderClass);
 	}
 
 
@@ -460,6 +464,7 @@ public class SemanticMetadataServiceImpl
 	public void addNamedGraph(URI graphURI, InputStream inputStream, RDFFormat rdfFormat)
 	{
 		OntModel namedGraphModel = createOntModelForNamedGraph(graphURI);
+		namedGraphModel.removeAll();
 		namedGraphModel.read(inputStream, graphURI.resolve(".").toString(), rdfFormat.getName().toUpperCase());
 	}
 
@@ -472,7 +477,7 @@ public class SemanticMetadataServiceImpl
 
 
 	@Override
-	public void removeNamedGraph(URI graphURI, URI baseURI)
+	public void removeNamedGraph(URI graphURI, URI roURI)
 	{
 		graphURI = graphURI.normalize();
 		if (!graphset.containsGraph(graphURI.toString())) {
@@ -485,10 +490,37 @@ public class SemanticMetadataServiceImpl
 			RDFNode annotationBodyRef = it.next();
 			//TODO make sure that this named graph is internal
 			if (graphset.containsGraph(annotationBodyRef.asResource().getURI())) {
-				removeNamedGraph(URI.create(annotationBodyRef.asResource().getURI()), baseURI);
+				removeNamedGraph(URI.create(annotationBodyRef.asResource().getURI()), roURI);
 			}
 		}
 		graphset.removeGraph(graphURI.toString());
+	}
+
+
+	private OntModel createOntModelForAllNamedGraphs()
+	{
+		OntModel ontModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
+			graphset.asJenaModel(DEFAULT_NAMED_GRAPH_URI.toString()));
+		ontModel.addSubModel(defaultModel);
+		return ontModel;
+	}
+
+
+	/**
+	 * 
+	 * @param roURI must end with /
+	 * @return
+	 */
+	private URI getManifestURI(URI roURI)
+	{
+		return roURI.resolve(".ro_metadata/manifest");
+	}
+
+
+	@Override
+	public void removeResearchObject(URI researchObjectURI)
+	{
+		removeNamedGraph(getManifestURI(researchObjectURI), researchObjectURI);
 	}
 
 }

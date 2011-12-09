@@ -19,94 +19,72 @@ public interface SemanticMetadataService
 {
 
 	/**
-	 * Create a manifest (ore:ResourceMap) with a given URI. Automatically creates a 
-	 * research object (ro:ResearchObject, ore:Aggregation) described by it as well. 
-	 * If URI is used already, IllegalArgumentException is thrown.
-	 * 
-	 * @param manifestURI
-	 *            manifest URI
-	 * @return Research Object URI
+	 * Create a new ro:ResearchObject and ro:Manifest.
+	 * @param researchObjectURI RO URI, absolute
 	 */
-	void createManifest(URI manifestURI);
+	void createResearchObject(URI researchObjectURI);
 
 
 	/**
-	 * Create or update a manifest (ore:ResourceMap) with a given URI. Automatically creates a 
-	 * research object (ro:ResearchObject, ore:Aggregation) described by it as well. 
-	 * If URI is used already, the manifest is updated. If dcterms:created date has changed, 
-	 * the earlier of the two is preserved.
-	 * 
-	 * @param manifestURI
-	 *            manifest URI
-	 * @return Research Object URI
+	 * Update the manifest of a research object.
+	 * @param manifestURI manifest URI, absolute
+	 * @param inputStream the manifest
+	 * @param rdfFormat manifest RDF format
 	 */
-	void createManifest(URI manifestURI, InputStream is, RDFFormat rdfFormat);
+	void updateManifest(URI manifestURI, InputStream inputStream, RDFFormat rdfFormat);
 
 
 	/**
-	 * Remove all research objects whose manifests match the given URI (includes
-	 * its descendants).
-	 * 
-	 * @param manifestURI
-	 *            manifest URI
-	 * @param baseURI the base URI of RO, used for distinguishing internal resources from external
+	 * Removes a research object, its manifest, proxies, internal aggregated resources 
+	 * and internal named graphs. A resource/named graph is considered internal if it 
+	 * contains the research object URI.
+	 * @param researchObjectURI RO URI, absolute
 	 */
-	void removeManifest(URI manifestURI, URI baseURI);
+	void removeResearchObject(URI researchObjectURI);
 
 
 	/**
-	 * Get the manifest (ore:ResourceMap), which includes the RO metadata and
-	 * proxies.
-	 * 
-	 * @param manifestURI
-	 *            manifest URI
-	 * @param notation
-	 *            RDF/XML or Trig
-	 * @return manifest or null
+	 * Returns the manifest of an RO.
+	 * @param manifestURI manifest URI, absolute
+	 * @param rdfFormat returned manifest format
+	 * @return manifest with the research object URI as base URI
 	 */
 	InputStream getManifest(URI manifestURI, RDFFormat rdfFormat);
 
 
 	/**
-	 * Add an aggregated resource (ro:Resource).
-	 * 
-	 * @param resourceURI
-	 *            resource URI
-	 * @param resourceInfo
-	 *            resource name, file size and checksum
+	 * Adds a resource to ro:ResearchObject.
+	 * @param researchObjectURI RO URI, absolute
+	 * @param resourceURI resource URI, absolute or relative to RO URI
+	 * @param resourceInfo resource metadata
 	 */
-	void addResource(URI manifestURI, URI resourceURI, ResourceInfo resourceInfo);
+	void addResource(URI researchObjectURI, URI resourceURI, ResourceInfo resourceInfo);
 
 
 	/**
-	 * Remove an aggregated resource.
-	 * 
-	 * @param resourceURI
-	 *            resource URI
+	 * Removes a resource from ro:ResearchObject.
+	 * @param researchObjectURI RO URI, absolute
+	 * @param resourceURI resource URI, absolute or relative to RO URI
 	 */
-	void removeResource(URI manifestURI, URI resourceURI);
+	void removeResource(URI researchObjectURI, URI resourceURI);
 
 
 	/**
-	 * Get an RDF resource. If the RDF format supports 
-	 * named graphs, referenced named graphs will be included as well.
-	 * 
-	 * @param resourceURI
-	 *            resource URI
-	 * @param notation
-	 *            Notation of the result. In text/plain, pairs
-	 *            attribute/attribute_values are returned.
-	 * @return resource or null
+	 * Returns resource metadata.
+	 * @param researchObjectURI RO URI, absolute
+	 * @param resourceURI resource URI, absolute or relative to RO URI
+	 * @param rdfFormat resource metadata format
+	 * @return resource description with URIs relative to RO URI
 	 */
-	InputStream getResource(URI resourceURI, RDFFormat rdfFormat);
+	InputStream getResource(URI researchObjectURI, URI resourceURI, RDFFormat rdfFormat);
 
 
 	/**
 	 * Return true if the resource exists and belongs to class ro:Folder
 	 * @param resourceURI resource URI
-	 * @return
+	 * @return true if the resource exists and belongs to class ro:Folder, false otherwise
 	 */
-	boolean isRoFolder(URI resourceURI);
+	boolean isRoFolder(URI researchObjectURI, URI resourceURI);
 
 
 	/**
@@ -141,19 +119,19 @@ public interface SemanticMetadataService
 	/**
 	 * Delete a named graph from the quadstore.
 	 * @param graphURI graph URI
-	 * @param baseURI the base URI of RO, used for distinguishing internal resources from external
+	 * @param roURI the RO URI, used for distinguishing internal resources from external
 	 */
-	void removeNamedGraph(URI graphURI, URI baseURI);
+	void removeNamedGraph(URI graphURI, URI roURI);
 
 
 	/**
-	 * List manifest resources that start with the given URI.
+	 * List ro:ResearchObject resources that start with the given URI.
 	 * 
-	 * @param partialURI URI with which the manifest URI must start
+	 * @param partialURI URI with which the RO URI must start
 	 * 
-	 * @return list of manifest URIs
+	 * @return set of RO URIs
 	 */
-	Set<URI> findManifests(URI partialURI);
+	Set<URI> findResearchObjects(URI partialURI);
 
 
 	/**
