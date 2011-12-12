@@ -734,27 +734,36 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#isNamedGraph(java.net.URI)}.
+	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#isROMetadataNamedGraph(java.net.URI)}.
 	 * @throws SQLException 
 	 * @throws NamingException 
 	 * @throws IOException 
 	 * @throws ClassNotFoundException 
 	 */
 	@Test
-	public final void testIsNamedGraph()
+	public final void testIsROMetadataNamedGraph()
 		throws ClassNotFoundException, IOException, NamingException, SQLException
 	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
 		try {
-			sms.createResearchObject(researchObjectURI);
-			sms.addResource(researchObjectURI, workflowURI, workflowInfo);
-			sms.addResource(researchObjectURI, ann1URI, ann1Info);
-			InputStream is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
+			InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
+			sms.updateManifest(manifestURI, is, RDFFormat.TURTLE);
+
+			is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
 			sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
-			Assert.assertTrue("Annotation body is a named graph", sms.isNamedGraph(annotationBody1URI));
-			Assert.assertTrue("Manifest is a named graph", sms.isNamedGraph(manifestURI));
-			Assert.assertTrue("A resource is not a named graph", !sms.isNamedGraph(workflowURI));
-			Assert.assertTrue("A fake resource is not a named graph", !sms.isNamedGraph(resourceFakeURI));
+			is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
+			sms.addNamedGraph(annotationBody1URI.resolve("fake"), is, RDFFormat.TURTLE);
+
+			Assert.assertTrue("Annotation body is an RO metadata named graph",
+				sms.isROMetadataNamedGraph(researchObjectURI, annotationBody1URI));
+			Assert.assertTrue("An random named graph is not an RO metadata named graph",
+				!sms.isROMetadataNamedGraph(researchObjectURI, annotationBody1URI.resolve("fake")));
+			Assert.assertTrue("Manifest is an RO metadata named graph",
+				sms.isROMetadataNamedGraph(researchObjectURI, manifestURI));
+			Assert.assertTrue("A resource is not an RO metadata named graph",
+				!sms.isROMetadataNamedGraph(researchObjectURI, workflowURI));
+			Assert.assertTrue("A fake resource is not an RO metadata named graph",
+				!sms.isROMetadataNamedGraph(researchObjectURI, resourceFakeURI));
 		}
 		finally {
 			sms.close();

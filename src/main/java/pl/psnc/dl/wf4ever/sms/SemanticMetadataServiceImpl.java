@@ -26,6 +26,7 @@ import org.openrdf.rio.RDFFormat;
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 
+import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
@@ -48,6 +49,7 @@ import com.hp.hpl.jena.vocabulary.DCTerms;
 
 import de.fuberlin.wiwiss.ng4j.NamedGraph;
 import de.fuberlin.wiwiss.ng4j.NamedGraphSet;
+import de.fuberlin.wiwiss.ng4j.Quad;
 import de.fuberlin.wiwiss.ng4j.db.NamedGraphSetDB;
 import de.fuberlin.wiwiss.ng4j.impl.NamedGraphSetImpl;
 
@@ -472,9 +474,16 @@ public class SemanticMetadataServiceImpl
 
 
 	@Override
-	public boolean isNamedGraph(URI graphURI)
+	public boolean isROMetadataNamedGraph(URI researchObjectURI, URI graphURI)
 	{
-		return graphset.containsGraph(graphURI.toString());
+		if (!graphset.containsGraph(graphURI.toString()))
+			return false;
+		Node manifest = Node.createURI(getManifestURI(researchObjectURI).toString());
+		Node body = Node.createURI(this.body.getURI());
+		Node annBody = Node.createURI(graphURI.toString());
+		boolean isManifest = getManifestURI(researchObjectURI).equals(graphURI);
+		boolean isAnnotationBody = graphset.containsQuad(new Quad(manifest, Node.ANY, body, annBody));
+		return isManifest || isAnnotationBody;
 	}
 
 

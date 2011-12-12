@@ -97,11 +97,12 @@ public interface SemanticMetadataService
 
 
 	/**
-	 * Return true if a named graph with given URI exists.
+	 * Return true if a named graph with given URI exists and is part of RO metadata.
+	 * Such named graphs are manifests and annotation bodies.
 	 * @param graphURI graph URI
 	 * @return
 	 */
-	boolean isNamedGraph(URI graphURI);
+	boolean isROMetadataNamedGraph(URI researchObjectURI, URI graphURI);
 
 
 	/**
