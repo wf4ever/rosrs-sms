@@ -68,7 +68,7 @@ public class SemanticMetadataServiceImpl
 
 	private static final String FOAF_NAMESPACE = "http://xmlns.com/foaf/0.1/";
 
-	private static final String AO_NAMESPACE = "http://purl.org/ao/core/";
+	private static final String AO_NAMESPACE = "http://purl.org/ao/";
 
 	private static final URI DEFAULT_NAMED_GRAPH_URI = URI.create("sms");
 
@@ -109,7 +109,7 @@ public class SemanticMetadataServiceImpl
 
 	private final Property checksum;
 
-	private final Property hasTopic;
+	private final Property body;
 
 	private final String getResourceQueryTmpl = "DESCRIBE <%s> WHERE { }";
 
@@ -146,7 +146,7 @@ public class SemanticMetadataServiceImpl
 
 		researchObjectClass = defaultModel.getOntClass(RO_NAMESPACE + "ResearchObject");
 		manifestClass = defaultModel.getOntClass(RO_NAMESPACE + "Manifest");
-		resourceClass = defaultModel.getOntClass(ORE_NAMESPACE + "AggregatedResource");
+		resourceClass = defaultModel.getOntClass(RO_NAMESPACE + "Resource");
 		roFolderClass = defaultModel.getOntClass(RO_NAMESPACE + "Folder");
 
 		name = defaultModel.getProperty(RO_NAMESPACE + "name");
@@ -157,7 +157,7 @@ public class SemanticMetadataServiceImpl
 		aggregates = defaultModel.getProperty(ORE_NAMESPACE + "aggregates");
 		foafAgentClass = defaultModel.getOntClass(FOAF_NAMESPACE + "Agent");
 		foafName = defaultModel.getProperty(FOAF_NAMESPACE + "name");
-		hasTopic = defaultModel.getProperty(AO_NAMESPACE + "hasTopic");
+		body = defaultModel.getProperty(AO_NAMESPACE + "body");
 
 		defaultModel.setNsPrefixes(standardNamespaces);
 	}
@@ -347,6 +347,8 @@ public class SemanticMetadataServiceImpl
 		Model resultModel = qexec.execDescribe();
 		qexec.close();
 
+		resultModel.removeNsPrefix("xml");
+
 		resultModel.write(out, rdfFormat.getName().toUpperCase(), roURI.toString());
 		return new ByteArrayInputStream(out.toByteArray());
 	}
@@ -385,7 +387,7 @@ public class SemanticMetadataServiceImpl
 		tmpGraphSet.addGraph(graphset.getGraph(namedGraphURI.toString()));
 
 		OntModel annotationModel = createOntModelForNamedGraph(namedGraphURI);
-		NodeIterator it = annotationModel.listObjectsOfProperty(hasTopic);
+		NodeIterator it = annotationModel.listObjectsOfProperty(body);
 		while (it.hasNext()) {
 			RDFNode annotationBodyRef = it.next();
 			URI childURI = URI.create(annotationBodyRef.asResource().getURI());
@@ -485,7 +487,7 @@ public class SemanticMetadataServiceImpl
 		}
 		OntModel manifestModel = createOntModelForNamedGraph(graphURI);
 
-		NodeIterator it = manifestModel.listObjectsOfProperty(hasTopic);
+		NodeIterator it = manifestModel.listObjectsOfProperty(body);
 		while (it.hasNext()) {
 			RDFNode annotationBodyRef = it.next();
 			//TODO make sure that this named graph is internal
@@ -513,7 +515,7 @@ public class SemanticMetadataServiceImpl
 	 */
 	private URI getManifestURI(URI roURI)
 	{
-		return roURI.resolve(".ro_metadata/manifest");
+		return roURI.resolve(".ro/manifest");
 	}
 
 

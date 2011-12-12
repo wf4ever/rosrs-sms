@@ -8,7 +8,7 @@
 @prefix rdfg: <http://www.w3.org/2004/03/trix/rdfg-1/> .
 @prefix ore: <http://www.openarchives.org/ore/terms/> .
 
-<.ro_metadata/manifest> a ro:Manifest ;
+<.ro/manifest> a ro:Manifest ;
     ore:describes <.> ;
     dct:created "2011-12-02T16:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Agent; foaf:name "RO manager" ] .

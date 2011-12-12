@@ -33,6 +33,7 @@ import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
 import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
+import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
@@ -48,6 +49,10 @@ import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.vocabulary.DCTerms;
 
+import de.fuberlin.wiwiss.ng4j.NamedGraphSet;
+import de.fuberlin.wiwiss.ng4j.Quad;
+import de.fuberlin.wiwiss.ng4j.impl.NamedGraphSetImpl;
+
 /**
  * @author piotrhol
  *
@@ -57,7 +62,7 @@ public class SemanticMetadataServiceImplTest
 
 	private static final Logger log = Logger.getLogger(SemanticMetadataServiceImplTest.class);
 
-	private final static URI manifestURI = URI.create("http://example.org/ROs/ro1/.ro_metadata/manifest");
+	private final static URI manifestURI = URI.create("http://example.org/ROs/ro1/.ro/manifest");
 
 	private final static URI researchObjectURI = URI.create("http://example.org/ROs/ro1/");
 
@@ -79,7 +84,7 @@ public class SemanticMetadataServiceImplTest
 
 	private final static URI folderURI = URI.create("http://example.org/ROs/ro1/afolder");
 
-	private final URI annotationBody1URI = URI.create("http://example.org/ROs/ro1/annotations/myTitleContent");
+	private final URI annotationBody1URI = URI.create("http://example.org/ROs/ro1/.ro/ann1");
 
 	private static final String RO_NAMESPACE = "http://purl.org/wf4ever/ro#";
 
@@ -409,7 +414,44 @@ public class SemanticMetadataServiceImplTest
 			Assert.assertEquals("Creator name must be correct", userProfile.getName(),
 				creator.getPropertyValue(foafName).asLiteral().getString());
 
-			log.debug(IOUtils.toString(sms.getManifest(manifestURI, RDFFormat.TURTLE), "UTF-8"));
+			log.debug(IOUtils.toString(sms.getManifest(manifestURI, RDFFormat.RDFXML), "UTF-8"));
+		}
+		finally {
+			sms.close();
+		}
+	}
+
+
+	/**
+	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getManifest(java.net.URI, org.openrdf.rio.RDFFormat)}.
+	 * @throws IOException 
+	 * @throws SQLException 
+	 * @throws NamingException 
+	 * @throws ClassNotFoundException 
+	 */
+	@Test
+	public final void testGetManifestWithAnnotationBodies()
+		throws IOException, ClassNotFoundException, NamingException, SQLException
+	{
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+		try {
+			Assert.assertNull("Returns null when manifest does not exist", sms.getManifest(manifestURI, RDFFormat.TRIG));
+
+			InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
+			sms.updateManifest(manifestURI, is, RDFFormat.TURTLE);
+			is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
+			sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
+
+			NamedGraphSet graphset = new NamedGraphSetImpl();
+			graphset.read(sms.getManifest(manifestURI, RDFFormat.TRIG), "TRIG", null);
+
+			Quad sampleAgg = new Quad(Node.createURI(manifestURI.toString()), Node.createURI(researchObjectURI
+					.toString()), Node.createURI(aggregates.getURI()), Node.createURI(workflowURI.toString()));
+			Assert.assertTrue("Contains a sample aggregation", graphset.containsQuad(sampleAgg));
+
+			Quad sampleAnn = new Quad(Node.createURI(annotationBody1URI.toString()), Node.createURI(workflowURI
+					.toString()), Node.createURI("http://purl.org/dc/terms/licence"), Node.createLiteral("GPL"));
+			Assert.assertTrue("Contains a sample annotation", graphset.containsQuad(sampleAnn));
 		}
 		finally {
 			sms.close();
@@ -502,11 +544,13 @@ public class SemanticMetadataServiceImplTest
 			sms.addResource(researchObjectURI, workflowURI, workflowInfo);
 			sms.addResource(researchObjectURI, ann1URI, ann1Info);
 
+			log.debug(IOUtils.toString(sms.getResource(researchObjectURI, workflowURI, RDFFormat.RDFXML), "UTF-8"));
+
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(sms.getResource(researchObjectURI, workflowURI, RDFFormat.RDFXML), null);
+			model.read(sms.getResource(researchObjectURI, workflowURI, RDFFormat.RDFXML), researchObjectURI.toString());
 			verifyResource(model, workflowURI, workflowInfo);
 
-			model.read(sms.getResource(researchObjectURI, ann1URI, RDFFormat.RDFXML), null);
+			model.read(sms.getResource(researchObjectURI, ann1URI, RDFFormat.TURTLE), null, "TTL");
 			verifyResource(model, ann1URI, ann1Info);
 		}
 		finally {
@@ -526,8 +570,8 @@ public class SemanticMetadataServiceImplTest
 	{
 		Individual resource = model.getIndividual(resourceURI.toString());
 		Assert.assertNotNull("Resource cannot be null", resource);
-		Assert.assertTrue(String.format("Resource %s must be a ore:AggregatedResource", resourceURI),
-			resource.hasRDFType("http://www.openarchives.org/ore/terms/AggregatedResource"));
+		Assert.assertTrue(String.format("Resource %s must be a ro:Resource", resourceURI),
+			resource.hasRDFType(RO_NAMESPACE + "Resource"));
 
 		Literal nameLiteral = resource.getPropertyValue(name).asLiteral();
 		Assert.assertNotNull("Resource must contain ro:name", nameLiteral);
@@ -577,10 +621,8 @@ public class SemanticMetadataServiceImplTest
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
 			model.read(sms2.getNamedGraph(annotationBody1URI, RDFFormat.TURTLE), null, "TTL");
 
-			verifyTriple(model, URI.create("http://example.org/ROs/ro1/foo/bar.txt"),
-				URI.create("http://purl.org/dc/terms/title"), "A test");
-			verifyTriple(model, URI.create("http://example.org/ROs/ro1/foo/bar.txt"),
-				URI.create("http://purl.org/dc/terms/licence"), "GPL");
+			verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/title"), "A test");
+			verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/licence"), "GPL");
 			verifyTriple(model, URI.create("http://workflows.org/a/workflow.scufl"),
 				URI.create("http://purl.org/dc/terms/description"), "Something interesting");
 		}
