@@ -481,8 +481,6 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public boolean isROMetadataNamedGraph(URI researchObjectURI, URI graphURI)
 	{
-		if (!graphset.containsGraph(graphURI.toString()))
-			return false;
 		Node manifest = Node.createURI(getManifestURI(researchObjectURI).toString());
 		Node body = Node.createURI(this.body.getURI());
 		Node annBody = Node.createURI(graphURI.toString());

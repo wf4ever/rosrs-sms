@@ -762,6 +762,9 @@ public class SemanticMetadataServiceImplTest
 			InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
 			sms.updateManifest(manifestURI, is, RDFFormat.TURTLE);
 
+			Assert.assertTrue("Only mentioned annotation body is an RO metadata named graph",
+				sms.isROMetadataNamedGraph(researchObjectURI, annotationBody1URI));
+
 			is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
 			sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
 			is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
