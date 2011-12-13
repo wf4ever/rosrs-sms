@@ -537,4 +537,11 @@ public class SemanticMetadataServiceImpl
 		removeNamedGraph(researchObjectURI, getManifestURI(researchObjectURI));
 	}
 
+
+	@Override
+	public boolean containsNamedGraph(URI graphURI)
+	{
+		return graphset.containsGraph(graphURI.toString());
+	}
+
 }
