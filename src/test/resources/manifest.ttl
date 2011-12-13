@@ -15,7 +15,7 @@
 
 <.> a ro:ResearchObject, ore:Aggregation ;
     ore:aggregates <a_workflow.t2flow>, :ann1, <afolder> ;
-    ore:isDescribedBy <.> ;
+    ore:isDescribedBy <.ro/manifest> ;
     dct:created "2011-12-02T15:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Person; foaf:name "Stian Soiland-Reyes" ] .
 

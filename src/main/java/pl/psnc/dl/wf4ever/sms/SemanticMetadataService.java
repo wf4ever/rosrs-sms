@@ -119,12 +119,13 @@ public interface SemanticMetadataService
 
 	/**
 	 * Delete a named graph from the quadstore.
-	 * @param graphURI graph URI
 	 * @param roURI the RO URI, used for distinguishing internal resources from external
+	 * @param graphURI graph URI
 	 */
-	void removeNamedGraph(URI graphURI, URI roURI);
+	void removeNamedGraph(URI researchObjectURI, URI graphURI);
 
 
+	//TODO limit results depending on the user
 	/**
 	 * List ro:ResearchObject resources that start with the given URI.
 	 * 

@@ -293,6 +293,11 @@ public class SemanticMetadataServiceImpl
 					resourceInfo.getDigestMethod(), resourceInfo.getChecksum())));
 			}
 		}
+		manifestModel.add(resource, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
+		Individual agent = manifestModel.createIndividual(foafAgentClass);
+		manifestModel.add(agent, foafName, user.getName());
+		manifestModel.add(resource, DCTerms.creator, agent);
+
 	}
 
 
@@ -488,7 +493,7 @@ public class SemanticMetadataServiceImpl
 
 
 	@Override
-	public void removeNamedGraph(URI graphURI, URI roURI)
+	public void removeNamedGraph(URI researchObjectURI, URI graphURI)
 	{
 		graphURI = graphURI.normalize();
 		if (!graphset.containsGraph(graphURI.toString())) {
@@ -501,7 +506,7 @@ public class SemanticMetadataServiceImpl
 			RDFNode annotationBodyRef = it.next();
 			//TODO make sure that this named graph is internal
 			if (graphset.containsGraph(annotationBodyRef.asResource().getURI())) {
-				removeNamedGraph(URI.create(annotationBodyRef.asResource().getURI()), roURI);
+				removeNamedGraph(researchObjectURI, URI.create(annotationBodyRef.asResource().getURI()));
 			}
 		}
 		graphset.removeGraph(graphURI.toString());
@@ -531,7 +536,7 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public void removeResearchObject(URI researchObjectURI)
 	{
-		removeNamedGraph(getManifestURI(researchObjectURI), researchObjectURI);
+		removeNamedGraph(researchObjectURI, getManifestURI(researchObjectURI));
 	}
 
 }

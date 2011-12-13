@@ -46,6 +46,7 @@ import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
+import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.vocabulary.DCTerms;
 
@@ -573,6 +574,18 @@ public class SemanticMetadataServiceImplTest
 		Assert.assertTrue(String.format("Resource %s must be a ro:Resource", resourceURI),
 			resource.hasRDFType(RO_NAMESPACE + "Resource"));
 
+		RDFNode createdLiteral = resource.getPropertyValue(DCTerms.created);
+		Assert.assertNotNull("Resource must contain dcterms:created", createdLiteral);
+		Assert.assertEquals("Date type is xsd:dateTime", XSDDatatype.XSDdateTime, createdLiteral.asLiteral()
+				.getDatatype());
+
+		Resource creatorResource = resource.getPropertyResourceValue(DCTerms.creator);
+		Assert.assertNotNull("Resource must contain dcterms:creator", creatorResource);
+		Individual creator = creatorResource.as(Individual.class);
+		Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
+		Assert.assertEquals("Creator name must be correct", userProfile.getName(), creator.getPropertyValue(foafName)
+				.asLiteral().getString());
+
 		Literal nameLiteral = resource.getPropertyValue(name).asLiteral();
 		Assert.assertNotNull("Resource must contain ro:name", nameLiteral);
 		Assert.assertEquals("Name type is xsd:string", XSDDatatype.XSDstring, nameLiteral.getDatatype());
@@ -790,7 +803,7 @@ public class SemanticMetadataServiceImplTest
 			InputStream is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
 			sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
 			Assert.assertNotNull("A named graph exists", sms.getNamedGraph(annotationBody1URI, RDFFormat.RDFXML));
-			sms.removeNamedGraph(annotationBody1URI, researchObjectURI);
+			sms.removeNamedGraph(researchObjectURI, annotationBody1URI);
 			Assert.assertNull("A deleted named graph no longer exists",
 				sms.getNamedGraph(annotationBody1URI, RDFFormat.RDFXML));
 		}
