@@ -408,8 +408,8 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public Set<URI> findResearchObjects(URI partialURI)
 	{
-		partialURI = partialURI.normalize();
-		String queryString = String.format(findResearchObjectsQueryTmpl, partialURI.toString());
+		String queryString = String.format(findResearchObjectsQueryTmpl, partialURI != null ? partialURI.normalize()
+				.toString() : "");
 		Query query = QueryFactory.create(queryString);
 
 		// Execute the query and obtain results

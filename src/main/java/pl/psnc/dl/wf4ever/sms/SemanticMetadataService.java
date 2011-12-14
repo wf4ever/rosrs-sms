@@ -138,7 +138,7 @@ public interface SemanticMetadataService
 	/**
 	 * List ro:ResearchObject resources that start with the given URI.
 	 * 
-	 * @param partialURI URI with which the RO URI must start
+	 * @param partialURI URI with which the RO URI must start. If null, all ROs are returned.
 	 * 
 	 * @return set of RO URIs
 	 */

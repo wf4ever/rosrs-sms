@@ -681,6 +681,7 @@ public class SemanticMetadataServiceImplTest
 			expected.add(researchObject2URI);
 			Assert.assertEquals("Find with base of RO URI", expected,
 				sms.findResearchObjects(researchObjectURI.resolve("..")));
+			Assert.assertEquals("Find with null param", expected, sms.findResearchObjects(null));
 		}
 		finally {
 			sms.close();
