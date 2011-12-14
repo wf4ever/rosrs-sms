@@ -209,7 +209,7 @@ public class SemanticMetadataServiceImpl
 		OntModel manifestModel = createOntModelForNamedGraph(manifestURI);
 		Individual manifest = manifestModel.getIndividual(manifestURI.toString());
 		if (manifest != null) {
-			throw new IllegalArgumentException("URI already exists");
+			throw new IllegalArgumentException("URI already exists: " + manifestURI);
 		}
 		manifest = manifestModel.createIndividual(manifestURI.toString(), manifestClass);
 		Individual ro = manifestModel.createIndividual(researchObjectURI.toString(), researchObjectClass);
@@ -279,7 +279,7 @@ public class SemanticMetadataServiceImpl
 		OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(roURI.normalize()));
 		Individual ro = manifestModel.getIndividual(roURI.toString());
 		if (ro == null) {
-			throw new IllegalArgumentException("URI not found");
+			throw new IllegalArgumentException("URI not found: " + roURI);
 		}
 		Individual resource = manifestModel.createIndividual(resourceURI.toString(), resourceClass);
 		manifestModel.add(ro, aggregates, resource);
@@ -315,11 +315,11 @@ public class SemanticMetadataServiceImpl
 		OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(roURI.normalize()));
 		Individual ro = manifestModel.getIndividual(roURI.toString());
 		if (ro == null) {
-			throw new IllegalArgumentException("URI not found");
+			throw new IllegalArgumentException("URI not found: " + roURI);
 		}
 		Individual resource = manifestModel.getIndividual(resourceURI.toString());
 		if (resource == null) {
-			throw new IllegalArgumentException("URI not found");
+			throw new IllegalArgumentException("URI not found: " + resourceURI);
 		}
 		manifestModel.remove(ro, aggregates, resource);
 
@@ -495,7 +495,7 @@ public class SemanticMetadataServiceImpl
 	{
 		graphURI = graphURI.normalize();
 		if (!graphset.containsGraph(graphURI.toString())) {
-			throw new IllegalArgumentException("URI not found");
+			throw new IllegalArgumentException("URI not found: " + graphURI);
 		}
 		OntModel manifestModel = createOntModelForNamedGraph(graphURI);
 
