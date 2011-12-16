@@ -119,4 +119,21 @@
     <prefix    rdf:datatype="&xsd;string">pav-authoring</prefix>
 </OntologySpec>
 
+<OntologySpec>
+    <publicURI rdf:resource="http://purl.org/ao/" />
+    <altURL    rdf:resource="file:rdf/annotation.owl" />
+<!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
+    <prefix    rdf:datatype="&xsd;string">ao2</prefix>
+</OntologySpec>
+
+<OntologySpec>
+    <publicURI rdf:resource="http://www.openarchives.org/ore/terms/" />
+    <altURL    rdf:resource="file:rdf/ore.rdf" />
+<!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
+    <prefix    rdf:datatype="&xsd;string"></prefix>
+</OntologySpec>
+
+</OntologySpec>
+
+
 </rdf:RDF>
