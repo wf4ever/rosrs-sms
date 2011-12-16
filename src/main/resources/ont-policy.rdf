@@ -51,84 +51,84 @@
 
 <OntologySpec>
     <publicURI rdf:resource="http://purl.org/wf4ever/ro#" />
-    <altURL    rdf:resource="file:rdf/ro.owl" />
+    <altURL    rdf:resource="file:vocabularies/ro.owl" />
 <!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
     <prefix    rdf:datatype="&xsd;string">ro</prefix>
 </OntologySpec>
 
 <OntologySpec>
     <publicURI rdf:resource="http://xmlns.com/foaf/0.1/" />
-    <altURL    rdf:resource="file:rdf/foaf.rdf" />
+    <altURL    rdf:resource="file:vocabularies/foaf.rdf" />
 <!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
     <prefix    rdf:datatype="&xsd;string">foaf</prefix>
 </OntologySpec>
 
 <OntologySpec>
     <publicURI rdf:resource="http://purl.org/wf4ever/ore-owl" />
-    <altURL    rdf:resource="file:rdf/ore-owl.ttl" />
+    <altURL    rdf:resource="file:vocabularies/ore-owl.ttl" />
 <!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
     <prefix    rdf:datatype="&xsd;string">ore-owl</prefix>
 </OntologySpec>
 
 <OntologySpec>
     <publicURI rdf:resource="http://purl.org/NET/dc_owl2dl/terms_od" />
-    <altURL    rdf:resource="file:rdf/dcterms_od.ttl" />
+    <altURL    rdf:resource="file:vocabularies/dcterms_od.ttl" />
 <!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
     <prefix    rdf:datatype="&xsd;string">terms_od</prefix>
 </OntologySpec>
 
 <OntologySpec>
     <publicURI rdf:resource="http://purl.org/ao/core/" />
-    <altURL    rdf:resource="file:rdf/annotation-core.owl" />
+    <altURL    rdf:resource="file:vocabularies/annotation-core.owl" />
 <!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
     <prefix    rdf:datatype="&xsd;string">ao</prefix>
 </OntologySpec>
 
 <OntologySpec>
     <publicURI rdf:resource="http://purl.org/NET/dc_owl2dl/dcam" />
-    <altURL    rdf:resource="file:rdf/dcam.ttl" />
+    <altURL    rdf:resource="file:vocabularies/dcam.ttl" />
 <!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
     <prefix    rdf:datatype="&xsd;string">dcam</prefix>
 </OntologySpec>
 
 <OntologySpec>
     <publicURI rdf:resource="http://purl.org/pav/2.0/" />
-    <altURL    rdf:resource="file:rdf/pav.owl" />
+    <altURL    rdf:resource="file:vocabularies/pav.owl" />
 <!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
     <prefix    rdf:datatype="&xsd;string">pav</prefix>
 </OntologySpec>
 
 <OntologySpec>
     <publicURI rdf:resource="http://www.w3.org/TR/skos-reference/skos-owl1-dl.rdf" />
-    <altURL    rdf:resource="file:rdf/skos-owl1-dl.rdf" />
+    <altURL    rdf:resource="file:vocabularies/skos-owl1-dl.rdf" />
 <!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
     <prefix    rdf:datatype="&xsd;string">skos</prefix>
 </OntologySpec>
 
 <OntologySpec>
     <publicURI rdf:resource="http://purl.org/pav/authoring/2.0/" />
-    <altURL    rdf:resource="file:rdf/pav-authoring.owl" />
+    <altURL    rdf:resource="file:vocabularies/pav-authoring.owl" />
 <!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
     <prefix    rdf:datatype="&xsd;string">pav-authoring</prefix>
 </OntologySpec>
 
 <OntologySpec>
     <publicURI rdf:resource="http://purl.org/pav/provenance/2.0/" />
-    <altURL    rdf:resource="file:rdf/pav-provenance.owl" />
+    <altURL    rdf:resource="file:vocabularies/pav-provenance.owl" />
 <!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
     <prefix    rdf:datatype="&xsd;string">pav-authoring</prefix>
 </OntologySpec>
 
 <OntologySpec>
     <publicURI rdf:resource="http://purl.org/ao/" />
-    <altURL    rdf:resource="file:rdf/annotation.owl" />
+    <altURL    rdf:resource="file:vocabularies/annotation.owl" />
 <!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
     <prefix    rdf:datatype="&xsd;string">ao2</prefix>
 </OntologySpec>
 
 <OntologySpec>
     <publicURI rdf:resource="http://www.openarchives.org/ore/terms/" />
-    <altURL    rdf:resource="file:rdf/ore.rdf" />
+    <altURL    rdf:resource="file:vocabularies/ore.rdf" />
 <!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
     <prefix    rdf:datatype="&xsd;string"></prefix>
 </OntologySpec>
