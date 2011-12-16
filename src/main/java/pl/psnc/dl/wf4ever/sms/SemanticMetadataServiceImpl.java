@@ -82,36 +82,34 @@ public class SemanticMetadataServiceImpl
 
 	private final NamedGraphSet graphset;
 
-	/**
-	 * For storing triples that don't belong to any RO, the default graph. 
-	 */
-	private final OntModel defaultModel;
+	private static final OntModel defaultModel = ModelFactory.createOntologyModel(
+		new OntModelSpec(OntModelSpec.OWL_MEM), ModelFactory.createDefaultModel().read(RO_NAMESPACE, "TTL"));
 
-	private final OntClass researchObjectClass;
+	private static final OntClass researchObjectClass = defaultModel.getOntClass(RO_NAMESPACE + "ResearchObject");
 
-	private final OntClass manifestClass;
+	private static final OntClass manifestClass = defaultModel.getOntClass(RO_NAMESPACE + "Manifest");
 
-	private final OntClass foafAgentClass;
+	private static final OntClass resourceClass = defaultModel.getOntClass(RO_NAMESPACE + "Resource");
 
-	private final OntClass resourceClass;
+	private static final OntClass roFolderClass = defaultModel.getOntClass(RO_NAMESPACE + "Folder");
 
-	private final OntClass roFolderClass;
+	private static final OntClass foafAgentClass = defaultModel.getOntClass(FOAF_NAMESPACE + "Agent");
 
-	private final Property describes;
+	private static final Property describes = defaultModel.getProperty(ORE_NAMESPACE + "describes");
 
-	private final Property isDescribedBy;
+	private static final Property isDescribedBy = defaultModel.getProperty(ORE_NAMESPACE + "isDescribedBy");
 
-	private final Property aggregates;
+	private static final Property aggregates = defaultModel.getProperty(ORE_NAMESPACE + "aggregates");
 
-	private final Property foafName;
+	private static final Property foafName = defaultModel.getProperty(FOAF_NAMESPACE + "name");
 
-	private final Property name;
+	private static final Property name = defaultModel.getProperty(RO_NAMESPACE + "name");
 
-	private final Property filesize;
+	private static final Property filesize = defaultModel.getProperty(RO_NAMESPACE + "filesize");
 
-	private final Property checksum;
+	private static final Property checksum = defaultModel.getProperty(RO_NAMESPACE + "checksum");
 
-	private final Property body;
+	private static final Property body = defaultModel.getProperty(AO_NAMESPACE + "body");
 
 	private final String getResourceQueryTmpl = "DESCRIBE <%s> WHERE { }";
 
@@ -126,37 +124,13 @@ public class SemanticMetadataServiceImpl
 	public SemanticMetadataServiceImpl(UserProfile user)
 		throws IOException, NamingException, SQLException, ClassNotFoundException
 	{
+		this.user = user;
 		connection = getConnection("connection.properties");
 		if (connection == null) {
 			throw new RuntimeException("Connection could not be created");
 		}
-		this.user = user;
-
-		//		FileManager.get().setLocationMapper(new LocationMapper());
 
 		graphset = new NamedGraphSetDB(connection, "sms");
-		NamedGraph defaultGraph = getOrCreateGraph(graphset, DEFAULT_NAMED_GRAPH_URI);
-		Model tmpModel = ModelFactory.createModelForGraph(defaultGraph);
-
-		tmpModel.read(RO_NAMESPACE, "TTL");
-
-		OntModelSpec spec = new OntModelSpec(OntModelSpec.OWL_MEM);
-		defaultModel = ModelFactory.createOntologyModel(spec, tmpModel);
-
-		researchObjectClass = defaultModel.getOntClass(RO_NAMESPACE + "ResearchObject");
-		manifestClass = defaultModel.getOntClass(RO_NAMESPACE + "Manifest");
-		resourceClass = defaultModel.getOntClass(RO_NAMESPACE + "Resource");
-		roFolderClass = defaultModel.getOntClass(RO_NAMESPACE + "Folder");
-
-		name = defaultModel.getProperty(RO_NAMESPACE + "name");
-		filesize = defaultModel.getProperty(RO_NAMESPACE + "filesize");
-		checksum = defaultModel.getProperty(RO_NAMESPACE + "checksum");
-		describes = defaultModel.getProperty(ORE_NAMESPACE + "describes");
-		isDescribedBy = defaultModel.getProperty(ORE_NAMESPACE + "isDescribedBy");
-		aggregates = defaultModel.getProperty(ORE_NAMESPACE + "aggregates");
-		foafAgentClass = defaultModel.getOntClass(FOAF_NAMESPACE + "Agent");
-		foafName = defaultModel.getProperty(FOAF_NAMESPACE + "name");
-		body = defaultModel.getProperty(AO_NAMESPACE + "body");
 
 		defaultModel.setNsPrefixes(standardNamespaces);
 	}
@@ -479,10 +453,10 @@ public class SemanticMetadataServiceImpl
 	public boolean isROMetadataNamedGraph(URI researchObjectURI, URI graphURI)
 	{
 		Node manifest = Node.createURI(getManifestURI(researchObjectURI).toString());
-		Node body = Node.createURI(this.body.getURI());
+		Node bodyNode = Node.createURI(body.getURI());
 		Node annBody = Node.createURI(graphURI.toString());
 		boolean isManifest = getManifestURI(researchObjectURI).equals(graphURI);
-		boolean isAnnotationBody = graphset.containsQuad(new Quad(manifest, Node.ANY, body, annBody));
+		boolean isAnnotationBody = graphset.containsQuad(new Quad(manifest, Node.ANY, bodyNode, annBody));
 		return isManifest || isAnnotationBody;
 	}
 
