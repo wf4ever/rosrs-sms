@@ -132,19 +132,16 @@ public class SemanticMetadataServiceImpl
 		}
 		this.user = user;
 
+		//		FileManager.get().setLocationMapper(new LocationMapper());
+
 		graphset = new NamedGraphSetDB(connection, "sms");
 		NamedGraph defaultGraph = getOrCreateGraph(graphset, DEFAULT_NAMED_GRAPH_URI);
 		Model tmpModel = ModelFactory.createModelForGraph(defaultGraph);
 
-		//		InputStream modelIS = getClass().getClassLoader().getResourceAsStream("ro.rdf");
-		//		defaultModel.read(modelIS, null);
 		tmpModel.read(RO_NAMESPACE, "TTL");
 
-		defaultModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM, tmpModel);
-
-		OntModel foafModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM);
-		foafModel.read(FOAF_NAMESPACE, null);
-		defaultModel.addSubModel(foafModel);
+		OntModelSpec spec = new OntModelSpec(OntModelSpec.OWL_MEM);
+		defaultModel = ModelFactory.createOntologyModel(spec, tmpModel);
 
 		researchObjectClass = defaultModel.getOntClass(RO_NAMESPACE + "ResearchObject");
 		manifestClass = defaultModel.getOntClass(RO_NAMESPACE + "Manifest");
