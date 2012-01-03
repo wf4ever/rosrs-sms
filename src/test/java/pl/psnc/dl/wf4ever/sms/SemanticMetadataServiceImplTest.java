@@ -471,7 +471,7 @@ public class SemanticMetadataServiceImplTest
 			Assert.assertTrue("Contains a sample aggregation", graphset.containsQuad(sampleAgg));
 
 			Quad sampleAnn = new Quad(Node.createURI(annotationBody1URI.toString()), Node.createURI(workflowURI
-					.toString()), Node.createURI("http://purl.org/dc/terms/licence"), Node.createLiteral("GPL"));
+					.toString()), Node.createURI("http://purl.org/dc/terms/license"), Node.createLiteral("GPL"));
 			Assert.assertTrue("Contains a sample annotation", graphset.containsQuad(sampleAnn));
 		}
 		finally {
@@ -667,7 +667,7 @@ public class SemanticMetadataServiceImplTest
 			model.read(sms2.getNamedGraph(annotationBody1URI, RDFFormat.TURTLE), null, "TTL");
 
 			verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/title"), "A test");
-			verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/licence"), "GPL");
+			verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/license"), "GPL");
 			verifyTriple(model, URI.create("http://workflows.org/a/workflow.scufl"),
 				URI.create("http://purl.org/dc/terms/description"), "Something interesting");
 		}
@@ -884,6 +884,16 @@ public class SemanticMetadataServiceImplTest
 			Assert.assertNotNull("Resource cannot be null", resource);
 			Assert.assertTrue(String.format("Resource %s must be a ro:Resource", workflowURI),
 				resource.hasRDFType(RO_NAMESPACE + "Resource"));
+
+			is = getClass().getClassLoader().getResourceAsStream("direct-annotations-construct.sparql");
+			String constructQuery = IOUtils.toString(is, "UTF-8");
+			out = sms.executeSparql(constructQuery, RDFFormat.RDFXML);
+			model.removeAll();
+			model.read(new ByteArrayInputStream(out.toByteArray()), null, "RDF/XML");
+			Assert.assertTrue("Construct contains triple 1",
+				model.contains(model.createResource(workflowURI.toString()), DCTerms.title, "A test"));
+			Assert.assertTrue("Construct contains triple 2",
+				model.contains(model.createResource(workflowURI.toString()), DCTerms.license, "GPL"));
 
 		}
 		finally {

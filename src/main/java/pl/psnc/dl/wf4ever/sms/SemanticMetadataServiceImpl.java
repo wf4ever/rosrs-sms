@@ -517,24 +517,19 @@ public class SemanticMetadataServiceImpl
 	{
 		Query query = QueryFactory.create(queryS);
 		ByteArrayOutputStream out = null;
-		try {
-			switch (query.getQueryType()) {
-				case Query.QueryTypeSelect:
-					break;
-				case Query.QueryTypeConstruct:
-					out = processConstructQuery(query, rdfFormat);
-					break;
-				case Query.QueryTypeDescribe:
-					out = processDescribeQuery(query, rdfFormat);
-					break;
-				case Query.QueryTypeAsk:
-					break;
-				default:
-					out = null;
-			}
-		}
-		finally {
-			graphset.close();
+		switch (query.getQueryType()) {
+			case Query.QueryTypeSelect:
+				break;
+			case Query.QueryTypeConstruct:
+				out = processConstructQuery(query, rdfFormat);
+				break;
+			case Query.QueryTypeDescribe:
+				out = processDescribeQuery(query, rdfFormat);
+				break;
+			case Query.QueryTypeAsk:
+				break;
+			default:
+				out = null;
 		}
 		return out;
 	}
