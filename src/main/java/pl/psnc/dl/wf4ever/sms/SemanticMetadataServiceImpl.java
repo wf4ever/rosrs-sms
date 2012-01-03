@@ -516,7 +516,16 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public InputStream executeSparql(String queryS, RDFFormat rdfFormat)
 	{
-		Query query = QueryFactory.create(queryS);
+		if (queryS == null)
+			throw new NullPointerException("Query cannot be null");
+		Query query = null;
+		try {
+			query = QueryFactory.create(queryS);
+		}
+		catch (Exception e) {
+			throw new IllegalArgumentException("Wrong query syntax: " + e.getMessage());
+		}
+
 		switch (query.getQueryType()) {
 			case Query.QueryTypeSelect:
 				return processSelectQuery(query, rdfFormat);
