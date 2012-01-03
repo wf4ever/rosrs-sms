@@ -37,6 +37,7 @@ import com.hp.hpl.jena.query.QueryExecutionFactory;
 import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
+import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.NodeIterator;
@@ -513,29 +514,57 @@ public class SemanticMetadataServiceImpl
 
 
 	@Override
-	public ByteArrayOutputStream executeSparql(String queryS, RDFFormat rdfFormat)
+	public InputStream executeSparql(String queryS, RDFFormat rdfFormat)
 	{
 		Query query = QueryFactory.create(queryS);
-		ByteArrayOutputStream out = null;
 		switch (query.getQueryType()) {
 			case Query.QueryTypeSelect:
-				break;
+				return processSelectQuery(query, rdfFormat);
 			case Query.QueryTypeConstruct:
-				out = processConstructQuery(query, rdfFormat);
-				break;
+				return processConstructQuery(query, rdfFormat);
 			case Query.QueryTypeDescribe:
-				out = processDescribeQuery(query, rdfFormat);
-				break;
+				return processDescribeQuery(query, rdfFormat);
 			case Query.QueryTypeAsk:
-				break;
+				return processAskQuery(query, rdfFormat);
 			default:
-				out = null;
+				return null;
 		}
-		return out;
 	}
 
 
-	private ByteArrayOutputStream processConstructQuery(Query query, RDFFormat rdfFormat)
+	private InputStream processSelectQuery(Query query, RDFFormat rdfFormat)
+	{
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		QueryExecution qexec = QueryExecutionFactory.create(query, new NamedGraphDataset(graphset));
+		if ("application/json".equals(rdfFormat.getDefaultMIMEType())) {
+			ResultSetFormatter.outputAsJSON(qexec.execSelect());
+		}
+		else {
+			ResultSetFormatter.outputAsXML(qexec.execSelect());
+		}
+		qexec.close();
+
+		return new ByteArrayInputStream(out.toByteArray());
+	}
+
+
+	private InputStream processAskQuery(Query query, RDFFormat rdfFormat)
+	{
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		QueryExecution qexec = QueryExecutionFactory.create(query, new NamedGraphDataset(graphset));
+		if ("application/json".equals(rdfFormat.getDefaultMIMEType())) {
+			ResultSetFormatter.outputAsJSON(qexec.execAsk());
+		}
+		else {
+			ResultSetFormatter.outputAsXML(qexec.execAsk());
+		}
+		qexec.close();
+
+		return new ByteArrayInputStream(out.toByteArray());
+	}
+
+
+	private InputStream processConstructQuery(Query query, RDFFormat rdfFormat)
 	{
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		QueryExecution qexec = QueryExecutionFactory.create(query, new NamedGraphDataset(graphset));
@@ -543,11 +572,11 @@ public class SemanticMetadataServiceImpl
 		qexec.close();
 
 		resultModel.write(out, rdfFormat.getName().toUpperCase());
-		return out;
+		return new ByteArrayInputStream(out.toByteArray());
 	}
 
 
-	private ByteArrayOutputStream processDescribeQuery(Query query, RDFFormat rdfFormat)
+	private InputStream processDescribeQuery(Query query, RDFFormat rdfFormat)
 	{
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		QueryExecution qexec = QueryExecutionFactory.create(query, new NamedGraphDataset(graphset));
@@ -555,7 +584,7 @@ public class SemanticMetadataServiceImpl
 		qexec.close();
 
 		resultModel.write(out, rdfFormat.getName().toUpperCase());
-		return out;
+		return new ByteArrayInputStream(out.toByteArray());
 	}
 
 }

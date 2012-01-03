@@ -3,7 +3,6 @@
  */
 package pl.psnc.dl.wf4ever.sms;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.Set;
@@ -183,7 +182,25 @@ public interface SemanticMetadataService
 	Set<URI> findResearchObjects(URI partialURI);
 
 
-	ByteArrayOutputStream executeSparql(String query, RDFFormat rdfFormat);
+	/**
+	 * Responses are a available in a range of different formats. The specific formats
+	 * available depend on the type of SPARQL query being executed. SPARQL defines four
+	 * different types of query: CONSTRUCT, DESCRIBE, SELECT and ASK.
+	 * 
+	 * CONSTRUCT and DESCRIBE queries both return RDF graphs and so the usual range of RDF
+	 * serializations are available, including RDF/XML, RDF/JSON, Turtle, etc.
+	 * 
+	 * SELECT queries return a tabular result set, while ASK queries return a boolean
+	 * value. Results from both of these query types can be returned in either SPARQL XML
+	 * Results Format or SPARQL JSON Results Format.
+	 * 
+	 * See also http://www.w3.org/TR/rdf-sparql-XMLres/
+	 * 
+	 * @param query
+	 * @param rdfFormat
+	 * @return
+	 */
+	InputStream executeSparql(String query, RDFFormat rdfFormat);
 
 
 	/**

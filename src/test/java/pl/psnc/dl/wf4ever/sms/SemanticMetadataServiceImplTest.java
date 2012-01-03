@@ -5,8 +5,6 @@ package pl.psnc.dl.wf4ever.sms;
 
 import static org.junit.Assert.fail;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -877,9 +875,8 @@ public class SemanticMetadataServiceImplTest
 			sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
 
 			String describeQuery = String.format("DESCRIBE <%s>", workflowURI.toString());
-			ByteArrayOutputStream out = sms.executeSparql(describeQuery, RDFFormat.RDFXML);
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(new ByteArrayInputStream(out.toByteArray()), null, "RDF/XML");
+			model.read(sms.executeSparql(describeQuery, RDFFormat.RDFXML), null, "RDF/XML");
 			Individual resource = model.getIndividual(workflowURI.toString());
 			Assert.assertNotNull("Resource cannot be null", resource);
 			Assert.assertTrue(String.format("Resource %s must be a ro:Resource", workflowURI),
@@ -887,9 +884,8 @@ public class SemanticMetadataServiceImplTest
 
 			is = getClass().getClassLoader().getResourceAsStream("direct-annotations-construct.sparql");
 			String constructQuery = IOUtils.toString(is, "UTF-8");
-			out = sms.executeSparql(constructQuery, RDFFormat.RDFXML);
 			model.removeAll();
-			model.read(new ByteArrayInputStream(out.toByteArray()), null, "RDF/XML");
+			model.read(sms.executeSparql(constructQuery, RDFFormat.RDFXML), null, "RDF/XML");
 			Assert.assertTrue("Construct contains triple 1",
 				model.contains(model.createResource(workflowURI.toString()), DCTerms.title, "A test"));
 			Assert.assertTrue("Construct contains triple 2",
