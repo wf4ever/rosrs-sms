@@ -903,6 +903,18 @@ public class SemanticMetadataServiceImplTest
 					Charset.forName("UTF-8"), "json", false, false)), "UTF-8");
 			//FIXME make more in-depth JSON validation
 			Assert.assertTrue("JSON looks correct", json.contains("Marco Roos"));
+
+			is = getClass().getClassLoader().getResourceAsStream("direct-annotations-ask-true.sparql");
+			String askTrueQuery = IOUtils.toString(is, "UTF-8");
+			xml = IOUtils.toString(sms.executeSparql(askTrueQuery,
+				new RDFFormat("XML", "application/xml", Charset.forName("UTF-8"), "xml", false, false)), "UTF-8");
+			Assert.assertTrue("XML looks correct", xml.contains("true"));
+
+			is = getClass().getClassLoader().getResourceAsStream("direct-annotations-ask-false.sparql");
+			String askFalseQuery = IOUtils.toString(is, "UTF-8");
+			xml = IOUtils.toString(sms.executeSparql(askFalseQuery,
+				new RDFFormat("XML", "application/xml", Charset.forName("UTF-8"), "xml", false, false)), "UTF-8");
+			Assert.assertTrue("XML looks correct", xml.contains("false"));
 		}
 		finally {
 			sms.close();
