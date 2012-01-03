@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.HashSet;
@@ -891,6 +892,17 @@ public class SemanticMetadataServiceImplTest
 			Assert.assertTrue("Construct contains triple 2",
 				model.contains(model.createResource(workflowURI.toString()), DCTerms.license, "GPL"));
 
+			is = getClass().getClassLoader().getResourceAsStream("direct-annotations-select.sparql");
+			String selectQuery = IOUtils.toString(is, "UTF-8");
+			String xml = IOUtils.toString(sms.executeSparql(selectQuery, new RDFFormat("XML", "application/xml",
+					Charset.forName("UTF-8"), "xml", false, false)), "UTF-8");
+			//FIXME make more in-depth XML validation
+			Assert.assertTrue("XML looks correct", xml.contains("Marco Roos"));
+
+			String json = IOUtils.toString(sms.executeSparql(selectQuery, new RDFFormat("JSON", "application/json",
+					Charset.forName("UTF-8"), "json", false, false)), "UTF-8");
+			//FIXME make more in-depth JSON validation
+			Assert.assertTrue("JSON looks correct", json.contains("Marco Roos"));
 		}
 		finally {
 			sms.close();

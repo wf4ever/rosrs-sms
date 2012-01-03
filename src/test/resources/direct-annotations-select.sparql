@@ -7,12 +7,12 @@ PREFIX dcterms: <http://purl.org/dc/terms/>
 PREFIX foaf: <http://xmlns.com/foaf/0.1/>
 PREFIX ao: <http://purl.org/ao/>
 
-PREFIX ro: ro: <http://purl.org/wf4ever/ro#>
+PREFIX ro: <http://purl.org/wf4ever/ro#>
 PREFIX ore: <http://www.openarchives.org/ore/terms/>
 
 SELECT ?resource 
 	?graph 
-	#?creator
+	?creator
 	?prop
 	?value
 	?author

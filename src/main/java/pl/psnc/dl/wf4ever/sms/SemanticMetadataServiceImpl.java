@@ -537,10 +537,10 @@ public class SemanticMetadataServiceImpl
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		QueryExecution qexec = QueryExecutionFactory.create(query, new NamedGraphDataset(graphset));
 		if ("application/json".equals(rdfFormat.getDefaultMIMEType())) {
-			ResultSetFormatter.outputAsJSON(qexec.execSelect());
+			ResultSetFormatter.outputAsJSON(out, qexec.execSelect());
 		}
 		else {
-			ResultSetFormatter.outputAsXML(qexec.execSelect());
+			ResultSetFormatter.outputAsXML(out, qexec.execSelect());
 		}
 		qexec.close();
 
@@ -553,10 +553,10 @@ public class SemanticMetadataServiceImpl
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		QueryExecution qexec = QueryExecutionFactory.create(query, new NamedGraphDataset(graphset));
 		if ("application/json".equals(rdfFormat.getDefaultMIMEType())) {
-			ResultSetFormatter.outputAsJSON(qexec.execAsk());
+			ResultSetFormatter.outputAsJSON(out, qexec.execAsk());
 		}
 		else {
-			ResultSetFormatter.outputAsXML(qexec.execAsk());
+			ResultSetFormatter.outputAsXML(out, qexec.execAsk());
 		}
 		qexec.close();
 
