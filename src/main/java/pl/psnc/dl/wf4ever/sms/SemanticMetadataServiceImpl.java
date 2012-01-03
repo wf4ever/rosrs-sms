@@ -52,6 +52,7 @@ import de.fuberlin.wiwiss.ng4j.NamedGraphSet;
 import de.fuberlin.wiwiss.ng4j.Quad;
 import de.fuberlin.wiwiss.ng4j.db.NamedGraphSetDB;
 import de.fuberlin.wiwiss.ng4j.impl.NamedGraphSetImpl;
+import de.fuberlin.wiwiss.ng4j.sparql.NamedGraphDataset;
 
 /**
  * @author piotrhol
@@ -169,8 +170,7 @@ public class SemanticMetadataServiceImpl
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService#createResearchObject(java
+	 * @see pl.psnc.dl.wf4ever.sms.SemanticMetadataService#createResearchObject(java
 	 * .net.URI)
 	 */
 	@Override
@@ -225,8 +225,7 @@ public class SemanticMetadataServiceImpl
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService#getManifest(java.net.URI,
+	 * @see pl.psnc.dl.wf4ever.sms.SemanticMetadataService#getManifest(java.net.URI,
 	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
@@ -239,8 +238,7 @@ public class SemanticMetadataServiceImpl
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService#addResource(java.net.URI,
+	 * @see pl.psnc.dl.wf4ever.sms.SemanticMetadataService#addResource(java.net.URI,
 	 * java.net.URI, pl.psnc.dl.wf4ever.dlibra.ResourceInfo)
 	 */
 	@Override
@@ -275,9 +273,8 @@ public class SemanticMetadataServiceImpl
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService#removeResource(java.net
-	 * .URI, java.net.URI)
+	 * @see pl.psnc.dl.wf4ever.sms.SemanticMetadataService#removeResource(java.net .URI,
+	 * java.net.URI)
 	 */
 	@Override
 	public void removeResource(URI roURI, URI resourceURI)
@@ -304,8 +301,7 @@ public class SemanticMetadataServiceImpl
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService#getResource(java.net.URI,
+	 * @see pl.psnc.dl.wf4ever.sms.SemanticMetadataService#getResource(java.net.URI,
 	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
@@ -335,8 +331,7 @@ public class SemanticMetadataServiceImpl
 	/*
 	 * (non-Javadoc)
 	 * 
-	 * @see
-	 * pl.psnc.dl.wf4ever.sms.SemanticMetadataService#getAnnotationBody(java
+	 * @see pl.psnc.dl.wf4ever.sms.SemanticMetadataService#getAnnotationBody(java
 	 * .net.URI, pl.psnc.dl.wf4ever.sms.SemanticMetadataService.Notation)
 	 */
 	@Override
@@ -493,7 +488,8 @@ public class SemanticMetadataServiceImpl
 
 	/**
 	 * 
-	 * @param roURI must end with /
+	 * @param roURI
+	 *            must end with /
 	 * @return
 	 */
 	private URI getManifestURI(URI roURI)
@@ -513,6 +509,58 @@ public class SemanticMetadataServiceImpl
 	public boolean containsNamedGraph(URI graphURI)
 	{
 		return graphset.containsGraph(graphURI.toString());
+	}
+
+
+	@Override
+	public ByteArrayOutputStream executeSparql(String queryS, RDFFormat rdfFormat)
+	{
+		Query query = QueryFactory.create(queryS);
+		ByteArrayOutputStream out = null;
+		try {
+			switch (query.getQueryType()) {
+				case Query.QueryTypeSelect:
+					break;
+				case Query.QueryTypeConstruct:
+					out = processConstructQuery(query, rdfFormat);
+					break;
+				case Query.QueryTypeDescribe:
+					out = processDescribeQuery(query, rdfFormat);
+					break;
+				case Query.QueryTypeAsk:
+					break;
+				default:
+					out = null;
+			}
+		}
+		finally {
+			graphset.close();
+		}
+		return out;
+	}
+
+
+	private ByteArrayOutputStream processConstructQuery(Query query, RDFFormat rdfFormat)
+	{
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		QueryExecution qexec = QueryExecutionFactory.create(query, new NamedGraphDataset(graphset));
+		Model resultModel = qexec.execConstruct();
+		qexec.close();
+
+		resultModel.write(out, rdfFormat.getName().toUpperCase());
+		return out;
+	}
+
+
+	private ByteArrayOutputStream processDescribeQuery(Query query, RDFFormat rdfFormat)
+	{
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		QueryExecution qexec = QueryExecutionFactory.create(query, new NamedGraphDataset(graphset));
+		Model resultModel = qexec.execDescribe();
+		qexec.close();
+
+		resultModel.write(out, rdfFormat.getName().toUpperCase());
+		return out;
 	}
 
 }

@@ -5,6 +5,8 @@ package pl.psnc.dl.wf4ever.sms;
 
 import static org.junit.Assert.fail;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -56,7 +58,7 @@ import de.fuberlin.wiwiss.ng4j.impl.NamedGraphSetImpl;
 
 /**
  * @author piotrhol
- *
+ * 
  */
 public class SemanticMetadataServiceImplTest
 {
@@ -179,11 +181,14 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#SemanticMetadataServiceImpl(pl.psnc.dl.wf4ever.dlibra.UserProfile)}.
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#SemanticMetadataServiceImpl(pl.psnc.dl.wf4ever.dlibra.UserProfile)}
+	 * .
+	 * 
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public final void testSemanticMetadataServiceImpl()
@@ -224,11 +229,14 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#createResearchObject(java.net.URI)}.
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#createResearchObject(java.net.URI)}
+	 * .
+	 * 
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public final void testCreateResearchObject()
@@ -252,11 +260,14 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#updateManifest(java.net.URI, java.io.InputStream, org.openrdf.rio.RDFFormat)}.
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#updateManifest(java.net.URI, java.io.InputStream, org.openrdf.rio.RDFFormat)}
+	 * .
+	 * 
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public final void testUpdateManifest()
@@ -330,11 +341,14 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#removeResearchObject(java.net.URI, java.net.URI)}.
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#removeResearchObject(java.net.URI, java.net.URI)}
+	 * .
+	 * 
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public final void testRemoveManifest()
@@ -367,11 +381,14 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getManifest(java.net.URI, org.openrdf.rio.RDFFormat)}.
-	 * @throws IOException 
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws ClassNotFoundException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getManifest(java.net.URI, org.openrdf.rio.RDFFormat)}
+	 * .
+	 * 
+	 * @throws IOException
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public final void testGetManifest()
@@ -424,11 +441,14 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getManifest(java.net.URI, org.openrdf.rio.RDFFormat)}.
-	 * @throws IOException 
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws ClassNotFoundException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getManifest(java.net.URI, org.openrdf.rio.RDFFormat)}
+	 * .
+	 * 
+	 * @throws IOException
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public final void testGetManifestWithAnnotationBodies()
@@ -461,11 +481,14 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#addResource(java.net.URI, java.net.URI, pl.psnc.dl.wf4ever.dlibra.ResourceInfo)}.
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#addResource(java.net.URI, java.net.URI, pl.psnc.dl.wf4ever.dlibra.ResourceInfo)}
+	 * .
+	 * 
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public final void testAddResource()
@@ -486,11 +509,14 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#removeResource(java.net.URI, java.net.URI)}.
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#removeResource(java.net.URI, java.net.URI)}
+	 * .
+	 * 
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public final void testRemoveResource()
@@ -525,12 +551,15 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getResource(java.net.URI, org.openrdf.rio.RDFFormat)}.
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
-	 * @throws URISyntaxException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getResource(java.net.URI, org.openrdf.rio.RDFFormat)}
+	 * .
+	 * 
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
+	 * @throws URISyntaxException
 	 */
 	@Test
 	public final void testGetResource()
@@ -562,8 +591,8 @@ public class SemanticMetadataServiceImplTest
 
 	/**
 	 * @param model
-	 * @param resourceInfo 
-	 * @param resourceURI 
+	 * @param resourceInfo
+	 * @param resourceURI
 	 * @throws URISyntaxException
 	 */
 	private void verifyResource(OntModel model, URI resourceURI, ResourceInfo resourceInfo)
@@ -608,11 +637,14 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getNamedGraph(java.net.URI, org.openrdf.rio.RDFFormat)}.
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#getNamedGraph(java.net.URI, org.openrdf.rio.RDFFormat)}
+	 * .
+	 * 
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public final void testGetNamedGraph()
@@ -655,11 +687,14 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#findResearchObjects(java.net.URI)}.
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#findResearchObjects(java.net.URI)}
+	 * .
+	 * 
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public final void testFindManifests()
@@ -690,11 +725,14 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#isRoFolder(java.net.URI)}.
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#isRoFolder(java.net.URI)}
+	 * .
+	 * 
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public final void testIsRoFolder()
@@ -723,11 +761,14 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#addNamedGraph(java.net.URI, java.io.InputStream, org.openrdf.rio.RDFFormat)}.
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#addNamedGraph(java.net.URI, java.io.InputStream, org.openrdf.rio.RDFFormat)}
+	 * .
+	 * 
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public final void testAddNamedGraph()
@@ -748,11 +789,14 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#isROMetadataNamedGraph(java.net.URI)}.
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#isROMetadataNamedGraph(java.net.URI)}
+	 * .
+	 * 
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public final void testIsROMetadataNamedGraph()
@@ -789,11 +833,14 @@ public class SemanticMetadataServiceImplTest
 
 
 	/**
-	 * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#removeNamedGraph(java.net.URI, java.net.URI)}.
-	 * @throws SQLException 
-	 * @throws NamingException 
-	 * @throws IOException 
-	 * @throws ClassNotFoundException 
+	 * Test method for
+	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#removeNamedGraph(java.net.URI, java.net.URI)}
+	 * .
+	 * 
+	 * @throws SQLException
+	 * @throws NamingException
+	 * @throws IOException
+	 * @throws ClassNotFoundException
 	 */
 	@Test
 	public final void testRemoveNamedGraph()
@@ -810,6 +857,34 @@ public class SemanticMetadataServiceImplTest
 			sms.removeNamedGraph(researchObjectURI, annotationBody1URI);
 			Assert.assertNull("A deleted named graph no longer exists",
 				sms.getNamedGraph(annotationBody1URI, RDFFormat.RDFXML));
+		}
+		finally {
+			sms.close();
+		}
+	}
+
+
+	@Test
+	public final void testExecuteSparql()
+		throws ClassNotFoundException, IOException, NamingException, SQLException
+	{
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+		try {
+			InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
+			sms.updateManifest(manifestURI, is, RDFFormat.TURTLE);
+
+			is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
+			sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
+
+			String describeQuery = String.format("DESCRIBE <%s>", workflowURI.toString());
+			ByteArrayOutputStream out = sms.executeSparql(describeQuery, RDFFormat.RDFXML);
+			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+			model.read(new ByteArrayInputStream(out.toByteArray()), null, "RDF/XML");
+			Individual resource = model.getIndividual(workflowURI.toString());
+			Assert.assertNotNull("Resource cannot be null", resource);
+			Assert.assertTrue(String.format("Resource %s must be a ro:Resource", workflowURI),
+				resource.hasRDFType(RO_NAMESPACE + "Resource"));
+
 		}
 		finally {
 			sms.close();
