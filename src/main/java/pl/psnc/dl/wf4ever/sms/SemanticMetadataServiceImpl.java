@@ -13,9 +13,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Calendar;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -29,6 +27,8 @@ import org.openrdf.rio.RDFFormat;
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.ontology.Individual;
@@ -610,9 +610,9 @@ public class SemanticMetadataServiceImpl
 
 
 	@Override
-	public Map<URI, Object> getAllAttributes(URI subjectURI)
+	public Multimap<URI, Object> getAllAttributes(URI subjectURI)
 	{
-		Map<URI, Object> attributes = new HashMap<>();
+		Multimap<URI, Object> attributes = HashMultimap.<URI, Object> create();
 		// This could be an inference model but it slows down the lookup process and 
 		// generates super-attributes
 		OntModel model = createOntModelForAllNamedGraphs(OntModelSpec.OWL_MEM);

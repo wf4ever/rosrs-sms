@@ -5,12 +5,13 @@ package pl.psnc.dl.wf4ever.sms;
 
 import java.io.InputStream;
 import java.net.URI;
-import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.rio.RDFFormat;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
+
+import com.google.common.collect.Multimap;
 
 /**
  * @author piotrhol
@@ -216,7 +217,7 @@ public interface SemanticMetadataService
 	 * @return map of property URI with either a resource URI or a literal value (i.e.
 	 *         String or Calendar)
 	 */
-	Map<URI, Object> getAllAttributes(URI subjectURI);
+	Multimap<URI, Object> getAllAttributes(URI subjectURI);
 
 
 	/**

@@ -13,7 +13,6 @@ import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -33,6 +32,7 @@ import org.openrdf.rio.RDFFormat;
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 
+import com.google.common.collect.Multimap;
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
 import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
 import com.hp.hpl.jena.graph.Node;
@@ -935,18 +935,20 @@ public class SemanticMetadataServiceImplTest
 			is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
 			sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
 
-			Map<URI, Object> atts = sms.getAllAttributes(workflowURI);
-			Assert.assertEquals(5, atts.size());
+			Multimap<URI, Object> atts = sms.getAllAttributes(workflowURI);
+			Assert.assertEquals(6, atts.size());
 			Assert.assertTrue("Attributes contain type",
 				atts.containsValue(URI.create("http://purl.org/wf4ever/ro#Resource")));
-			Assert.assertTrue("Attributes contain created",
-				atts.get(URI.create(DCTerms.created.toString())) instanceof Calendar);
+			Assert.assertTrue("Attributes contain created", atts.get(URI.create(DCTerms.created.toString())).iterator()
+					.next() instanceof Calendar);
 			Assert.assertTrue("Attributes contain title",
-				atts.get(URI.create(DCTerms.title.toString())).equals("A test"));
+				atts.get(URI.create(DCTerms.title.toString())).contains("A test"));
+			Assert.assertTrue("Attributes contain title2",
+				atts.get(URI.create(DCTerms.title.toString())).contains("An alternative title"));
 			Assert.assertTrue("Attributes contain licence",
-				atts.get(URI.create(DCTerms.license.toString())).equals("GPL"));
+				atts.get(URI.create(DCTerms.license.toString())).contains("GPL"));
 			Assert.assertTrue("Attributes contain creator",
-				atts.get(URI.create(DCTerms.creator.toString())).equals("Stian Soiland-Reyes"));
+				atts.get(URI.create(DCTerms.creator.toString())).contains("Stian Soiland-Reyes"));
 		}
 		finally {
 			sms.close();
