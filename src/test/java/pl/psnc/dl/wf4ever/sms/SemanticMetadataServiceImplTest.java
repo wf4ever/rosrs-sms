@@ -13,6 +13,7 @@ import java.nio.charset.Charset;
 import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -915,6 +916,37 @@ public class SemanticMetadataServiceImplTest
 			xml = IOUtils.toString(sms.executeSparql(askFalseQuery,
 				new RDFFormat("XML", "application/xml", Charset.forName("UTF-8"), "xml", false, false)), "UTF-8");
 			Assert.assertTrue("XML looks correct", xml.contains("false"));
+		}
+		finally {
+			sms.close();
+		}
+	}
+
+
+	@Test
+	public final void testGetAllAttributes()
+		throws ClassNotFoundException, IOException, NamingException, SQLException
+	{
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+		try {
+			InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
+			sms.updateManifest(manifestURI, is, RDFFormat.TURTLE);
+
+			is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
+			sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
+
+			Map<URI, Object> atts = sms.getAllAttributes(workflowURI);
+			Assert.assertEquals(5, atts.size());
+			Assert.assertTrue("Attributes contain type",
+				atts.containsValue(URI.create("http://purl.org/wf4ever/ro#Resource")));
+			Assert.assertTrue("Attributes contain created",
+				atts.get(URI.create(DCTerms.created.toString())) instanceof Calendar);
+			Assert.assertTrue("Attributes contain title",
+				atts.get(URI.create(DCTerms.title.toString())).equals("A test"));
+			Assert.assertTrue("Attributes contain licence",
+				atts.get(URI.create(DCTerms.license.toString())).equals("GPL"));
+			Assert.assertTrue("Attributes contain creator",
+				atts.get(URI.create(DCTerms.creator.toString())).equals("Stian Soiland-Reyes"));
 		}
 		finally {
 			sms.close();

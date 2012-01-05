@@ -5,6 +5,7 @@ package pl.psnc.dl.wf4ever.sms;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.util.Map;
 import java.util.Set;
 
 import org.openrdf.rio.RDFFormat;
@@ -201,6 +202,21 @@ public interface SemanticMetadataService
 	 * @return
 	 */
 	InputStream executeSparql(String query, RDFFormat rdfFormat);
+
+
+	/**
+	 * Returns a flat list of all attributes (facts and annotations) having a given
+	 * resource as a subject. This searches all named graphs, in all ROs.
+	 * 
+	 * If the property is dcterms:creator and the object is a foaf:Person, instead of the
+	 * Person resource, its foaf:name is put.
+	 * 
+	 * @param subjectURI
+	 *            URI of the resource
+	 * @return map of property URI with either a resource URI or a literal value (i.e.
+	 *         String or Calendar)
+	 */
+	Map<URI, Object> getAllAttributes(URI subjectURI);
 
 
 	/**

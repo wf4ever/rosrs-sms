@@ -19,7 +19,9 @@
     dct:created "2011-12-02T15:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Person; foaf:name "Stian Soiland-Reyes" ] .
 
-<a_workflow.t2flow> a ro:Resource .
+<a_workflow.t2flow> a ro:Resource ;
+    dct:created "2011-12-02T15:02:10Z"^^xsd:dateTime ;
+    dct:creator [ a foaf:Person; foaf:name "Stian Soiland-Reyes" ] .
 
 :proxy1 a ore:Proxy ;
     ore:proxyFor <a_workflow.t2flow> ;

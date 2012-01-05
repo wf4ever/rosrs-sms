@@ -8,11 +8,14 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -26,6 +29,7 @@ import org.openrdf.rio.RDFFormat;
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 
+import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
@@ -44,6 +48,7 @@ import com.hp.hpl.jena.rdf.model.NodeIterator;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.Resource;
+import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
 import com.hp.hpl.jena.shared.PrefixMapping;
 import com.hp.hpl.jena.vocabulary.DCTerms;
@@ -63,7 +68,6 @@ public class SemanticMetadataServiceImpl
 	implements SemanticMetadataService
 {
 
-	@SuppressWarnings("unused")
 	private static final Logger log = Logger.getLogger(SemanticMetadataServiceImpl.class);
 
 	private static final String ORE_NAMESPACE = "http://www.openarchives.org/ore/terms/";
@@ -96,6 +100,8 @@ public class SemanticMetadataServiceImpl
 	private static final OntClass roFolderClass = defaultModel.getOntClass(RO_NAMESPACE + "Folder");
 
 	private static final OntClass foafAgentClass = defaultModel.getOntClass(FOAF_NAMESPACE + "Agent");
+
+	private static final OntClass foafPersonClass = defaultModel.getOntClass(FOAF_NAMESPACE + "Person");
 
 	private static final Property describes = defaultModel.getProperty(ORE_NAMESPACE + "describes");
 
@@ -480,7 +486,13 @@ public class SemanticMetadataServiceImpl
 
 	private OntModel createOntModelForAllNamedGraphs()
 	{
-		OntModel ontModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
+		return createOntModelForAllNamedGraphs(OntModelSpec.OWL_MEM);
+	}
+
+
+	private OntModel createOntModelForAllNamedGraphs(OntModelSpec spec)
+	{
+		OntModel ontModel = ModelFactory.createOntologyModel(spec,
 			graphset.asJenaModel(DEFAULT_NAMED_GRAPH_URI.toString()));
 		ontModel.addSubModel(defaultModel);
 		return ontModel;
@@ -596,4 +608,50 @@ public class SemanticMetadataServiceImpl
 		return new ByteArrayInputStream(out.toByteArray());
 	}
 
+
+	@Override
+	public Map<URI, Object> getAllAttributes(URI subjectURI)
+	{
+		Map<URI, Object> attributes = new HashMap<>();
+		// This could be an inference model but it slows down the lookup process and 
+		// generates super-attributes
+		OntModel model = createOntModelForAllNamedGraphs(OntModelSpec.OWL_MEM);
+		Resource subject = model.getResource(subjectURI.toString());
+		if (subject == null)
+			return attributes;
+		StmtIterator it = model.listStatements(subject, null, (RDFNode) null);
+		while (it.hasNext()) {
+			Statement s = it.next();
+			try {
+				URI propURI = new URI(s.getPredicate().getURI());
+				Object object;
+				if (s.getObject().isResource()) {
+					// Need to check both because the model has no inference
+					if (s.getObject().as(Individual.class).hasRDFType(foafAgentClass)
+							|| s.getObject().as(Individual.class).hasRDFType(foafPersonClass)) {
+						object = s.getObject().asResource().getProperty(foafName).getLiteral().getValue();
+					}
+					else {
+						if (s.getObject().isURIResource()) {
+							object = new URI(s.getObject().asResource().getURI());
+						}
+						else {
+							continue;
+						}
+					}
+				}
+				else {
+					object = s.getObject().asLiteral().getValue();
+				}
+				if (object instanceof XSDDateTime) {
+					object = ((XSDDateTime) object).asCalendar();
+				}
+				attributes.put(propURI, object);
+			}
+			catch (URISyntaxException e) {
+				log.error(e);
+			}
+		}
+		return attributes;
+	}
 }
