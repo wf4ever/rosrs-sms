@@ -42,6 +42,7 @@ import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
+import com.hp.hpl.jena.query.Syntax;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.NodeIterator;
@@ -69,6 +70,8 @@ public class SemanticMetadataServiceImpl
 {
 
 	private static final Logger log = Logger.getLogger(SemanticMetadataServiceImpl.class);
+
+	private static final Syntax sparqlSyntax = Syntax.syntaxARQ;
 
 	private static final String ORE_NAMESPACE = "http://www.openarchives.org/ore/terms/";
 
@@ -209,23 +212,26 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public void updateManifest(URI manifestURI, InputStream is, RDFFormat rdfFormat)
 	{
-		//TODO validate the manifest?
+		// TODO validate the manifest?
 		addNamedGraph(manifestURI, is, rdfFormat);
 
 		//
-		//		// leave only one dcterms:created - the earliest
-		//		Individual manifest = manifestModel.getIndividual(manifestURI.toString());
-		//		NodeIterator it = manifestModel.listObjectsOfProperty(manifest, DCTerms.created);
-		//		Calendar earliest = null;
-		//		while (it.hasNext()) {
-		//			Calendar created = ((XSDDateTime) it.next().asLiteral().getValue()).asCalendar();
-		//			if (earliest == null || created.before(earliest))
-		//				earliest = created;
-		//		}
-		//		if (earliest != null) {
-		//			manifestModel.removeAll(manifest, DCTerms.created, null);
-		//			manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(earliest));
-		//		}
+		// // leave only one dcterms:created - the earliest
+		// Individual manifest = manifestModel.getIndividual(manifestURI.toString());
+		// NodeIterator it = manifestModel.listObjectsOfProperty(manifest,
+		// DCTerms.created);
+		// Calendar earliest = null;
+		// while (it.hasNext()) {
+		// Calendar created = ((XSDDateTime)
+		// it.next().asLiteral().getValue()).asCalendar();
+		// if (earliest == null || created.before(earliest))
+		// earliest = created;
+		// }
+		// if (earliest != null) {
+		// manifestModel.removeAll(manifest, DCTerms.created, null);
+		// manifestModel.add(manifest, DCTerms.created,
+		// manifestModel.createTypedLiteral(earliest));
+		// }
 	}
 
 
@@ -475,7 +481,7 @@ public class SemanticMetadataServiceImpl
 		NodeIterator it = manifestModel.listObjectsOfProperty(body);
 		while (it.hasNext()) {
 			RDFNode annotationBodyRef = it.next();
-			//TODO make sure that this named graph is internal
+			// TODO make sure that this named graph is internal
 			if (graphset.containsGraph(annotationBodyRef.asResource().getURI())) {
 				removeNamedGraph(researchObjectURI, URI.create(annotationBodyRef.asResource().getURI()));
 			}
@@ -532,7 +538,7 @@ public class SemanticMetadataServiceImpl
 			throw new NullPointerException("Query cannot be null");
 		Query query = null;
 		try {
-			query = QueryFactory.create(queryS);
+			query = QueryFactory.create(queryS, sparqlSyntax);
 		}
 		catch (Exception e) {
 			throw new IllegalArgumentException("Wrong query syntax: " + e.getMessage());
@@ -613,7 +619,7 @@ public class SemanticMetadataServiceImpl
 	public Multimap<URI, Object> getAllAttributes(URI subjectURI)
 	{
 		Multimap<URI, Object> attributes = HashMultimap.<URI, Object> create();
-		// This could be an inference model but it slows down the lookup process and 
+		// This could be an inference model but it slows down the lookup process and
 		// generates super-attributes
 		OntModel model = createOntModelForAllNamedGraphs(OntModelSpec.OWL_MEM);
 		Resource subject = model.getResource(subjectURI.toString());
