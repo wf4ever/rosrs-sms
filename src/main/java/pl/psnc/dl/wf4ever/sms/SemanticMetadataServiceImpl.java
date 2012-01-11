@@ -92,7 +92,7 @@ public class SemanticMetadataServiceImpl
 	private final NamedGraphSet graphset;
 
 	private static final OntModel defaultModel = ModelFactory.createOntologyModel(
-		new OntModelSpec(OntModelSpec.OWL_MEM), ModelFactory.createDefaultModel().read(RO_NAMESPACE, "TTL"));
+		new OntModelSpec(OntModelSpec.OWL_MEM), ModelFactory.createDefaultModel().read(RO_NAMESPACE));
 
 	private static final OntClass researchObjectClass = defaultModel.getOntClass(RO_NAMESPACE + "ResearchObject");
 
