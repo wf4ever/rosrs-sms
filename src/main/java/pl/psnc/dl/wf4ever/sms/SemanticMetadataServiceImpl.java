@@ -532,7 +532,7 @@ public class SemanticMetadataServiceImpl
 
 
 	@Override
-	public InputStream executeSparql(String queryS, RDFFormat rdfFormat)
+	public QueryResult executeSparql(String queryS, RDFFormat rdfFormat)
 	{
 		if (queryS == null)
 			throw new NullPointerException("Query cannot be null");
@@ -559,59 +559,81 @@ public class SemanticMetadataServiceImpl
 	}
 
 
-	private InputStream processSelectQuery(Query query, RDFFormat rdfFormat)
+	private QueryResult processSelectQuery(Query query, RDFFormat rdfFormat)
 	{
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		RDFFormat outputFormat;
 		QueryExecution qexec = QueryExecutionFactory.create(query, new NamedGraphDataset(graphset));
-		if ("application/json".equals(rdfFormat.getDefaultMIMEType())) {
+		if (SemanticMetadataService.SPARQL_JSON.equals(rdfFormat)) {
+			outputFormat = SemanticMetadataService.SPARQL_JSON;
 			ResultSetFormatter.outputAsJSON(out, qexec.execSelect());
 		}
 		else {
+			outputFormat = SemanticMetadataService.SPARQL_XML;
 			ResultSetFormatter.outputAsXML(out, qexec.execSelect());
 		}
 		qexec.close();
 
-		return new ByteArrayInputStream(out.toByteArray());
+		return new QueryResult(new ByteArrayInputStream(out.toByteArray()), outputFormat);
 	}
 
 
-	private InputStream processAskQuery(Query query, RDFFormat rdfFormat)
+	private QueryResult processAskQuery(Query query, RDFFormat rdfFormat)
 	{
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		RDFFormat outputFormat;
 		QueryExecution qexec = QueryExecutionFactory.create(query, new NamedGraphDataset(graphset));
-		if ("application/json".equals(rdfFormat.getDefaultMIMEType())) {
+		if ("application/sparql-results+json".equals(rdfFormat.getDefaultMIMEType())) {
+			outputFormat = SemanticMetadataService.SPARQL_JSON;
 			ResultSetFormatter.outputAsJSON(out, qexec.execAsk());
 		}
 		else {
+			outputFormat = SemanticMetadataService.SPARQL_XML;
 			ResultSetFormatter.outputAsXML(out, qexec.execAsk());
 		}
 		qexec.close();
 
-		return new ByteArrayInputStream(out.toByteArray());
+		return new QueryResult(new ByteArrayInputStream(out.toByteArray()), outputFormat);
 	}
 
 
-	private InputStream processConstructQuery(Query query, RDFFormat rdfFormat)
+	private QueryResult processConstructQuery(Query query, RDFFormat rdfFormat)
 	{
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		QueryExecution qexec = QueryExecutionFactory.create(query, new NamedGraphDataset(graphset));
 		Model resultModel = qexec.execConstruct();
 		qexec.close();
 
-		resultModel.write(out, rdfFormat.getName().toUpperCase());
-		return new ByteArrayInputStream(out.toByteArray());
+		RDFFormat outputFormat;
+		if (RDFFormat.values().contains(rdfFormat)) {
+			outputFormat = rdfFormat;
+		}
+		else {
+			outputFormat = RDFFormat.RDFXML;
+		}
+
+		resultModel.write(out, outputFormat.getName().toUpperCase());
+		return new QueryResult(new ByteArrayInputStream(out.toByteArray()), outputFormat);
 	}
 
 
-	private InputStream processDescribeQuery(Query query, RDFFormat rdfFormat)
+	private QueryResult processDescribeQuery(Query query, RDFFormat rdfFormat)
 	{
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		QueryExecution qexec = QueryExecutionFactory.create(query, new NamedGraphDataset(graphset));
 		Model resultModel = qexec.execDescribe();
 		qexec.close();
 
-		resultModel.write(out, rdfFormat.getName().toUpperCase());
-		return new ByteArrayInputStream(out.toByteArray());
+		RDFFormat outputFormat;
+		if (RDFFormat.values().contains(rdfFormat)) {
+			outputFormat = rdfFormat;
+		}
+		else {
+			outputFormat = RDFFormat.RDFXML;
+		}
+
+		resultModel.write(out, outputFormat.getName().toUpperCase());
+		return new QueryResult(new ByteArrayInputStream(out.toByteArray()), outputFormat);
 	}
 
 

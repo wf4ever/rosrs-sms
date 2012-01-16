@@ -5,6 +5,7 @@ package pl.psnc.dl.wf4ever.sms;
 
 import java.io.InputStream;
 import java.net.URI;
+import java.nio.charset.Charset;
 import java.util.Set;
 
 import org.openrdf.rio.RDFFormat;
@@ -19,6 +20,13 @@ import com.google.common.collect.Multimap;
  */
 public interface SemanticMetadataService
 {
+
+	public static final RDFFormat SPARQL_XML = new RDFFormat("XML", "application/sparql-results+xml",
+			Charset.forName("UTF-8"), "xml", false, false);
+
+	public static final RDFFormat SPARQL_JSON = new RDFFormat("JSON", "application/sparql-results+json",
+			Charset.forName("UTF-8"), "json", false, false);
+
 
 	/**
 	 * Create a new ro:ResearchObject and ro:Manifest.
@@ -172,7 +180,7 @@ public interface SemanticMetadataService
 	void removeNamedGraph(URI researchObjectURI, URI graphURI);
 
 
-	//TODO limit results depending on the user
+	// TODO limit results depending on the user
 	/**
 	 * List ro:ResearchObject resources that start with the given URI.
 	 * 
@@ -202,7 +210,7 @@ public interface SemanticMetadataService
 	 * @param rdfFormat
 	 * @return
 	 */
-	InputStream executeSparql(String query, RDFFormat rdfFormat);
+	QueryResult executeSparql(String query, RDFFormat rdfFormat);
 
 
 	/**

@@ -878,7 +878,8 @@ public class SemanticMetadataServiceImplTest
 
 			String describeQuery = String.format("DESCRIBE <%s>", workflowURI.toString());
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-			model.read(sms.executeSparql(describeQuery, RDFFormat.RDFXML), null, "RDF/XML");
+			QueryResult res = sms.executeSparql(describeQuery, RDFFormat.RDFXML);
+			model.read(res.getInputStream(), null, "RDF/XML");
 			Individual resource = model.getIndividual(workflowURI.toString());
 			Assert.assertNotNull("Resource cannot be null", resource);
 			Assert.assertTrue(String.format("Resource %s must be a ro:Resource", workflowURI),
@@ -887,7 +888,7 @@ public class SemanticMetadataServiceImplTest
 			is = getClass().getClassLoader().getResourceAsStream("direct-annotations-construct.sparql");
 			String constructQuery = IOUtils.toString(is, "UTF-8");
 			model.removeAll();
-			model.read(sms.executeSparql(constructQuery, RDFFormat.RDFXML), null, "RDF/XML");
+			model.read(sms.executeSparql(constructQuery, RDFFormat.RDFXML).getInputStream(), null, "RDF/XML");
 			Assert.assertTrue("Construct contains triple 1",
 				model.contains(model.createResource(workflowURI.toString()), DCTerms.title, "A test"));
 			Assert.assertTrue("Construct contains triple 2",
@@ -895,27 +896,37 @@ public class SemanticMetadataServiceImplTest
 
 			is = getClass().getClassLoader().getResourceAsStream("direct-annotations-select.sparql");
 			String selectQuery = IOUtils.toString(is, "UTF-8");
-			String xml = IOUtils.toString(sms.executeSparql(selectQuery, new RDFFormat("XML", "application/xml",
-					Charset.forName("UTF-8"), "xml", false, false)), "UTF-8");
-			//FIXME make more in-depth XML validation
+			String xml = IOUtils.toString(sms.executeSparql(selectQuery, SemanticMetadataService.SPARQL_XML)
+					.getInputStream(), "UTF-8");
+			// FIXME make more in-depth XML validation
 			Assert.assertTrue("XML looks correct", xml.contains("Marco Roos"));
 
-			String json = IOUtils.toString(sms.executeSparql(selectQuery, new RDFFormat("JSON", "application/json",
-					Charset.forName("UTF-8"), "json", false, false)), "UTF-8");
-			//FIXME make more in-depth JSON validation
+			String json = IOUtils.toString(sms.executeSparql(selectQuery, SemanticMetadataService.SPARQL_JSON)
+					.getInputStream(), "UTF-8");
+			// FIXME make more in-depth JSON validation
 			Assert.assertTrue("JSON looks correct", json.contains("Marco Roos"));
 
 			is = getClass().getClassLoader().getResourceAsStream("direct-annotations-ask-true.sparql");
 			String askTrueQuery = IOUtils.toString(is, "UTF-8");
-			xml = IOUtils.toString(sms.executeSparql(askTrueQuery,
-				new RDFFormat("XML", "application/xml", Charset.forName("UTF-8"), "xml", false, false)), "UTF-8");
+			xml = IOUtils.toString(
+				sms.executeSparql(askTrueQuery, SemanticMetadataService.SPARQL_XML).getInputStream(), "UTF-8");
 			Assert.assertTrue("XML looks correct", xml.contains("true"));
 
 			is = getClass().getClassLoader().getResourceAsStream("direct-annotations-ask-false.sparql");
 			String askFalseQuery = IOUtils.toString(is, "UTF-8");
-			xml = IOUtils.toString(sms.executeSparql(askFalseQuery,
-				new RDFFormat("XML", "application/xml", Charset.forName("UTF-8"), "xml", false, false)), "UTF-8");
+			xml = IOUtils.toString(sms.executeSparql(askFalseQuery, SemanticMetadataService.SPARQL_XML)
+					.getInputStream(), "UTF-8");
 			Assert.assertTrue("XML looks correct", xml.contains("false"));
+
+			RDFFormat jpeg = new RDFFormat("JPEG", "image/jpeg", Charset.forName("UTF-8"), "jpeg", false, false);
+			res = sms.executeSparql(describeQuery, jpeg);
+			Assert.assertEquals("RDF/XML is the default format", RDFFormat.RDFXML, res.getFormat());
+			res = sms.executeSparql(constructQuery, jpeg);
+			Assert.assertEquals("RDF/XML is the default format", RDFFormat.RDFXML, res.getFormat());
+			res = sms.executeSparql(selectQuery, jpeg);
+			Assert.assertEquals("SPARQL XML is the default format", SemanticMetadataService.SPARQL_XML, res.getFormat());
+			res = sms.executeSparql(askTrueQuery, jpeg);
+			Assert.assertEquals("SPARQL XML is the default format", SemanticMetadataService.SPARQL_XML, res.getFormat());
 		}
 		finally {
 			sms.close();
