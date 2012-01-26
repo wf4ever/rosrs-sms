@@ -12,7 +12,7 @@ import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
@@ -389,7 +389,8 @@ public class SemanticMetadataServiceImpl
 		}
 		URI manifestURI = getManifestURI(researchObjectURI.normalize());
 
-		List<URI> namedGraphsURIs = Arrays.asList(manifestURI);
+		List<URI> namedGraphsURIs = new ArrayList<>();
+		namedGraphsURIs.add(manifestURI);
 		OntModel annotationModel = createOntModelForNamedGraph(manifestURI);
 		NodeIterator it = annotationModel.listObjectsOfProperty(body);
 		while (it.hasNext()) {
