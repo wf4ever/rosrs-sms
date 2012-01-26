@@ -12,8 +12,10 @@ import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -368,6 +370,44 @@ public class SemanticMetadataServiceImpl
 	}
 
 
+	@Override
+	public InputStream getNamedGraphWithRelativeURIs(URI namedGraphURI, URI researchObjectURI, RDFFormat rdfFormat)
+	{
+		if (rdfFormat != RDFFormat.RDFXML) {
+			throw new RuntimeException("Format " + rdfFormat + " is not supported");
+		}
+		namedGraphURI = namedGraphURI.normalize();
+		if (!graphset.containsGraph(namedGraphURI.toString())) {
+			return null;
+		}
+		NamedGraphSet tmpGraphSet = new NamedGraphSetImpl();
+		if (rdfFormat.supportsContexts()) {
+			addGraphsRecursively(tmpGraphSet, namedGraphURI);
+		}
+		else {
+			tmpGraphSet.addGraph(graphset.getGraph(namedGraphURI.toString()));
+		}
+		URI manifestURI = getManifestURI(researchObjectURI.normalize());
+
+		List<URI> namedGraphsURIs = Arrays.asList(manifestURI);
+		OntModel annotationModel = createOntModelForNamedGraph(manifestURI);
+		NodeIterator it = annotationModel.listObjectsOfProperty(body);
+		while (it.hasNext()) {
+			RDFNode annotationBodyRef = it.next();
+			namedGraphsURIs.add(URI.create(annotationBodyRef.asResource().getURI()));
+		}
+
+		RO_RDFXMLWriter writer = new RO_RDFXMLWriter();
+		writer.setResearchObjectURI(researchObjectURI);
+		writer.setBaseURI(namedGraphURI);
+		writer.setNamedGraphs(namedGraphsURIs);
+
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		writer.write(tmpGraphSet.asJenaModel(namedGraphURI.toString()), out, null);
+		return new ByteArrayInputStream(out.toByteArray());
+	}
+
+
 	private void addGraphsRecursively(NamedGraphSet tmpGraphSet, URI namedGraphURI)
 	{
 		tmpGraphSet.addGraph(graphset.getGraph(namedGraphURI.toString()));
@@ -682,4 +722,5 @@ public class SemanticMetadataServiceImpl
 		}
 		return attributes;
 	}
+
 }

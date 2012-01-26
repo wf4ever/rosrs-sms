@@ -170,6 +170,19 @@ public interface SemanticMetadataService
 
 
 	/**
+	 * Get a portable named graph. The URIs will be relativized against the RO URI. All
+	 * references to other named graphs within the RO will have a file extension appended.
+	 * 
+	 * @param graphURI
+	 * @param rdfFormat
+	 * @param researchObjectURI
+	 * @param fileExtension
+	 * @return
+	 */
+	InputStream getNamedGraphWithRelativeURIs(URI graphURI, URI researchObjectURI, RDFFormat rdfFormat);
+
+
+	/**
 	 * Delete a named graph from the quadstore.
 	 * 
 	 * @param roURI

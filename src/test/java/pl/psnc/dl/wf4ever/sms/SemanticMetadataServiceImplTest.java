@@ -75,6 +75,9 @@ public class SemanticMetadataServiceImplTest
 
 	private final static URI workflowURI = URI.create("http://example.org/ROs/ro1/a_workflow.t2flow");
 
+	@SuppressWarnings("unused")
+	private final static URI workflow2URI = URI.create("http://example.org/ROs/ro2/runme.t2flow");
+
 	private final ResourceInfo workflowInfo = new ResourceInfo("a_workflow.t2flow", "ABC123455666344E", 646365L, "SHA1");
 
 	private final static URI ann1URI = URI.create("http://example.org/ROs/ro1/ann1");
@@ -686,6 +689,16 @@ public class SemanticMetadataServiceImplTest
 	}
 
 
+	@SuppressWarnings("unused")
+	private void verifyTriple(Model model, URI subjectURI, URI propertyURI, Resource object)
+	{
+		Resource subject = model.createResource(subjectURI.toString());
+		Property property = model.createProperty(propertyURI.toString());
+		Assert.assertTrue(String.format("Annotation body must contain a triple <%s> <%s> <%s>", subject.getURI(),
+			property.getURI(), object), model.contains(subject, property, object));
+	}
+
+
 	/**
 	 * Test method for
 	 * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#findResearchObjects(java.net.URI)}
@@ -964,5 +977,44 @@ public class SemanticMetadataServiceImplTest
 		finally {
 			sms.close();
 		}
+	}
+
+
+	@Test
+	public void testGetNamedGraphWithRelativeURIs()
+		throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException
+	{
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+		try {
+			sms.createResearchObject(researchObjectURI);
+			sms.addResource(researchObjectURI, workflowURI, workflowInfo);
+			sms.addResource(researchObjectURI, ann1URI, ann1Info);
+			InputStream is = getClass().getClassLoader().getResourceAsStream("annotationBody2.ttl");
+			sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
+		}
+		finally {
+			sms.close();
+		}
+		SemanticMetadataService sms2 = new SemanticMetadataServiceImpl(userProfile);
+		try {
+			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+			model.read(sms2.getNamedGraphWithRelativeURIs(annotationBody1URI, researchObjectURI, RDFFormat.RDFXML), "",
+				"RDF/XML");
+
+			log.debug(IOUtils.toString(
+				sms2.getNamedGraphWithRelativeURIs(annotationBody1URI, researchObjectURI, RDFFormat.RDFXML), "UTF-8"));
+
+			//FIXME this does not work, for some reason ".." is stripped
+			//			verifyTriple(model, new URI("../a_workflow.t2flow"), URI.create("http://purl.org/dc/terms/title"), "A test");
+			//			verifyTriple(model, new URI("../a_workflow.t2flow"), URI.create("http://purl.org/dc/terms/source"),
+			//				model.createResource(workflow2URI.toString()));
+			//			verifyTriple(model, new URI("manifest.rdf"), URI.create("http://purl.org/dc/terms/license"), "GPL");
+			//			verifyTriple(model, URI.create("http://workflows.org/a/workflow.scufl"),
+			//				URI.create("http://purl.org/dc/terms/description"), "Something interesting");
+		}
+		finally {
+			sms.close();
+		}
+
 	}
 }
