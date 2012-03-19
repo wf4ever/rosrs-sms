@@ -328,18 +328,18 @@ public class SemanticMetadataServiceImpl
 		if (resource == null) {
 			return null;
 		}
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
 
 		String queryString = String.format(getResourceQueryTmpl, resourceURI.toString());
 		Query query = QueryFactory.create(queryString);
-		QueryExecution qexec = QueryExecutionFactory.create(query, manifestModel);
-		Model resultModel = qexec.execDescribe();
-		qexec.close();
 
-		resultModel.removeNsPrefix("xml");
+		QueryResult result = processDescribeQuery(query, rdfFormat);
 
-		resultModel.write(out, rdfFormat.getName().toUpperCase(), roURI.toString());
-		return new ByteArrayInputStream(out.toByteArray());
+		if (!result.getFormat().equals(rdfFormat)) {
+			log.warn(String.format("Possible RDF format mismatch: %s requested, %s returned", rdfFormat.getName(),
+				result.getFormat().getName()));
+		}
+
+		return result.getInputStream();
 	}
 
 
@@ -672,6 +672,8 @@ public class SemanticMetadataServiceImpl
 		else {
 			outputFormat = RDFFormat.RDFXML;
 		}
+
+		resultModel.removeNsPrefix("xml");
 
 		resultModel.write(out, outputFormat.getName().toUpperCase());
 		return new QueryResult(new ByteArrayInputStream(out.toByteArray()), outputFormat);

@@ -576,12 +576,17 @@ public class SemanticMetadataServiceImplTest
 			sms.createResearchObject(researchObjectURI);
 			sms.addResource(researchObjectURI, workflowURI, workflowInfo);
 			sms.addResource(researchObjectURI, ann1URI, ann1Info);
+			InputStream is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
+			sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
 
 			log.debug(IOUtils.toString(sms.getResource(researchObjectURI, workflowURI, RDFFormat.RDFXML), "UTF-8"));
 
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
 			model.read(sms.getResource(researchObjectURI, workflowURI, RDFFormat.RDFXML), researchObjectURI.toString());
 			verifyResource(model, workflowURI, workflowInfo);
+			verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/title"), "A test");
+			verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/title"), "An alternative title");
+			verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/license"), "GPL");
 
 			model.read(sms.getResource(researchObjectURI, ann1URI, RDFFormat.TURTLE), null, "TTL");
 			verifyResource(model, ann1URI, ann1Info);
