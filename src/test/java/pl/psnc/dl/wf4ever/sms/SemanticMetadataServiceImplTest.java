@@ -678,7 +678,7 @@ public class SemanticMetadataServiceImplTest
 
 			verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/title"), "A test");
 			verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/license"), "GPL");
-			verifyTriple(model, URI.create("http://workflows.org/a/workflow.scufl"),
+			verifyTriple(model, URI.create("http://workflows.org/a%20workflow.scufl"),
 				URI.create("http://purl.org/dc/terms/description"), "Something interesting");
 			verifyTriple(model, workflowPartURI, URI.create("http://purl.org/dc/terms/description"), "The key part");
 		}
@@ -1031,7 +1031,7 @@ public class SemanticMetadataServiceImplTest
 			verifyTriple(model, /* "../a_workflow.t2flow" */"a_workflow.t2flow",
 				URI.create("http://purl.org/dc/terms/source"), model.createResource(workflow2URI.toString()));
 			verifyTriple(model, new URI("manifest.rdf"), URI.create("http://purl.org/dc/terms/license"), "GPL");
-			verifyTriple(model, URI.create("http://workflows.org/a/workflow.scufl"),
+			verifyTriple(model, URI.create("http://workflows.org/a%20workflow.scufl"),
 				URI.create("http://purl.org/dc/terms/description"), "Something interesting");
 			verifyTriple(model, /* "../a_workflow.t2flow#somePartOfIt" */"a_workflow.t2flow#somePartOfIt",
 				URI.create("http://purl.org/dc/terms/description"), "The key part");

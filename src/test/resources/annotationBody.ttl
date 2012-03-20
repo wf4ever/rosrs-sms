@@ -4,7 +4,7 @@
 <http://example.org/ROs/ro1/a_workflow.t2flow> dc:title "An alternative title" .
 <http://example.org/ROs/ro1/a_workflow.t2flow> dc:license "GPL" .
 
-<http://workflows.org/a/workflow.scufl> dc:description "Something interesting" .
+<http://workflows.org/a%20workflow.scufl> dc:description "Something interesting" .
 
 <http://example.org/ROs/ro1/a_workflow.t2flow#somePartOfIt> dc:description "The key part" .
 

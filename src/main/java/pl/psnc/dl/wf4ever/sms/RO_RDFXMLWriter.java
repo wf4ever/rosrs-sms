@@ -33,12 +33,18 @@ public class RO_RDFXMLWriter
 		URI resourceURI = URI.create(uri).normalize();
 		if (resourceURI.toString().startsWith(researchObjectURI.toString())) {
 			Path localPath = Paths.get(baseURI.resolve(".").getPath()).relativize(Paths.get(resourceURI.getPath()));
+			String path;
 			if (namedGraphsURIs.contains(resourceURI)) {
-				return localPath.toString() + ".rdf";
+				path = localPath.toString() + ".rdf";
 			}
 			else {
-				return localPath.toString();
+				path = localPath.toString();
 			}
+			if (resourceURI.getRawQuery() != null)
+				path = path.concat("?").concat(resourceURI.getRawQuery());
+			if (resourceURI.getRawFragment() != null)
+				path = path.concat("#").concat(resourceURI.getRawFragment());
+			return path;
 		}
 		else {
 			return super.relativize(uri);
