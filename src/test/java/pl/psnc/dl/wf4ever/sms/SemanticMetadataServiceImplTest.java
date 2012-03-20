@@ -49,6 +49,7 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.vocabulary.DCTerms;
 
@@ -75,7 +76,8 @@ public class SemanticMetadataServiceImplTest
 
 	private final static URI workflowURI = URI.create("http://example.org/ROs/ro1/a_workflow.t2flow");
 
-	@SuppressWarnings("unused")
+	private final static URI workflowPartURI = URI.create("http://example.org/ROs/ro1/a_workflow.t2flow#somePartOfIt");
+
 	private final static URI workflow2URI = URI.create("http://example.org/ROs/ro2/runme.t2flow");
 
 	private final ResourceInfo workflowInfo = new ResourceInfo("a_workflow.t2flow", "ABC123455666344E", 646365L, "SHA1");
@@ -678,6 +680,7 @@ public class SemanticMetadataServiceImplTest
 			verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/license"), "GPL");
 			verifyTriple(model, URI.create("http://workflows.org/a/workflow.scufl"),
 				URI.create("http://purl.org/dc/terms/description"), "Something interesting");
+			verifyTriple(model, workflowPartURI, URI.create("http://purl.org/dc/terms/description"), "The key part");
 		}
 		finally {
 			sms.close();
@@ -694,10 +697,18 @@ public class SemanticMetadataServiceImplTest
 	}
 
 
-	@SuppressWarnings("unused")
-	private void verifyTriple(Model model, URI subjectURI, URI propertyURI, Resource object)
+	private void verifyTriple(Model model, String subjectURI, URI propertyURI, String object)
 	{
-		Resource subject = model.createResource(subjectURI.toString());
+		Resource subject = model.createResource(subjectURI);
+		Property property = model.createProperty(propertyURI.toString());
+		Assert.assertTrue(String.format("Annotation body must contain a triple <%s> <%s> <%s>", subject.getURI(),
+			property.getURI(), object), model.contains(subject, property, object));
+	}
+
+
+	private void verifyTriple(Model model, String subjectURI, URI propertyURI, Resource object)
+	{
+		Resource subject = model.createResource(subjectURI);
 		Property property = model.createProperty(propertyURI.toString());
 		Assert.assertTrue(String.format("Annotation body must contain a triple <%s> <%s> <%s>", subject.getURI(),
 			property.getURI(), object), model.contains(subject, property, object));
@@ -1009,13 +1020,21 @@ public class SemanticMetadataServiceImplTest
 			log.debug(IOUtils.toString(
 				sms2.getNamedGraphWithRelativeURIs(annotationBody1URI, researchObjectURI, RDFFormat.RDFXML), "UTF-8"));
 
-			//FIXME this does not work, for some reason ".." is stripped
-			//			verifyTriple(model, new URI("../a_workflow.t2flow"), URI.create("http://purl.org/dc/terms/title"), "A test");
-			//			verifyTriple(model, new URI("../a_workflow.t2flow"), URI.create("http://purl.org/dc/terms/source"),
-			//				model.createResource(workflow2URI.toString()));
-			//			verifyTriple(model, new URI("manifest.rdf"), URI.create("http://purl.org/dc/terms/license"), "GPL");
-			//			verifyTriple(model, URI.create("http://workflows.org/a/workflow.scufl"),
-			//				URI.create("http://purl.org/dc/terms/description"), "Something interesting");
+			ResIterator x = model.listSubjects();
+			while (x.hasNext()) {
+				System.out.println(x.next().getURI());
+			}
+
+			//FIXME this does not work correctly, for some reason ".." is stripped when reading the model
+			verifyTriple(model, /* "../a_workflow.t2flow" */"a_workflow.t2flow",
+				URI.create("http://purl.org/dc/terms/title"), "A test");
+			verifyTriple(model, /* "../a_workflow.t2flow" */"a_workflow.t2flow",
+				URI.create("http://purl.org/dc/terms/source"), model.createResource(workflow2URI.toString()));
+			verifyTriple(model, new URI("manifest.rdf"), URI.create("http://purl.org/dc/terms/license"), "GPL");
+			verifyTriple(model, URI.create("http://workflows.org/a/workflow.scufl"),
+				URI.create("http://purl.org/dc/terms/description"), "Something interesting");
+			verifyTriple(model, /* "../a_workflow.t2flow#somePartOfIt" */"a_workflow.t2flow#somePartOfIt",
+				URI.create("http://purl.org/dc/terms/description"), "The key part");
 		}
 		finally {
 			sms.close();
