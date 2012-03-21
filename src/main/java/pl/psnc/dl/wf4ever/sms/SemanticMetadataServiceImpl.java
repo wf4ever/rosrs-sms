@@ -124,6 +124,8 @@ public class SemanticMetadataServiceImpl
 
 	private final String getResourceQueryTmpl = "DESCRIBE <%s> WHERE { }";
 
+	private final String getUserQueryTmpl = "DESCRIBE <%s> WHERE { }";
+
 	private final String findResearchObjectsQueryTmpl = "PREFIX ro: <" + RO_NAMESPACE + "> SELECT ?ro "
 			+ "WHERE { ?ro a ro:ResearchObject. FILTER regex(str(?ro), \"^%s\") . }";
 
@@ -727,6 +729,27 @@ public class SemanticMetadataServiceImpl
 			}
 		}
 		return attributes;
+	}
+
+
+	@Override
+	public QueryResult getUser(URI userURI, RDFFormat rdfFormat)
+	{
+		userURI = userURI.normalize();
+
+		String queryString = String.format(getUserQueryTmpl, userURI.toString());
+		Query query = QueryFactory.create(queryString);
+
+		return processDescribeQuery(query, rdfFormat);
+	}
+
+
+	@Override
+	public void removeUser(URI userURI)
+	{
+		if (graphset.containsGraph(userURI.toString())) {
+			graphset.removeGraph(userURI.toString());
+		}
 	}
 
 }

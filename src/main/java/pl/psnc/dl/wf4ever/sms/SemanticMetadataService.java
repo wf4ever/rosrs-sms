@@ -227,6 +227,27 @@ public interface SemanticMetadataService
 
 
 	/**
+	 * Returns an RDF graph describing the given user.
+	 * 
+	 * @param userURI
+	 *            User URI
+	 * @param rdfFormat
+	 *            Requested RDF format, RDF/XML is the default one
+	 * @return A FOAF RDF graph in selected format
+	 */
+	QueryResult getUser(URI userURI, RDFFormat rdfFormat);
+
+
+	/**
+	 * Removes all data about a given user.
+	 * 
+	 * @param userURI
+	 *            User URI
+	 */
+	void removeUser(URI userURI);
+
+
+	/**
 	 * Returns a flat list of all attributes (facts and annotations) having a given
 	 * resource as a subject. This searches all named graphs, in all ROs.
 	 * 

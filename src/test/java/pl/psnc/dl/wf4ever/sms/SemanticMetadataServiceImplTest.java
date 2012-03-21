@@ -1051,4 +1051,30 @@ public class SemanticMetadataServiceImplTest
 		}
 
 	}
+
+
+	@Test
+	public final void testGetRemoveUser()
+		throws ClassNotFoundException, IOException, NamingException, SQLException
+	{
+		SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+		try {
+			OntModel userModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+			userModel.read(sms.getUser(userProfile.getUri(), RDFFormat.RDFXML).getInputStream(), "", "RDF/XML");
+			Individual creator = userModel.getIndividual(userProfile.getUri().toString());
+			Assert.assertNotNull("User named graph must contain dcterms:creator", creator);
+			Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
+			Assert.assertEquals("Creator name must be correct", userProfile.getName(),
+				creator.getPropertyValue(foafName).asLiteral().getString());
+
+			sms.removeUser(userProfile.getUri());
+			userModel.removeAll();
+			userModel.read(sms.getUser(userProfile.getUri(), RDFFormat.RDFXML).getInputStream(), "", "RDF/XML");
+			creator = userModel.getIndividual(userProfile.getUri().toString());
+			Assert.assertNull("User named graph must not contain dcterms:creator", creator);
+		}
+		finally {
+			sms.close();
+		}
+	}
 }
