@@ -72,7 +72,8 @@ public class SemanticMetadataServiceImplTest
 
 	private final static URI researchObject2URI = URI.create("http://example.org/ROs/ro2/");
 
-	private final static UserProfile userProfile = new UserProfile("jank", "pass", "Jan Kowalski", false);
+	private final static UserProfile userProfile = new UserProfile("jank", "pass", "Jan Kowalski",
+			UserProfile.Role.AUTHENTICATED);
 
 	private final static URI workflowURI = URI.create("http://example.org/ROs/ro1/a_workflow.t2flow");
 
@@ -213,7 +214,7 @@ public class SemanticMetadataServiceImplTest
 		try {
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
 
-			model.read(sms2.getManifest(manifestURI, RDFFormat.RDFXML), null);
+			model.read(sms2.getManifest(manifestURI, RDFFormat.RDFXML), "");
 			Individual manifest = model.getIndividual(manifestURI.toString());
 			Individual ro = model.getIndividual(researchObjectURI.toString());
 			Assert.assertNotNull("Manifest must contain ro:Manifest", manifest);
@@ -224,8 +225,8 @@ public class SemanticMetadataServiceImplTest
 			Literal createdLiteral = manifest.getPropertyValue(DCTerms.created).asLiteral();
 			Assert.assertNotNull("Manifest must contain dcterms:created", createdLiteral);
 
-			Resource creatorResource = manifest.getPropertyResourceValue(DCTerms.creator);
-			Assert.assertNotNull("Manifest must contain dcterms:creator", creatorResource);
+			//			Resource creatorResource = manifest.getPropertyResourceValue(DCTerms.creator);
+			//			Assert.assertNotNull("Manifest must contain dcterms:creator", creatorResource);
 		}
 		finally {
 			sms2.close();
@@ -394,10 +395,11 @@ public class SemanticMetadataServiceImplTest
 	 * @throws SQLException
 	 * @throws NamingException
 	 * @throws ClassNotFoundException
+	 * @throws URISyntaxException
 	 */
 	@Test
 	public final void testGetManifest()
-		throws IOException, ClassNotFoundException, NamingException, SQLException
+		throws IOException, ClassNotFoundException, NamingException, SQLException, URISyntaxException
 	{
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
 		try {
@@ -423,16 +425,20 @@ public class SemanticMetadataServiceImplTest
 			Calendar created = ((XSDDateTime) createdLiteral.getValue()).asCalendar();
 			Assert.assertTrue("Created is a valid date", !before.after(created) && !after.before(created));
 
-			Resource creatorResource = manifest.getPropertyResourceValue(DCTerms.creator);
-			Assert.assertNotNull("Manifest must contain dcterms:creator", creatorResource);
-			Individual creator = creatorResource.as(Individual.class);
-			Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
-			Assert.assertEquals("Creator name must be correct", "RODL", creator.getPropertyValue(foafName).asLiteral()
-					.getString());
+			//			Resource creatorResource = manifest.getPropertyResourceValue(DCTerms.creator);
+			//			Assert.assertNotNull("Manifest must contain dcterms:creator", creatorResource);
+			//			Individual creator = creatorResource.as(Individual.class);
+			//			Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
+			//			Assert.assertEquals("Creator name must be correct", "RODL", creator.getPropertyValue(foafName).asLiteral()
+			//					.getString());
 
-			creatorResource = ro.getPropertyResourceValue(DCTerms.creator);
+			Resource creatorResource = ro.getPropertyResourceValue(DCTerms.creator);
 			Assert.assertNotNull("RO must contain dcterms:creator", creatorResource);
-			creator = creatorResource.as(Individual.class);
+
+			OntModel userModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+			userModel.read(sms.getNamedGraph(new URI(creatorResource.getURI()), RDFFormat.RDFXML), "");
+
+			Individual creator = userModel.getIndividual(creatorResource.getURI());
 			Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
 			Assert.assertEquals("Creator name must be correct", userProfile.getName(),
 				creator.getPropertyValue(foafName).asLiteral().getString());
@@ -585,13 +591,13 @@ public class SemanticMetadataServiceImplTest
 
 			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
 			model.read(sms.getResource(researchObjectURI, workflowURI, RDFFormat.RDFXML), researchObjectURI.toString());
-			verifyResource(model, workflowURI, workflowInfo);
+			verifyResource(sms, model, workflowURI, workflowInfo);
 			verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/title"), "A test");
 			verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/title"), "An alternative title");
 			verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/license"), "GPL");
 
 			model.read(sms.getResource(researchObjectURI, ann1URI, RDFFormat.TURTLE), null, "TTL");
-			verifyResource(model, ann1URI, ann1Info);
+			verifyResource(sms, model, ann1URI, ann1Info);
 		}
 		finally {
 			sms.close();
@@ -605,7 +611,7 @@ public class SemanticMetadataServiceImplTest
 	 * @param resourceURI
 	 * @throws URISyntaxException
 	 */
-	private void verifyResource(OntModel model, URI resourceURI, ResourceInfo resourceInfo)
+	private void verifyResource(SemanticMetadataService sms, OntModel model, URI resourceURI, ResourceInfo resourceInfo)
 		throws URISyntaxException
 	{
 		Individual resource = model.getIndividual(resourceURI.toString());
@@ -620,7 +626,11 @@ public class SemanticMetadataServiceImplTest
 
 		Resource creatorResource = resource.getPropertyResourceValue(DCTerms.creator);
 		Assert.assertNotNull("Resource must contain dcterms:creator", creatorResource);
-		Individual creator = creatorResource.as(Individual.class);
+
+		OntModel userModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+		userModel.read(sms.getNamedGraph(new URI(creatorResource.getURI()), RDFFormat.RDFXML), "");
+		Individual creator = userModel.getIndividual(creatorResource.getURI());
+		Assert.assertNotNull("User named graph must contain dcterms:creator", creator);
 		Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
 		Assert.assertEquals("Creator name must be correct", userProfile.getName(), creator.getPropertyValue(foafName)
 				.asLiteral().getString());

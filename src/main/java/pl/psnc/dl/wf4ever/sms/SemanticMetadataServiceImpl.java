@@ -89,8 +89,6 @@ public class SemanticMetadataServiceImpl
 			.setNsPrefix("ore", ORE_NAMESPACE).setNsPrefix("ro", RO_NAMESPACE).setNsPrefix("dcterms", DCTerms.NS)
 			.setNsPrefix("foaf", FOAF_NAMESPACE).lock();
 
-	private static final String SERVICE_NAME = "RODL";
-
 	private final NamedGraphSet graphset;
 
 	private static final OntModel defaultModel = ModelFactory.createOntologyModel(
@@ -146,6 +144,19 @@ public class SemanticMetadataServiceImpl
 		graphset = new NamedGraphSetDB(connection, "sms");
 
 		defaultModel.setNsPrefixes(standardNamespaces);
+
+		createUserProfile(user);
+	}
+
+
+	private void createUserProfile(UserProfile user)
+	{
+		if (!containsNamedGraph(user.getUri())) {
+			OntModel userModel = createOntModelForNamedGraph(user.getUri());
+			userModel.removeAll();
+			Individual agent = userModel.createIndividual(user.getUri().toString(), foafAgentClass);
+			userModel.add(agent, foafName, user.getName());
+		}
 	}
 
 
@@ -199,15 +210,10 @@ public class SemanticMetadataServiceImpl
 
 		manifestModel.add(ro, isDescribedBy, manifest);
 		manifestModel.add(ro, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
-		Individual agent = manifestModel.createIndividual(foafAgentClass);
-		manifestModel.add(agent, foafName, user.getName());
-		manifestModel.add(ro, DCTerms.creator, agent);
+		manifestModel.add(ro, DCTerms.creator, manifestModel.createResource(user.getUri().toString()));
 
 		manifestModel.add(manifest, describes, ro);
 		manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
-		agent = manifestModel.createIndividual(foafAgentClass);
-		manifestModel.add(agent, foafName, SERVICE_NAME);
-		manifestModel.add(manifest, DCTerms.creator, agent);
 	}
 
 
@@ -278,10 +284,7 @@ public class SemanticMetadataServiceImpl
 			}
 		}
 		manifestModel.add(resource, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
-		Individual agent = manifestModel.createIndividual(foafAgentClass);
-		manifestModel.add(agent, foafName, user.getName());
-		manifestModel.add(resource, DCTerms.creator, agent);
-
+		manifestModel.add(resource, DCTerms.creator, manifestModel.createResource(user.getUri().toString()));
 	}
 
 
