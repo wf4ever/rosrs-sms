@@ -1,15 +1,20 @@
 package pl.psnc.dl.wf4ever.sms;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+
+import org.apache.log4j.Logger;
 
 import com.hp.hpl.jena.xmloutput.impl.Basic;
 
 public class RO_RDFXMLWriter
 	extends Basic
 {
+
+	private static final Logger log = Logger.getLogger(RO_RDFXMLWriter.class);
 
 	private URI researchObjectURI;
 
@@ -40,11 +45,13 @@ public class RO_RDFXMLWriter
 			else {
 				path = localPath.toString();
 			}
-			if (resourceURI.getRawQuery() != null)
-				path = path.concat("?").concat(resourceURI.getRawQuery());
-			if (resourceURI.getRawFragment() != null)
-				path = path.concat("#").concat(resourceURI.getRawFragment());
-			return path;
+			try {
+				return new URI(null, null, path, resourceURI.getQuery(), resourceURI.getFragment()).toString();
+			}
+			catch (URISyntaxException e) {
+				log.error("Can't relativize the URI " + resourceURI, e);
+				return path;
+			}
 		}
 		else {
 			return super.relativize(uri);
