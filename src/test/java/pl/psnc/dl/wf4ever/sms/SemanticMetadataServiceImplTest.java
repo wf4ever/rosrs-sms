@@ -66,7 +66,7 @@ public class SemanticMetadataServiceImplTest
 
 	private static final Logger log = Logger.getLogger(SemanticMetadataServiceImplTest.class);
 
-	private final static URI manifestURI = URI.create("http://example.org/ROs/ro1/.ro/manifest");
+	private final static URI manifestURI = URI.create("http://example.org/ROs/ro1/.ro/manifest.rdf");
 
 	private final static URI researchObjectURI = URI.create("http://example.org/ROs/ro1/");
 

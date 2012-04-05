@@ -4,7 +4,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.List;
 
 import org.apache.log4j.Logger;
 
@@ -17,8 +16,6 @@ public class RO_RDFXMLWriter
 	private static final Logger log = Logger.getLogger(RO_RDFXMLWriter.class);
 
 	private URI researchObjectURI;
-
-	private List<URI> namedGraphsURIs;
 
 	private URI baseURI;
 
@@ -38,13 +35,7 @@ public class RO_RDFXMLWriter
 		URI resourceURI = URI.create(uri).normalize();
 		if (resourceURI.toString().startsWith(researchObjectURI.toString())) {
 			Path localPath = Paths.get(baseURI.resolve(".").getPath()).relativize(Paths.get(resourceURI.getPath()));
-			String path;
-			if (namedGraphsURIs.contains(resourceURI)) {
-				path = localPath.toString() + ".rdf";
-			}
-			else {
-				path = localPath.toString();
-			}
+			String path = localPath.toString();
 			try {
 				return new URI(null, null, path, resourceURI.getQuery(), resourceURI.getFragment()).toString();
 			}
@@ -65,12 +56,6 @@ public class RO_RDFXMLWriter
 	public URI getResearchObjectURI()
 	{
 		return researchObjectURI;
-	}
-
-
-	public void setNamedGraphs(List<URI> namedGraphsURIs)
-	{
-		this.namedGraphsURIs = namedGraphsURIs;
 	}
 
 

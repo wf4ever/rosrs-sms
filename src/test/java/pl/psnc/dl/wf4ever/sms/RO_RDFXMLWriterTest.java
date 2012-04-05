@@ -4,7 +4,6 @@
 package pl.psnc.dl.wf4ever.sms;
 
 import java.net.URI;
-import java.util.Arrays;
 
 import junit.framework.Assert;
 
@@ -71,8 +70,6 @@ public class RO_RDFXMLWriterTest
 		RO_RDFXMLWriter writer = new RO_RDFXMLWriter();
 		writer.setResearchObjectURI(URI.create("http://example.org/ROs/ro1/"));
 		writer.setBaseURI(URI.create("http://example.org/ROs/ro1/base/"));
-		writer.setNamedGraphs(Arrays.asList(URI.create("http://example.org/ROs/ro1/graph1"),
-			URI.create("http://example.org/ROs/ro1/base/folder/graph%202")));
 
 		Assert.assertEquals("http://example.org/ROs/ro2/resource",
 			writer.relativize("http://example.org/ROs/ro2/resource"));
@@ -81,9 +78,8 @@ public class RO_RDFXMLWriterTest
 		Assert.assertEquals("folder/resource", writer.relativize("http://example.org/ROs/ro1/base/folder/resource"));
 		Assert.assertEquals("../folder/resource", writer.relativize("http://example.org/ROs/ro1/folder/resource"));
 
-		Assert.assertEquals("../graph1.rdf", writer.relativize("http://example.org/ROs/ro1/graph1"));
-		Assert.assertEquals("folder/graph%202.rdf",
-			writer.relativize("http://example.org/ROs/ro1/base/folder/graph%202"));
+		Assert.assertEquals("../graph1", writer.relativize("http://example.org/ROs/ro1/graph1"));
+		Assert.assertEquals("folder/graph%202", writer.relativize("http://example.org/ROs/ro1/base/folder/graph%202"));
 
 		Assert.assertEquals("resource%20with%20spaces.txt",
 			writer.relativize("http://example.org/ROs/ro1/base/resource%20with%20spaces.txt"));

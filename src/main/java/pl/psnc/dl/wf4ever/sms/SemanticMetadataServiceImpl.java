@@ -12,10 +12,8 @@ import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -392,21 +390,10 @@ public class SemanticMetadataServiceImpl
 		else {
 			tmpGraphSet.addGraph(graphset.getGraph(namedGraphURI.toString()));
 		}
-		URI manifestURI = getManifestURI(researchObjectURI.normalize());
-
-		List<URI> namedGraphsURIs = new ArrayList<>();
-		namedGraphsURIs.add(manifestURI);
-		OntModel annotationModel = createOntModelForNamedGraph(manifestURI);
-		NodeIterator it = annotationModel.listObjectsOfProperty(body);
-		while (it.hasNext()) {
-			RDFNode annotationBodyRef = it.next();
-			namedGraphsURIs.add(URI.create(annotationBodyRef.asResource().getURI()));
-		}
 
 		RO_RDFXMLWriter writer = new RO_RDFXMLWriter();
 		writer.setResearchObjectURI(researchObjectURI);
 		writer.setBaseURI(namedGraphURI);
-		writer.setNamedGraphs(namedGraphsURIs);
 
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		writer.write(tmpGraphSet.asJenaModel(namedGraphURI.toString()), out, null);
@@ -559,7 +546,7 @@ public class SemanticMetadataServiceImpl
 	 */
 	private URI getManifestURI(URI roURI)
 	{
-		return roURI.resolve(".ro/manifest");
+		return roURI.resolve(".ro/manifest.rdf");
 	}
 
 
