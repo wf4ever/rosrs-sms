@@ -48,6 +48,12 @@
 			<version>1.0.7</version>
 		</dependency>
 		<dependency>
+			<groupId>org.apache.jena</groupId>
+			<artifactId>apache-jena</artifactId>
+			<version>2.7.0-incubating</version>
+			<type>pom</type>
+		</dependency>
+		<dependency>
 			<groupId>de.fuberlin.wiwss.ng4j</groupId>
 			<artifactId>ng4j</artifactId>
 			<version>0.9.4-SNAPSHOT</version>
@@ -87,16 +93,6 @@
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>11.0</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.jena</groupId>
-			<artifactId>jena-core</artifactId>
-			<version>2.7.0-incubating</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.jena</groupId>
-			<artifactId>jena-arq</artifactId>
-			<version>2.9.0-incubating</version>
 		</dependency>
 	</dependencies>
 	<organization>

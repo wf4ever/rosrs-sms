@@ -7,14 +7,14 @@ import java.nio.file.Paths;
 
 import org.apache.log4j.Logger;
 
-import com.hp.hpl.jena.xmloutput.impl.Basic;
+import com.hp.hpl.jena.n3.N3JenaWriterPP;
 
-public class RO_RDFXMLWriter
-	extends Basic
+public class RO_TurtleWriter
+	extends N3JenaWriterPP
 	implements ResearchObjectRelativeWriter
 {
 
-	private static final Logger log = Logger.getLogger(RO_RDFXMLWriter.class);
+	private static final Logger log = Logger.getLogger(RO_TurtleWriter.class);
 
 	private URI researchObjectURI;
 
@@ -32,25 +32,26 @@ public class RO_RDFXMLWriter
 
 
 	@Override
-	protected String relativize(String uri)
+	protected String formatURI(String uri)
 	{
 		if (researchObjectURI == null || baseURI == null) {
-			return super.relativize(uri);
+			return super.formatURI(uri);
 		}
 		URI resourceURI = URI.create(uri).normalize();
 		if (resourceURI.toString().startsWith(researchObjectURI.toString())) {
 			Path localPath = Paths.get(baseURI.resolve(".").getPath()).relativize(Paths.get(resourceURI.getPath()));
 			String path = localPath.toString();
 			try {
-				return new URI(null, null, path, resourceURI.getQuery(), resourceURI.getFragment()).toString();
+				return super.formatURI(new URI(null, null, path, resourceURI.getQuery(), resourceURI.getFragment())
+						.toString());
 			}
 			catch (URISyntaxException e) {
 				log.error("Can't relativize the URI " + resourceURI, e);
-				return path;
+				return super.formatURI(path);
 			}
 		}
 		else {
-			return super.relativize(uri);
+			return super.formatURI(uri);
 		}
 	}
 

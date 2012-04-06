@@ -376,8 +376,15 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public InputStream getNamedGraphWithRelativeURIs(URI namedGraphURI, URI researchObjectURI, RDFFormat rdfFormat)
 	{
-		if (rdfFormat != RDFFormat.RDFXML) {
+		ResearchObjectRelativeWriter writer;
+		if (rdfFormat != RDFFormat.RDFXML && rdfFormat != RDFFormat.TURTLE) {
 			throw new RuntimeException("Format " + rdfFormat + " is not supported");
+		}
+		else if (rdfFormat == RDFFormat.RDFXML) {
+			writer = new RO_RDFXMLWriter();
+		}
+		else {
+			writer = new RO_TurtleWriter();
 		}
 		namedGraphURI = namedGraphURI.normalize();
 		if (!graphset.containsGraph(namedGraphURI.toString())) {
@@ -391,7 +398,6 @@ public class SemanticMetadataServiceImpl
 			tmpGraphSet.addGraph(graphset.getGraph(namedGraphURI.toString()));
 		}
 
-		RO_RDFXMLWriter writer = new RO_RDFXMLWriter();
 		writer.setResearchObjectURI(researchObjectURI);
 		writer.setBaseURI(namedGraphURI);
 
