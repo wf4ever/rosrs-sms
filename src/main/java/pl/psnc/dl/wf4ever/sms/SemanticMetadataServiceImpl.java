@@ -500,11 +500,15 @@ public class SemanticMetadataServiceImpl
 	public boolean isROMetadataNamedGraph(URI researchObjectURI, URI graphURI)
 	{
 		Node manifest = Node.createURI(getManifestURI(researchObjectURI).toString());
+		Node deprecatedManifest = Node.createURI(getDeprecatedManifestURI(researchObjectURI).toString());
 		Node bodyNode = Node.createURI(body.getURI());
 		Node annBody = Node.createURI(graphURI.toString());
 		boolean isManifest = getManifestURI(researchObjectURI).equals(graphURI);
+		boolean isDeprecatedManifest = getDeprecatedManifestURI(researchObjectURI).equals(graphURI);
 		boolean isAnnotationBody = graphset.containsQuad(new Quad(manifest, Node.ANY, bodyNode, annBody));
-		return isManifest || isAnnotationBody;
+		boolean isDeprecatedAnnotationBody = graphset.containsQuad(new Quad(deprecatedManifest, Node.ANY, bodyNode,
+				annBody));
+		return isManifest || isAnnotationBody || isDeprecatedManifest || isDeprecatedAnnotationBody;
 	}
 
 
@@ -553,6 +557,18 @@ public class SemanticMetadataServiceImpl
 	private URI getManifestURI(URI roURI)
 	{
 		return roURI.resolve(".ro/manifest.rdf");
+	}
+
+
+	/**
+	 * 
+	 * @param roURI
+	 *            must end with /
+	 * @return
+	 */
+	private URI getDeprecatedManifestURI(URI roURI)
+	{
+		return roURI.resolve(".ro/manifest");
 	}
 
 
