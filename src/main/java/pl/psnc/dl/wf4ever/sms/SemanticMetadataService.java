@@ -106,7 +106,7 @@ public interface SemanticMetadataService
 	 *            resource URI, absolute or relative to RO URI
 	 * @param rdfFormat
 	 *            resource metadata format
-	 * @return resource description with URIs relative to RO URI
+	 * @return resource description or null if no data found
 	 */
 	InputStream getResource(URI researchObjectURI, URI resourceURI, RDFFormat rdfFormat);
 
