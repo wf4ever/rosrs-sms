@@ -575,6 +575,12 @@ public class SemanticMetadataServiceImpl
 	@Override
 	public void removeResearchObject(URI researchObjectURI)
 	{
+		try {
+			removeNamedGraph(researchObjectURI, getDeprecatedManifestURI(researchObjectURI));
+		}
+		catch (IllegalArgumentException e) {
+			// it is a hack so ignore exceptions
+		}
 		removeNamedGraph(researchObjectURI, getManifestURI(researchObjectURI));
 	}
 
