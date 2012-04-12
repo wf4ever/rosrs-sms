@@ -12,8 +12,10 @@ import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -519,17 +521,27 @@ public class SemanticMetadataServiceImpl
 		if (!graphset.containsGraph(graphURI.toString())) {
 			throw new IllegalArgumentException("URI not found: " + graphURI);
 		}
-		OntModel manifestModel = createOntModelForNamedGraph(graphURI);
 
-		NodeIterator it = manifestModel.listObjectsOfProperty(body);
-		while (it.hasNext()) {
-			RDFNode annotationBodyRef = it.next();
-			// TODO make sure that this named graph is internal
-			if (graphset.containsGraph(annotationBodyRef.asResource().getURI())) {
-				removeNamedGraph(researchObjectURI, URI.create(annotationBodyRef.asResource().getURI()));
+		List<URI> graphsToDelete = new ArrayList<>();
+		graphsToDelete.add(graphURI);
+
+		int i = 0;
+		while (i < graphsToDelete.size()) {
+			OntModel manifestModel = createOntModelForNamedGraph(graphsToDelete.get(i));
+			NodeIterator it = manifestModel.listObjectsOfProperty(body);
+			while (it.hasNext()) {
+				RDFNode annotationBodyRef = it.next();
+				URI graphURI2 = URI.create(annotationBodyRef.asResource().getURI());
+				// TODO make sure that this named graph is internal
+				if (graphset.containsGraph(graphURI2.toString()) && !graphsToDelete.contains(graphURI2)) {
+					graphsToDelete.add(graphURI2);
+				}
 			}
+			i++;
 		}
-		graphset.removeGraph(graphURI.toString());
+		for (URI graphURI2 : graphsToDelete) {
+			graphset.removeGraph(graphURI2.toString());
+		}
 	}
 
 
