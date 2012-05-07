@@ -82,8 +82,9 @@ public interface SemanticMetadataService
 	 *            resource URI, absolute or relative to RO URI
 	 * @param resourceInfo
 	 *            resource metadata
+	 * @return true if a new resource is added, false if it existed
 	 */
-	void addResource(URI researchObjectURI, URI resourceURI, ResourceInfo resourceInfo);
+	boolean addResource(URI researchObjectURI, URI resourceURI, ResourceInfo resourceInfo);
 
 
 	/**
@@ -130,8 +131,9 @@ public interface SemanticMetadataService
 	 *            named graph content
 	 * @param rdfFormat
 	 *            graph content format
+	 * @return true if a new named graph is added, false if it existed
 	 */
-	void addNamedGraph(URI graphURI, InputStream inputStream, RDFFormat rdfFormat);
+	boolean addNamedGraph(URI graphURI, InputStream inputStream, RDFFormat rdfFormat);
 
 
 	/**

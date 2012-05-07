@@ -508,10 +508,10 @@ public class SemanticMetadataServiceImplTest
 		SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
 		try {
 			sms.createResearchObject(researchObjectURI);
-			sms.addResource(researchObjectURI, workflowURI, workflowInfo);
-			sms.addResource(researchObjectURI, ann1URI, ann1Info);
-			sms.addResource(researchObjectURI, workflowURI, null);
-			sms.addResource(researchObjectURI, workflowURI, new ResourceInfo(null, null, 0, null));
+			Assert.assertTrue(sms.addResource(researchObjectURI, workflowURI, workflowInfo));
+			Assert.assertTrue(sms.addResource(researchObjectURI, ann1URI, ann1Info));
+			Assert.assertFalse(sms.addResource(researchObjectURI, workflowURI, null));
+			Assert.assertFalse(sms.addResource(researchObjectURI, workflowURI, new ResourceInfo(null, null, 0, null)));
 		}
 		finally {
 			sms.close();
@@ -819,7 +819,7 @@ public class SemanticMetadataServiceImplTest
 			sms.addResource(researchObjectURI, workflowURI, workflowInfo);
 			sms.addResource(researchObjectURI, ann1URI, ann1Info);
 			InputStream is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
-			sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
+			Assert.assertTrue(sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE));
 		}
 		finally {
 			sms.close();

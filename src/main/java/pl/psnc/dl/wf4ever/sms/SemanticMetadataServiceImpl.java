@@ -265,7 +265,7 @@ public class SemanticMetadataServiceImpl
 	 * java.net.URI, pl.psnc.dl.wf4ever.dlibra.ResourceInfo)
 	 */
 	@Override
-	public void addResource(URI roURI, URI resourceURI, ResourceInfo resourceInfo)
+	public boolean addResource(URI roURI, URI resourceURI, ResourceInfo resourceInfo)
 	{
 		resourceURI = resourceURI.normalize();
 		OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(roURI.normalize()));
@@ -273,7 +273,12 @@ public class SemanticMetadataServiceImpl
 		if (ro == null) {
 			throw new IllegalArgumentException("URI not found: " + roURI);
 		}
-		Individual resource = manifestModel.createIndividual(resourceURI.toString(), resourceClass);
+		boolean created = false;
+		Individual resource = manifestModel.getIndividual(resourceURI.toString());
+		if (resource == null) {
+			created = true;
+			resource = manifestModel.createIndividual(resourceURI.toString(), resourceClass);
+		}
 		manifestModel.add(ro, aggregates, resource);
 		if (resourceInfo != null) {
 			if (resourceInfo.getName() != null) {
@@ -287,6 +292,7 @@ public class SemanticMetadataServiceImpl
 		}
 		manifestModel.add(resource, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
 		manifestModel.add(resource, DCTerms.creator, manifestModel.createResource(user.getUri().toString()));
+		return created;
 	}
 
 
@@ -490,11 +496,13 @@ public class SemanticMetadataServiceImpl
 
 
 	@Override
-	public void addNamedGraph(URI graphURI, InputStream inputStream, RDFFormat rdfFormat)
+	public boolean addNamedGraph(URI graphURI, InputStream inputStream, RDFFormat rdfFormat)
 	{
+		boolean created = !containsNamedGraph(graphURI);
 		OntModel namedGraphModel = createOntModelForNamedGraph(graphURI);
 		namedGraphModel.removeAll();
 		namedGraphModel.read(inputStream, graphURI.resolve(".").toString(), rdfFormat.getName().toUpperCase());
+		return created;
 	}
 
 
