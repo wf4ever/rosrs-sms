@@ -554,6 +554,18 @@ public class SemanticMetadataServiceImplTest
 			catch (IllegalArgumentException e) {
 				// good
 			}
+
+			InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
+			sms.updateManifest(manifestURI, is, RDFFormat.TURTLE);
+			sms.removeResource(researchObjectURI, workflowURI);
+			Assert.assertNull("There should be no annotation body after a resource is deleted",
+				sms.getNamedGraph(annotationBody1URI, RDFFormat.RDFXML));
+			OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM);
+			model.read(sms.getManifest(manifestURI, RDFFormat.RDFXML), null);
+			Assert.assertFalse(model.listStatements(null, null, model.createResource(ann1URI.toString())).hasNext());
+			Assert.assertFalse(model.listStatements(model.createResource(ann1URI.toString()), null, (RDFNode) null)
+					.hasNext());
+
 		}
 		finally {
 			sms.close();

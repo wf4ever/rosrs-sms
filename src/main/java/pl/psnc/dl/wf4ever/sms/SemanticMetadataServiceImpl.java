@@ -50,6 +50,7 @@ import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.NodeIterator;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
+import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
@@ -121,6 +122,9 @@ public class SemanticMetadataServiceImpl
 	private static final Property checksum = defaultModel.getProperty(RO_NAMESPACE + "checksum");
 
 	private static final Property body = defaultModel.getProperty(AO_NAMESPACE + "body");
+
+	public static final Property annotatesAggregatedResource = defaultModel.getProperty(RO_NAMESPACE
+			+ "annotatesAggregatedResource");
 
 	private final String getResourceQueryTmpl = "DESCRIBE <%s> WHERE { }";
 
@@ -320,6 +324,23 @@ public class SemanticMetadataServiceImpl
 		StmtIterator it = manifestModel.listStatements(null, aggregates, resource);
 		if (!it.hasNext()) {
 			manifestModel.removeAll(resource, null, null);
+		}
+
+		ResIterator it2 = manifestModel.listSubjectsWithProperty(annotatesAggregatedResource, resource);
+		while (it2.hasNext()) {
+			Resource ann = it2.next();
+			manifestModel.remove(ann, annotatesAggregatedResource, resource);
+			if (!ann.hasProperty(annotatesAggregatedResource)) {
+				Resource annBody = ann.getPropertyResourceValue(body);
+				if (annBody != null && annBody.isURIResource()) {
+					URI annBodyURI = URI.create(annBody.getURI());
+					if (containsNamedGraph(annBodyURI)) {
+						removeNamedGraph(roURI, annBodyURI);
+					}
+				}
+				manifestModel.removeAll(ann, null, null);
+				manifestModel.removeAll(null, null, ann);
+			}
 		}
 	}
 

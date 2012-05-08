@@ -31,7 +31,7 @@
 
 :ann1 a ro:AggregatedAnnotation ;
     ao:body <.ro/ann1> ;
-    ao:annotatesResource <a_workflow.t2flow> ;
+    ro:annotatesAggregatedResource <a_workflow.t2flow> ;
     dct:created "2011-12-02T15:02:13Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Agent ; foaf:name "t2flow workflow annotation extractor" ] .
 

@@ -166,7 +166,7 @@ public interface SemanticMetadataService
 	 *            graph URI
 	 * @param rdfFormat
 	 *            response format
-	 * @return
+	 * @return named graph or null
 	 */
 	InputStream getNamedGraph(URI graphURI, RDFFormat rdfFormat);
 
