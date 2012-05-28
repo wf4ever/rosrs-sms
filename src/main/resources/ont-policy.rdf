@@ -65,7 +65,7 @@
 
 <OntologySpec>
     <publicURI rdf:resource="http://purl.org/wf4ever/ore-owl" />
-    <altURL    rdf:resource="file:vocabularies/ore-owl.ttl" />
+    <altURL    rdf:resource="file:vocabularies/ore-owl.owl" />
 <!--    <language  rdf:resource="http://www.w3.org/2002/07/owl" />-->
     <prefix    rdf:datatype="&xsd;string">ore-owl</prefix>
 </OntologySpec>
