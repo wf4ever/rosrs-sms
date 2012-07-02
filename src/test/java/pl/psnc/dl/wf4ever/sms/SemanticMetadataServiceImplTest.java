@@ -11,6 +11,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.Set;
@@ -107,6 +108,11 @@ public class SemanticMetadataServiceImplTest {
 
     private final Property foafName = ModelFactory.createDefaultModel()
             .createProperty("http://xmlns.com/foaf/0.1/name");
+
+    private final Property annotatesAggregatedResource = ModelFactory.createDefaultModel().createProperty(
+        RO_NAMESPACE + "annotatesAggregatedResource");
+
+    private final Property body = ModelFactory.createDefaultModel().createProperty("http://purl.org/ao/body");
 
     private final Property name = ModelFactory.createDefaultModel().createProperty(RO_NAMESPACE + "name");
 
@@ -1037,9 +1043,114 @@ public class SemanticMetadataServiceImplTest {
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
         try {
             sms.createResearchObject(researchObjectURI);
-            //TODO
+            sms.addResource(researchObjectURI, workflowURI, workflowInfo);
+            URI ann = sms.addAnnotation(researchObjectURI, Arrays.asList(workflowURI), annotationBody1URI);
+            Assert.assertTrue("Annotation is an annotation", sms.isAnnotation(researchObjectURI, ann));
+            Assert.assertFalse("Workflow is not an annotation", sms.isAnnotation(researchObjectURI, workflowURI));
+            Assert.assertFalse("2nd workflow is not an annotation", sms.isAnnotation(researchObjectURI, workflow2URI));
         } finally {
             sms.close();
         }
     }
+
+
+    @Test
+    public final void testAddAnnotation()
+            throws ClassNotFoundException, IOException, NamingException, SQLException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        try {
+            sms.createResearchObject(researchObjectURI);
+            sms.addResource(researchObjectURI, workflowURI, workflowInfo);
+            URI ann = sms
+                    .addAnnotation(researchObjectURI, Arrays.asList(workflowURI, workflow2URI), annotationBody1URI);
+            Assert.assertNotNull("Ann URI is not null", ann);
+
+            OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+            model.read(sms.getManifest(manifestURI, RDFFormat.RDFXML), null);
+            Resource researchObject = model.getResource(researchObjectURI.toString());
+            Resource annotation = model.getResource(ann.toString());
+            Resource workflow = model.getResource(workflowURI.toString());
+            Resource workflow2 = model.getResource(workflow2URI.toString());
+            Resource abody = model.getResource(annotationBody1URI.toString());
+
+            Assert.assertTrue(model.contains(researchObject, aggregates, annotation));
+            Assert.assertTrue(model.contains(annotation, annotatesAggregatedResource, workflow));
+            Assert.assertTrue(model.contains(annotation, annotatesAggregatedResource, workflow2));
+            Assert.assertTrue(model.contains(annotation, body, abody));
+        } finally {
+            sms.close();
+        }
+    }
+
+
+    @Test
+    public final void testUpdateAnnotation()
+            throws ClassNotFoundException, IOException, NamingException, SQLException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        try {
+            sms.createResearchObject(researchObjectURI);
+            sms.addResource(researchObjectURI, workflowURI, workflowInfo);
+            URI ann = sms
+                    .addAnnotation(researchObjectURI, Arrays.asList(workflowURI, workflow2URI), annotationBody1URI);
+            sms.updateAnnotation(researchObjectURI, ann, Arrays.asList(workflowURI, researchObjectURI), workflow2URI);
+
+            OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+            model.read(sms.getManifest(manifestURI, RDFFormat.RDFXML), null);
+            Resource researchObject = model.getResource(researchObjectURI.toString());
+            Resource annotation = model.getResource(ann.toString());
+            Resource workflow = model.getResource(workflowURI.toString());
+            Resource workflow2 = model.getResource(workflow2URI.toString());
+            Resource abody = model.getResource(annotationBody1URI.toString());
+
+            Assert.assertTrue(model.contains(researchObject, aggregates, annotation));
+            Assert.assertTrue(model.contains(annotation, annotatesAggregatedResource, workflow));
+            Assert.assertFalse(model.contains(annotation, annotatesAggregatedResource, workflow2));
+            Assert.assertTrue(model.contains(annotation, annotatesAggregatedResource, researchObject));
+            Assert.assertFalse(model.contains(annotation, body, abody));
+            Assert.assertTrue(model.contains(annotation, body, workflow2));
+        } finally {
+            sms.close();
+        }
+    }
+
+
+    @Test
+    public final void testGetAnnotationBody()
+            throws ClassNotFoundException, IOException, NamingException, SQLException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        try {
+            sms.createResearchObject(researchObjectURI);
+            sms.addResource(researchObjectURI, workflowURI, workflowInfo);
+            URI ann = sms
+                    .addAnnotation(researchObjectURI, Arrays.asList(workflowURI, workflow2URI), annotationBody1URI);
+            URI annBody = sms.getAnnotationBody(researchObjectURI, ann);
+            Assert.assertEquals("Annotation body retrieved correctly", annotationBody1URI, annBody);
+        } finally {
+            sms.close();
+        }
+    }
+
+
+    @Test
+    public final void testDeleteAnnotation()
+            throws ClassNotFoundException, IOException, NamingException, SQLException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        try {
+            sms.createResearchObject(researchObjectURI);
+            sms.addResource(researchObjectURI, workflowURI, workflowInfo);
+            URI ann = sms
+                    .addAnnotation(researchObjectURI, Arrays.asList(workflowURI, workflow2URI), annotationBody1URI);
+            sms.deleteAnnotation(researchObjectURI, ann);
+
+            OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+            model.read(sms.getManifest(manifestURI, RDFFormat.RDFXML), null);
+            Resource annotation = model.createResource(ann.toString());
+            Assert.assertFalse("No annotation statements", model.listStatements(annotation, null, (RDFNode) null)
+                    .hasNext());
+            Assert.assertFalse("No annotation statements", model.listStatements(null, null, annotation).hasNext());
+        } finally {
+            sms.close();
+        }
+    }
+
 }

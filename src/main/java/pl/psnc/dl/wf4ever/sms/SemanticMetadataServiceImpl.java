@@ -862,6 +862,9 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             Resource target = manifestModel.createResource(targetURI.normalize().toString());
             manifestModel.add(annotation, annotatesAggregatedResource, target);
         }
+        manifestModel.add(annotation, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
+        Resource agent = manifestModel.createResource(user.getUri().toString());
+        manifestModel.add(annotation, DCTerms.creator, agent);
         return annotationURI;
     }
 
@@ -900,9 +903,9 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     @Override
     public void deleteAnnotation(URI researchObject, URI annotation) {
         OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(researchObject.normalize()));
-        Individual annotationR = manifestModel.getIndividual(annotation.normalize().toString());
-        manifestModel.remove(annotationR, null, null);
-        manifestModel.remove(null, null, annotationR);
+        Resource annotationR = manifestModel.getResource(annotation.normalize().toString());
+        manifestModel.removeAll(annotationR, null, null);
+        manifestModel.removeAll(null, null, annotationR);
     }
 
 }
