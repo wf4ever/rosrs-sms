@@ -1,11 +1,9 @@
-/**
- * 
- */
 package pl.psnc.dl.wf4ever.sms;
 
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.util.List;
 import java.util.Set;
 
 import org.openrdf.rio.RDFFormat;
@@ -280,18 +278,6 @@ public interface SemanticMetadataService {
 
 
     /**
-     * Check if a resource is an annotation defined in a research object.
-     * 
-     * @param researchObject
-     *            research object to search
-     * @param resource
-     *            resource that may be an annotation
-     * @return true if this resource is an annotation in the research object, false otherwise
-     */
-    boolean isAnnotation(URI researchObject, URI resource);
-
-
-    /**
      * Create a new ro:Proxy for a resource. The resource does not have to be already aggregated.
      * 
      * @param researchObject
@@ -300,7 +286,7 @@ public interface SemanticMetadataService {
      *            resource for which the proxy will be
      * @return proxy URI
      */
-    URI createProxy(URI researchObject, URI resource);
+    URI addProxy(URI researchObject, URI resource);
 
 
     /**
@@ -324,7 +310,7 @@ public interface SemanticMetadataService {
      *            resource which should be pointed
      * @return true if a proxy was found, false otherwise
      */
-    boolean existsProxyFor(URI researchObject, URI resource);
+    boolean existsProxyForResource(URI researchObject, URI resource);
 
 
     /**
@@ -334,7 +320,7 @@ public interface SemanticMetadataService {
      *            research object to search
      * @param resource
      *            resource that the proxy must be for
-     * @return proxy URI
+     * @return proxy URI or null
      */
     URI getProxyForResource(URI researchObject, URI resource);
 
@@ -346,7 +332,7 @@ public interface SemanticMetadataService {
      *            research object in which the proxy is
      * @param proxy
      *            the proxy URI
-     * @return the proxyFor object URI
+     * @return the proxyFor object URI or null if not defined
      */
     URI getProxyFor(URI researchObject, URI proxy);
 
@@ -360,5 +346,69 @@ public interface SemanticMetadataService {
      *            the proxy URI
      */
     void deleteProxy(URI researchObject, URI proxy);
+
+
+    /**
+     * Add an annotation to the research object.
+     * 
+     * @param researchObject
+     *            research object
+     * @param annotationTargets
+     *            a list of annotated resources
+     * @param annotationBody
+     *            the annotation body
+     * @return URI of the annotation
+     */
+    URI addAnnotation(URI researchObject, List<URI> annotationTargets, URI annotationBody);
+
+
+    /**
+     * Update an existing annotation.
+     * 
+     * @param researchObject
+     *            research object
+     * @param annotation
+     *            URI of the annotation
+     * @param annotationTargets
+     *            a list of annotated resources
+     * @param annotationBody
+     *            the annotation body
+     */
+    void updateAnnotation(URI researchObject, URI annotation, List<URI> annotationTargets, URI annotationBody);
+
+
+    /**
+     * Check if a resource is an annotation defined in a research object.
+     * 
+     * @param researchObject
+     *            research object to search
+     * @param resource
+     *            resource that may be an annotation
+     * @return true if this resource is an annotation in the research object, false otherwise
+     */
+    boolean isAnnotation(URI researchObject, URI resource);
+
+
+    /**
+     * Return the ao:body object of an annotation.
+     * 
+     * @param researchObject
+     *            research object in which the annotation is
+     * @param annotation
+     *            the annotation URI
+     * @return the ao:body object URI or null if not defined
+     */
+    URI getAnnotationBody(URI researchObject, URI annotation);
+
+
+    /**
+     * Delete an annotation.
+     * 
+     * @param researchObject
+     *            research object in which the annotation is
+     * @param annotation
+     *            the annotation URI
+     */
+    void deleteAnnotation(URI researchObject, URI annotation);
 
 }
