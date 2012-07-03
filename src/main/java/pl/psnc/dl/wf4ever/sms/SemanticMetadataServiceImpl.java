@@ -844,8 +844,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     @Override
     public void deleteProxy(URI researchObject, URI proxy) {
         OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(researchObject.normalize()));
-        Individual proxyR = manifestModel.getIndividual(proxy.normalize().toString());
-        manifestModel.remove(proxyR, null, null);
+        Resource proxyR = manifestModel.getResource(proxy.normalize().toString());
+        manifestModel.removeAll(proxyR, null, null);
     }
 
 
