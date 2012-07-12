@@ -25,6 +25,31 @@ public interface SemanticMetadataService {
             Charset.forName("UTF-8"), "json", false, false);
 
 
+    public enum EvolutionClass {
+        LIVE {
+
+            @Override
+            public String toString() {
+                return "http://purl.org/wf4ever/roevo#LiveRO";
+            }
+        },
+        SNAPSHOT {
+
+            @Override
+            public String toString() {
+                return "http://purl.org/wf4ever/roevo#SnapshotRO";
+            }
+        },
+        ARCHIVED {
+
+            @Override
+            public String toString() {
+                return "http://purl.org/wf4ever/roevo#ArchivedRO";
+            }
+        }
+    }
+
+
     /**
      * Create a new ro:ResearchObject and ro:Manifest.
      * 
@@ -410,5 +435,16 @@ public interface SemanticMetadataService {
      *            the annotation URI
      */
     void deleteAnnotation(URI researchObject, URI annotation);
+
+
+    /**
+     * Set an evolution class of a research object in the manifest. Alternative evolution classes are removed.
+     * 
+     * @param researchObject
+     *            research object of which to set the class
+     * @param evoClass
+     *            the new evolution class, may be null if all evolution classes should be removed
+     */
+    void setEvolutionClass(URI researchObject, EvolutionClass evoClass);
 
 }

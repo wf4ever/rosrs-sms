@@ -908,4 +908,16 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         manifestModel.removeAll(null, null, annotationR);
     }
 
+
+    @Override
+    public void setEvolutionClass(URI researchObject, EvolutionClass evoClass) {
+        OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(researchObject.normalize()));
+        Individual researchObjectR = manifestModel.getIndividual(researchObject.toString());
+        for (EvolutionClass anyEvoClass : EvolutionClass.values()) {
+            researchObjectR.removeRDFType(manifestModel.createResource(anyEvoClass.toString()));
+        }
+        if (evoClass != null) {
+            researchObjectR.setRDFType(manifestModel.createResource(evoClass.toString()));
+        }
+    }
 }
