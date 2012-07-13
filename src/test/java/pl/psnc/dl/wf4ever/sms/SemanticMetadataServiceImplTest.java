@@ -32,6 +32,7 @@ import org.openrdf.rio.RDFFormat;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
+import pl.psnc.dl.wf4ever.sms.SemanticMetadataService.EvolutionClass;
 
 import com.google.common.collect.Multimap;
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
@@ -1153,4 +1154,26 @@ public class SemanticMetadataServiceImplTest {
         }
     }
 
+
+    @Test
+    public final void testSetEvolutionClass()
+            throws ClassNotFoundException, IOException, NamingException, SQLException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        try {
+            sms.createResearchObject(researchObjectURI);
+            Assert.assertEquals("Live evo class", EvolutionClass.LIVE, sms.getEvolutionClass(researchObjectURI));
+
+            sms.setEvolutionClass(researchObjectURI, EvolutionClass.SNAPSHOT);
+            Assert.assertEquals("Snapshot evo class", EvolutionClass.SNAPSHOT, sms.getEvolutionClass(researchObjectURI));
+            OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+            model.read(sms.getManifest(manifestURI, RDFFormat.RDFXML), null);
+            Individual ro = model.getIndividual(researchObjectURI.toString());
+            Assert.assertTrue("Snapshot evo class in the manifest", ro.hasRDFType(EvolutionClass.SNAPSHOT.toString()));
+
+            sms.setEvolutionClass(researchObjectURI, null);
+            Assert.assertNull("No evo class", sms.getEvolutionClass(researchObjectURI));
+        } finally {
+            sms.close();
+        }
+    }
 }

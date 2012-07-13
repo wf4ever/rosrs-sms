@@ -51,7 +51,7 @@ public interface SemanticMetadataService {
 
 
     /**
-     * Create a new ro:ResearchObject and ro:Manifest.
+     * Create a new ro:ResearchObject and ro:Manifest. The new research object will have a Live evolution class.
      * 
      * @param researchObjectURI
      *            RO URI, absolute
@@ -446,5 +446,15 @@ public interface SemanticMetadataService {
      *            the new evolution class, may be null if all evolution classes should be removed
      */
     void setEvolutionClass(URI researchObject, EvolutionClass evoClass);
+
+
+    /**
+     * Get the evolution class of a research object. The class must be defined in the manifest.
+     * 
+     * @param researchObject
+     *            research object
+     * @return the evolution class or null
+     */
+    EvolutionClass getEvolutionClass(URI researchObject);
 
 }

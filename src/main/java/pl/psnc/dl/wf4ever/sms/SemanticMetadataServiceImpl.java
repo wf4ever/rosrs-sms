@@ -213,6 +213,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         }
         manifest = manifestModel.createIndividual(manifestURI.toString(), manifestClass);
         Individual ro = manifestModel.createIndividual(researchObjectURI.toString(), researchObjectClass);
+        ro.addRDFType(manifestModel.createResource(EvolutionClass.LIVE.toString()));
 
         manifestModel.add(ro, isDescribedBy, manifest);
         manifestModel.add(ro, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
@@ -917,7 +918,20 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             researchObjectR.removeRDFType(manifestModel.createResource(anyEvoClass.toString()));
         }
         if (evoClass != null) {
-            researchObjectR.setRDFType(manifestModel.createResource(evoClass.toString()));
+            researchObjectR.addRDFType(manifestModel.createResource(evoClass.toString()));
         }
+    }
+
+
+    @Override
+    public EvolutionClass getEvolutionClass(URI researchObject) {
+        OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(researchObject.normalize()));
+        Individual researchObjectR = manifestModel.getIndividual(researchObject.toString());
+        for (EvolutionClass anyEvoClass : EvolutionClass.values()) {
+            if (researchObjectR.hasRDFType(anyEvoClass.toString())) {
+                return anyEvoClass;
+            }
+        }
+        return null;
     }
 }
