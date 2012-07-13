@@ -189,6 +189,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             String password = props.getProperty("password");
             if (driver_class != null && url != null && username != null && password != null) {
                 Class.forName(driver_class);
+                log.debug("Thread " + Thread.currentThread() + " opens a connection");
                 return DriverManager.getConnection(url, username, password);
             }
         }
@@ -484,6 +485,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     @Override
     public void close() {
+        log.debug("Thread " + Thread.currentThread() + " closes a connection");
         graphset.close();
     }
 
