@@ -76,13 +76,15 @@ public class SemanticMetadataServiceImplTest {
     private final static UserProfile userProfile = new UserProfile("jank", "pass", "Jan Kowalski",
             UserProfile.Role.AUTHENTICATED);
 
-    private final static URI workflowURI = URI.create("http://example.org/ROs/ro1/a_workflow.t2flow");
+    private final static URI workflowURI = URI.create("http://example.org/ROs/ro1/a%20workflow.t2flow");
 
-    private final static URI workflowPartURI = URI.create("http://example.org/ROs/ro1/a_workflow.t2flow#somePartOfIt");
+    private final static URI workflowPartURI = URI
+            .create("http://example.org/ROs/ro1/a%20workflow.t2flow#somePartOfIt");
 
     private final static URI workflow2URI = URI.create("http://example.org/ROs/ro2/runme.t2flow");
 
-    private final ResourceInfo workflowInfo = new ResourceInfo("a_workflow.t2flow", "ABC123455666344E", 646365L, "SHA1");
+    private final ResourceInfo workflowInfo = new ResourceInfo("a%20workflow.t2flow", "ABC123455666344E", 646365L,
+            "SHA1");
 
     private final static URI ann1URI = URI.create("http://example.org/ROs/ro1/ann1");
 
@@ -983,14 +985,14 @@ public class SemanticMetadataServiceImplTest {
             }
 
             //FIXME this does not work correctly, for some reason ".." is stripped when reading the model
-            verifyTriple(model, /* "../a_workflow.t2flow" */"a_workflow.t2flow",
+            verifyTriple(model, /* "../a_workflow.t2flow" */"a%20workflow.t2flow",
                 URI.create("http://purl.org/dc/terms/title"), "A test");
-            verifyTriple(model, /* "../a_workflow.t2flow" */"a_workflow.t2flow",
+            verifyTriple(model, /* "../a_workflow.t2flow" */"a%20workflow.t2flow",
                 URI.create("http://purl.org/dc/terms/source"), model.createResource(workflow2URI.toString()));
             verifyTriple(model, new URI("manifest.rdf"), URI.create("http://purl.org/dc/terms/license"), "GPL");
             verifyTriple(model, URI.create("http://workflows.org/a%20workflow.scufl"),
                 URI.create("http://purl.org/dc/terms/description"), "Something interesting");
-            verifyTriple(model, /* "../a_workflow.t2flow#somePartOfIt" */"a_workflow.t2flow#somePartOfIt",
+            verifyTriple(model, /* "../a_workflow.t2flow#somePartOfIt" */"a%20workflow.t2flow#somePartOfIt",
                 URI.create("http://purl.org/dc/terms/description"), "The key part");
         } finally {
             sms.close();

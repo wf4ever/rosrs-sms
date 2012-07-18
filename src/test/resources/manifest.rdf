@@ -3,7 +3,7 @@
 	<ro:ResearchObject rdf:about="../.">
 		<rdf:type rdf:resource="http://www.openarchives.org/ore/terms/Aggregation" />
 		<ore:aggregates>
-			<ro:Resource rdf:about="../a_workflow.t2flow" />
+			<ro:Resource rdf:about="../a%20workflow.t2flow" />
 		</ore:aggregates>
 		<ore:aggregates>
 			<ro:SemanticAnnotation rdf:about="../ann1">
@@ -17,7 +17,7 @@
 						</dct:creator>
 					</rdfg:Graph>
 				</ao:body>
-				<ro:annotatesAggregatedResource rdf:resource="../a_workflow.t2flow" />
+				<ro:annotatesAggregatedResource rdf:resource="../a%20workflow.t2flow" />
 				<ao:annotatesResource rdf:resource="../." />
 				<dct:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2011-12-02T15:02:13Z</dct:created>
 				<dct:creator>
@@ -35,7 +35,7 @@
 		</dct:creator>
 	</ro:ResearchObject>
 	<ro:Proxy rdf:about="../proxy1">
-		<ore:proxyFor rdf:resource="../a_workflow.t2flow" />
+		<ore:proxyFor rdf:resource="../a%20workflow.t2flow" />
 		<ore:proxyIn rdf:resource="../." />
 		<dct:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2011-12-02T15:02:10Z</dct:created>
 		<dct:creator>
