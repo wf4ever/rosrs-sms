@@ -9,6 +9,7 @@ import java.util.Set;
 import org.openrdf.rio.RDFFormat;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
+import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 
 import com.google.common.collect.Multimap;
 
@@ -48,6 +49,14 @@ public interface SemanticMetadataService {
             }
         }
     }
+
+
+    /**
+     * Return the user profile with which the service has been created.
+     * 
+     * @return the user of the service
+     */
+    UserProfile getUserProfile();
 
 
     /**

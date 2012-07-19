@@ -198,6 +198,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     }
 
 
+    @Override
+    public UserProfile getUserProfile() {
+        return user;
+    }
+
+
     /*
      * (non-Javadoc)
      * 
@@ -485,7 +491,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     @Override
     public void close() {
-        log.debug(""+this + " closes a connection");
+        log.debug("" + this + " closes a connection");
         graphset.close();
     }
 
@@ -936,4 +942,5 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         }
         return null;
     }
+
 }
