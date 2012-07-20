@@ -26,31 +26,6 @@ public interface SemanticMetadataService {
             Charset.forName("UTF-8"), "json", false, false);
 
 
-    public enum EvolutionClass {
-        LIVE {
-
-            @Override
-            public String toString() {
-                return "http://purl.org/wf4ever/roevo#LiveRO";
-            }
-        },
-        SNAPSHOT {
-
-            @Override
-            public String toString() {
-                return "http://purl.org/wf4ever/roevo#SnapshotRO";
-            }
-        },
-        ARCHIVED {
-
-            @Override
-            public String toString() {
-                return "http://purl.org/wf4ever/roevo#ArchivedRO";
-            }
-        }
-    }
-
-
     /**
      * Return the user profile with which the service has been created.
      * 
@@ -60,12 +35,46 @@ public interface SemanticMetadataService {
 
 
     /**
-     * Create a new ro:ResearchObject and ro:Manifest. The new research object will have a Live evolution class.
+     * Create a new ro:ResearchObject and ro:Manifest. The new research object will have a LiveRO evolution class.
      * 
      * @param researchObjectURI
      *            RO URI, absolute
      */
     void createResearchObject(URI researchObjectURI);
+
+
+    /**
+     * Create a new ro:ResearchObject and ro:Manifest. The new research object will have a LiveRO evolution class, and
+     * will point to its source.
+     * 
+     * @param researchObjectURI
+     *            RO URI, absolute
+     * @param source
+     *            URI of a source of the research object, may be null
+     */
+    void createLiveResearchObject(URI researchObjectURI, URI source);
+
+
+    /**
+     * Create a new ro:ResearchObject and ro:Manifest. The new research object will have a SnapshotRO evolution class.
+     * 
+     * @param researchObjectURI
+     *            RO URI, absolute
+     * @param liveRO
+     *            URI of a live research object, may be null
+     */
+    void createSnapshotResearchObject(URI researchObjectURI, URI liveRO);
+
+
+    /**
+     * Create a new ro:ResearchObject and ro:Manifest. The new research object will have a ArchivedRO evolution class.
+     * 
+     * @param researchObjectURI
+     *            RO URI, absolute
+     * @param liveRO
+     *            URI of a live research object, may be null
+     */
+    void createArchivedResearchObject(URI researchObjectURI, URI liveRO);
 
 
     /**
@@ -444,26 +453,5 @@ public interface SemanticMetadataService {
      *            the annotation URI
      */
     void deleteAnnotation(URI researchObject, URI annotation);
-
-
-    /**
-     * Set an evolution class of a research object in the manifest. Alternative evolution classes are removed.
-     * 
-     * @param researchObject
-     *            research object of which to set the class
-     * @param evoClass
-     *            the new evolution class, may be null if all evolution classes should be removed
-     */
-    void setEvolutionClass(URI researchObject, EvolutionClass evoClass);
-
-
-    /**
-     * Get the evolution class of a research object. The class must be defined in the manifest.
-     * 
-     * @param researchObject
-     *            research object
-     * @return the evolution class or null
-     */
-    EvolutionClass getEvolutionClass(URI researchObject);
 
 }
