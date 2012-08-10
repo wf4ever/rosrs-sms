@@ -697,7 +697,8 @@ public class SemanticMetadataServiceImplTest {
 
 
     /**
-     * Test method for {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#findResearchObjects(java.net.URI)} .
+     * Test method for
+     * {@link pl.psnc.dl.wf4ever.sms.SemanticMetadataServiceImpl#findResearchObjectsByPrefix(java.net.URI)} .
      * 
      * @throws SQLException
      * @throws NamingException
@@ -716,14 +717,19 @@ public class SemanticMetadataServiceImplTest {
 
             Set<URI> expected = new HashSet<URI>();
             expected.add(researchObjectURI);
-            Assert.assertEquals("Find with RO URI", expected, sms.findResearchObjects(researchObjectURI));
+            Assert.assertEquals("Find with RO URI", expected, sms.findResearchObjectsByPrefix(researchObjectURI));
 
             expected.clear();
             expected.add(researchObjectURI);
             expected.add(researchObject2URI);
             Assert.assertEquals("Find with base of RO URI", expected,
-                sms.findResearchObjects(researchObjectURI.resolve("..")));
-            Assert.assertEquals("Find with null param", expected, sms.findResearchObjects(null));
+                sms.findResearchObjectsByPrefix(researchObjectURI.resolve("..")));
+            Assert.assertEquals("Find with null param", expected, sms.findResearchObjectsByPrefix(null));
+
+            expected.clear();
+            expected.add(researchObjectURI);
+            expected.add(researchObject2URI);
+            Assert.assertEquals("Find by creator", expected, sms.findResearchObjectsByCreator(userProfile.getUri()));
         } finally {
             sms.close();
         }

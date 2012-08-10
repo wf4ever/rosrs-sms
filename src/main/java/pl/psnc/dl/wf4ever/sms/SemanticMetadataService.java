@@ -235,7 +235,6 @@ public interface SemanticMetadataService {
     void removeNamedGraph(URI researchObjectURI, URI graphURI);
 
 
-    // TODO limit results depending on the user
     /**
      * List ro:ResearchObject resources that start with the given URI.
      * 
@@ -244,7 +243,26 @@ public interface SemanticMetadataService {
      * 
      * @return set of RO URIs
      */
-    Set<URI> findResearchObjects(URI partialURI);
+    Set<URI> findResearchObjectsByPrefix(URI partialURI);
+
+
+    /**
+     * List ro:ResearchObject resources that have the given author as dcterms:creator in their manifest.
+     * 
+     * @param user
+     *            User URI.
+     * 
+     * @return set of RO URIs
+     */
+    Set<URI> findResearchObjectsByCreator(URI user);
+
+
+    /**
+     * List ro:ResearchObject resources.
+     * 
+     * @return set of RO URIs
+     */
+    Set<URI> findResearchObjects();
 
 
     /**

@@ -167,6 +167,9 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     private final String findResearchObjectsQueryTmpl = "PREFIX ro: <" + RO_NAMESPACE + "> SELECT ?ro "
             + "WHERE { ?ro a ro:ResearchObject. FILTER regex(str(?ro), \"^%s\") . }";
 
+    private final String findResearchObjectsByCreatorQueryTmpl = "PREFIX ro: <" + RO_NAMESPACE + "> PREFIX dcterms: <"
+            + DCTerms.NS + "> SELECT ?ro WHERE { ?ro a ro:ResearchObject ; dcterms:creator <%s> . }";
+
     private final Connection connection;
 
     private final UserProfile user;
@@ -580,7 +583,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 
     @Override
-    public Set<URI> findResearchObjects(URI partialURI) {
+    public Set<URI> findResearchObjectsByPrefix(URI partialURI) {
         String queryString = String.format(findResearchObjectsQueryTmpl, partialURI != null ? partialURI.normalize()
                 .toString() : "");
         Query query = QueryFactory.create(queryString);
@@ -598,6 +601,36 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         // Important - free up resources used running the query
         qe.close();
         return uris;
+    }
+
+
+    @Override
+    public Set<URI> findResearchObjectsByCreator(URI user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User cannot be null");
+        }
+        String queryString = String.format(findResearchObjectsByCreatorQueryTmpl, user.toString());
+        Query query = QueryFactory.create(queryString);
+
+        // Execute the query and obtain results
+        QueryExecution qe = QueryExecutionFactory.create(query, createOntModelForAllNamedGraphs());
+        ResultSet results = qe.execSelect();
+        Set<URI> uris = new HashSet<URI>();
+        while (results.hasNext()) {
+            QuerySolution solution = results.nextSolution();
+            Resource manifest = solution.getResource("ro");
+            uris.add(URI.create(manifest.getURI()));
+        }
+
+        // Important - free up resources used running the query
+        qe.close();
+        return uris;
+    }
+
+
+    @Override
+    public Set<URI> findResearchObjects() {
+        return findResearchObjectsByPrefix(null);
     }
 
 
