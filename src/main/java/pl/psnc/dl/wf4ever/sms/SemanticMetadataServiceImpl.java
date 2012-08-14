@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
@@ -1081,4 +1082,68 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         manifestModel.removeAll(null, null, annotationR);
     }
 
+
+    @Override
+    public int migrateRosr5To6(String datasource)
+            throws NamingException, SQLException {
+        if (datasource == null) {
+            throw new IllegalArgumentException("Datasource cannot be null");
+        }
+        InitialContext ctx = new InitialContext();
+        DataSource ds = (DataSource) ctx.lookup(datasource);
+        Connection connection = ds.getConnection();
+        if (connection == null) {
+            throw new IllegalArgumentException("Connection could not be created");
+        }
+
+        NamedGraphSetDB oldGraphset = new NamedGraphSetDB(connection, "sms");
+
+        int cnt = 0;
+        Iterator<Quad> it = oldGraphset.findQuads(Node.ANY, Node.ANY, Node.ANY, Node.ANY);
+        while (it.hasNext()) {
+            Quad quad = it.next();
+            Node g = quad.getGraphName();
+            if (g.isURI()) {
+                g = Node.createURI(g.getURI().replaceFirst("rosrs5", "rodl"));
+            }
+            Node o = quad.getObject();
+            if (o.isURI()) {
+                o = Node.createURI(o.getURI().replaceFirst("rosrs5", "rodl"));
+            }
+            Node s = quad.getSubject();
+            if (s.isURI()) {
+                s = Node.createURI(s.getURI().replaceFirst("rosrs5", "rodl"));
+            }
+            Quad newQuad = new Quad(g, s, quad.getPredicate(), o);
+            if (!graphset.containsQuad(newQuad)) {
+                cnt++;
+            }
+            graphset.addQuad(newQuad);
+        }
+
+        return cnt;
+    }
+
+
+    @Override
+    public int changeURI(URI oldUri, URI uri) {
+        int cnt = 0;
+        Node old = Node.createURI(oldUri.toString());
+        Node newu = Node.createURI(uri.toString());
+        Iterator<Quad> it = graphset.findQuads(Node.ANY, old, Node.ANY, Node.ANY);
+        while (it.hasNext()) {
+            Quad quad = it.next();
+            graphset.removeQuad(quad);
+            graphset.addQuad(new Quad(quad.getGraphName(), newu, quad.getPredicate(), quad.getObject()));
+            cnt++;
+        }
+        it = graphset.findQuads(Node.ANY, Node.ANY, Node.ANY, old);
+        while (it.hasNext()) {
+            Quad quad = it.next();
+            graphset.removeQuad(quad);
+            graphset.addQuad(new Quad(quad.getGraphName(), quad.getSubject(), quad.getPredicate(), newu));
+            cnt++;
+        }
+        return cnt;
+    }
 }

@@ -3,8 +3,11 @@ package pl.psnc.dl.wf4ever.sms;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.Charset;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Set;
+
+import javax.naming.NamingException;
 
 import org.openrdf.rio.RDFFormat;
 
@@ -471,5 +474,32 @@ public interface SemanticMetadataService {
      *            the annotation URI
      */
     void deleteAnnotation(URI researchObject, URI annotation);
+
+
+    /**
+     * Temporary method for converting ROSR5 triplestore to RODL6 triplestore.
+     * 
+     * @param oldDatasource
+     *            ROSR5 datasource
+     * 
+     * @throws NamingException
+     *             couldn't connect to the old datasource
+     * @throws SQLException
+     *             couldn't connect to the old datasource
+     */
+    int migrateRosr5To6(String oldDatasource)
+            throws NamingException, SQLException;
+
+
+    /**
+     * Changes all references to the first URI into the second.
+     * 
+     * @param oldUri
+     *            old URI
+     * @param uri
+     *            new URI
+     * @return number of quads changed
+     */
+    int changeURI(URI oldUri, URI uri);
 
 }
