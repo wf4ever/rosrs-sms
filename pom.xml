@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>pl.psnc.dl.wf4ever</groupId>
 	<artifactId>rosrs-sms</artifactId>
-	<version>3.0.1</version>
+	<version>3.0.1-SNAPSHOT</version>
 	<name>ROSRS Semantic Metadata Service</name>
 	<inceptionYear>2010</inceptionYear>
 	<developers>
@@ -17,35 +17,11 @@
 			<organization>PSNC</organization>
 		</developer>
 	</developers>
-	<repositories>
-		<repository>
-			<id>maven2-repository.dev.java.net</id>
-			<name>Java.net Repository for Maven</name>
-			<url>http://download.java.net/maven/2/</url>
-		</repository>
-		<repository>
-			<id>openrdf</id>
-			<name>OpenRDF</name>
-			<url>http://repo.aduna-software.org/maven2/releases/</url>
-		</repository>
-		<repository>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<id>dlibra-releases</id>
-			<url>http://maven.man.poznan.pl/repository/dlibra-libs-releases-public/</url>
-		</repository>
-		<repository>
-			<snapshots />
-			<id>dlibra-snapshots</id>
-			<url>http://maven.man.poznan.pl/repository/dlibra-libs-snapshots-public/</url>
-		</repository>
-	</repositories>
 	<dependencies>
 		<dependency>
 			<groupId>pl.psnc.dl.wf4ever</groupId>
 			<artifactId>rosrs-dlibra</artifactId>
-			<version>1.0.7</version>
+			<version>1.1.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.jena</groupId>
@@ -56,7 +32,7 @@
 		<dependency>
 			<groupId>de.fuberlin.wiwss.ng4j</groupId>
 			<artifactId>ng4j</artifactId>
-			<version>0.9.4-SNAPSHOT</version>
+			<version>0.9.4</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
@@ -104,12 +80,90 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>2.3.2</version>
+				<version>2.5.1</version>
 				<configuration>
 					<source>1.7</source>
 					<target>1.7</target>
 				</configuration>
 			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<version>2.3.2</version>
+			</plugin>
 		</plugins>
 	</build>
+	<scm>
+		<developerConnection>scm:git:git@github.com:wf4ever/rosrs-dlibra.git</developerConnection>
+		<tag>rosrs-dlibra-1.1.1</tag>
+	</scm>
+	<repositories>
+		<repository>
+			<id>openrdf</id>
+			<name>OpenRDF</name>
+			<url>http://repo.aduna-software.org/maven2/releases/</url>
+		</repository>
+		<repository>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<id>dlibra-releases</id>
+			<url>http://maven.man.poznan.pl/repository/dlibra-libs-releases-public/</url>
+		</repository>
+		<repository>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<id>dlibra-snapshots</id>
+			<url>http://maven.man.poznan.pl/repository/dlibra-libs-snapshots-public/</url>
+		</repository>
+	</repositories>
+	<distributionManagement>
+		<repository>
+			<id>dlibra-releases</id>
+			<url>http://maven.man.poznan.pl/repository/dlibra-libs-releases-public/</url>
+		</repository>
+		<snapshotRepository>
+			<id>dlibra-snapshots</id>
+			<url>http://maven.man.poznan.pl/repository/dlibra-libs-snapshots-public/</url>
+		</snapshotRepository>
+	</distributionManagement>
+	<profiles>
+		<profile>
+			<id>buildhive</id>
+			<!-- http://dev-snapshot.blogspot.com/2012/08/use-java-7-on-buildhive.html -->
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-compiler-plugin</artifactId>
+						<version>2.5.1</version>
+						<configuration>
+							<source>1.7</source>
+							<target>1.7</target>
+							<showDeprecation>true</showDeprecation>
+							<showWarnings>true</showWarnings>
+							<encoding>UTF-8</encoding>
+							<executable>/opt/jdk/jdk1.7.0/bin/javac</executable>
+							<fork>true</fork>
+						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<configuration>
+							<jvm>/opt/jdk/jdk1.7.0/bin/java</jvm>
+							<forkMode>once</forkMode>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>
