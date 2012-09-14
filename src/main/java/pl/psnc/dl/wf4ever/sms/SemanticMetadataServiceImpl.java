@@ -1053,7 +1053,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(researchObject.normalize()));
         Resource body = manifestModel.createResource(annotationBody.normalize().toString());
         Individual annotation = manifestModel.getIndividual(annotationURI.toString());
-        manifestModel.removeAll(annotation, null, null);
+        manifestModel.removeAll(annotation, aoBody, null);
+        manifestModel.removeAll(annotation, annotatesAggregatedResource, null);
         manifestModel.add(annotation, aoBody, body);
         for (URI targetURI : annotationTargets) {
             Resource target = manifestModel.createResource(targetURI.normalize().toString());
