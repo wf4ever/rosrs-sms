@@ -72,6 +72,12 @@ public class SemanticMetadataServiceImplTest {
 
     private final static URI researchObject2URI = URI.create("http://example.org/ROs/ro2/");
 
+    private final static URI snapshotResearchObjectURI = URI.create("http://example.org/ROs/sp1/");
+
+    private final static URI archiveResearchObjectURI = URI.create("http://example.org/ROs/arch1/");
+
+    private final static URI wrongResearchObjectURI = URI.create("http://wrong.example.org/ROs/wrongRo/");
+
     private final static UserProfile userProfile = new UserProfile("jank", "pass", "Jan Kowalski",
             UserProfile.Role.AUTHENTICATED);
 
@@ -172,6 +178,16 @@ public class SemanticMetadataServiceImplTest {
             }
             try {
                 sms.removeResearchObject(researchObject2URI);
+            } catch (IllegalArgumentException e) {
+                // nothing
+            }
+            try {
+                sms.removeResearchObject(snapshotResearchObjectURI);
+            } catch (IllegalArgumentException e) {
+                // nothing
+            }
+            try {
+                sms.removeResearchObject(archiveResearchObjectURI);
             } catch (IllegalArgumentException e) {
                 // nothing
             }
@@ -715,21 +731,22 @@ public class SemanticMetadataServiceImplTest {
             sms.addResource(researchObjectURI, workflowURI, workflowInfo);
             sms.addResource(researchObjectURI, ann1URI, ann1Info);
 
-            Set<URI> expected = new HashSet<URI>();
-            expected.add(researchObjectURI);
-            Assert.assertEquals("Find with RO URI", expected, sms.findResearchObjectsByPrefix(researchObjectURI));
+            Set<URI> result = sms.findResearchObjectsByPrefix(researchObjectURI.resolve(".."));
+            Assert.assertTrue("Find with base of RO", result.contains(researchObjectURI));
+            Assert.assertTrue("Find with base of RO", result.contains(researchObject2URI));
 
-            expected.clear();
-            expected.add(researchObjectURI);
-            expected.add(researchObject2URI);
-            Assert.assertEquals("Find with base of RO URI", expected,
-                sms.findResearchObjectsByPrefix(researchObjectURI.resolve("..")));
-            Assert.assertEquals("Find with null param", expected, sms.findResearchObjectsByPrefix(null));
+            result = sms.findResearchObjectsByPrefix(wrongResearchObjectURI.resolve(".."));
+            Assert.assertFalse("Not find with the wrong base", result.contains(researchObjectURI));
+            Assert.assertFalse("Not find with the wrong base", result.contains(researchObject2URI));
 
-            expected.clear();
-            expected.add(researchObjectURI);
-            expected.add(researchObject2URI);
-            Assert.assertEquals("Find by creator", expected, sms.findResearchObjectsByCreator(userProfile.getUri()));
+            result = sms.findResearchObjectsByCreator(userProfile.getUri());
+            Assert.assertTrue("Find by creator of RO", result.contains(researchObjectURI));
+            Assert.assertTrue("Find by creator of RO", result.contains(researchObject2URI));
+
+            result = sms.findResearchObjectsByCreator(wrongResearchObjectURI);
+            Assert.assertFalse("Not find by the wrong creator", result.contains(researchObjectURI));
+            Assert.assertFalse("Not find by the wrong creator", result.contains(researchObject2URI));
+
         } finally {
             sms.close();
         }
@@ -1160,5 +1177,4 @@ public class SemanticMetadataServiceImplTest {
             sms.close();
         }
     }
-
 }
