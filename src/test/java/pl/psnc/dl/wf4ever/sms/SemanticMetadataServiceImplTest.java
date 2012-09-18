@@ -60,6 +60,7 @@ import de.fuberlin.wiwiss.ng4j.impl.NamedGraphSetImpl;
 
 /**
  * @author piotrhol
+ * @author filipwis
  * 
  */
 public class SemanticMetadataServiceImplTest {
@@ -127,6 +128,10 @@ public class SemanticMetadataServiceImplTest {
     private final Property filesize = ModelFactory.createDefaultModel().createProperty(RO_NAMESPACE + "filesize");
 
     private final Property checksum = ModelFactory.createDefaultModel().createProperty(RO_NAMESPACE + "checksum");
+
+    private static final String PROJECT_PATH = System.getProperty("user.dir");
+
+    private static final String FILE_SEPARATOR = System.getProperty("file.separator");
 
 
     /**
@@ -1177,4 +1182,82 @@ public class SemanticMetadataServiceImplTest {
             sms.close();
         }
     }
+
+
+    @Test
+    public final void testIsSnapshot()
+            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        Assert.assertTrue("snapshot does not recognized",
+            sms.isSnapshotURI(getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL"));
+        Assert.assertFalse("snapshot wrongly recognized",
+            sms.isSnapshotURI(getResourceURI("ro1/"), ".ro/manifest.ttl", "TTL"));
+        sms.close();
+    }
+
+
+    @Test
+    public final void testIsArchive()
+            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        Assert.assertTrue("snapshot does not recognized",
+            sms.isArchiveURI(getResourceURI("ro1-arch1/"), ".ro/manifest.ttl", "TTL"));
+        Assert.assertFalse("snapshot wrongly recognized",
+            sms.isArchiveURI(getResourceURI("ro1/"), ".ro/manifest.ttl", "TTL"));
+        sms.close();
+    }
+
+
+    @Test
+    public final void testGetPreviousSnaphotOrArchive()
+            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        URI sp1Antecessor = sms.getPreviousSnaphotOrArchive(getResourceURI("ro1/"), getResourceURI("ro1-sp1/"),
+            ".ro/manifest.ttl", "TTL");
+        URI sp2Antecessor = sms.getPreviousSnaphotOrArchive(getResourceURI("ro1/"), getResourceURI("ro1-sp2/"),
+            ".ro/manifest.ttl", "TTL");
+        sms.close();
+        Assert.assertNull("wrong antecessor URI", sp1Antecessor);
+        Assert.assertEquals("wrong antecessor URI", sp2Antecessor, getResourceURI("ro1-sp1/"));
+
+    }
+
+
+    @Test
+    public final void testGetIndividual()
+            throws URISyntaxException, ClassNotFoundException, IOException, NamingException, SQLException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+        model.read(getResourceURI("ro1/").resolve(".ro/manifest.ttl").toString(), "TTL");
+        Individual source = model.getIndividual(getResourceURI("ro1/").toString());
+        Individual source2 = sms.getIndividual(getResourceURI("ro1/"), ".ro/manifest.ttl", "TTL");
+        Assert.assertEquals("wrong individual returned", source, source2);
+        sms.close();
+    }
+
+
+    @Test
+    public final void testGetLiveROfromSnapshotOrArchive()
+            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        URI liveFromRO = sms.getLiveURIFromSnapshotOrArchive(getResourceURI("ro1/"), ".ro/manifest.ttl", "TTL");
+        URI liveFromSP = sms.getLiveURIFromSnapshotOrArchive(getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL");
+        URI liveFromARCH = sms.getLiveURIFromSnapshotOrArchive(getResourceURI("ro1-arch1/"), ".ro/manifest.ttl", "TTL");
+        Assert.assertNull("live RO does not have a parent RO", liveFromRO);
+        Assert.assertEquals("wrong parent URI", liveFromSP, getResourceURI("ro1/"));
+        Assert.assertEquals("wrong parent URI", liveFromARCH, getResourceURI("ro1/"));
+
+    }
+
+
+    /***** HELPERS *****/
+
+    private URI getResourceURI(String resourceName)
+            throws URISyntaxException {
+        String result = PROJECT_PATH;
+        result += FILE_SEPARATOR + "src" + FILE_SEPARATOR + "test" + FILE_SEPARATOR + "resources" + FILE_SEPARATOR
+                + "rdfStructure" + FILE_SEPARATOR + resourceName;
+        return new URI("file://" + result);
+    }
+
 }

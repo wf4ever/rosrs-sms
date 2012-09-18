@@ -23,6 +23,7 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
 import org.openrdf.rio.RDFFormat;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
@@ -68,6 +69,8 @@ import de.fuberlin.wiwiss.ng4j.sparql.NamedGraphDataset;
  * 
  */
 public class SemanticMetadataServiceImpl implements SemanticMetadataService {
+
+    private static final String DEFAULT_MANIFEST_PATH = ".ro/manifest.rdf";
 
     private static final Logger log = Logger.getLogger(SemanticMetadataServiceImpl.class);
 
@@ -1145,5 +1148,149 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             cnt++;
         }
         return cnt;
+    }
+
+
+    @Override
+    public boolean isSnapshotURI(URI resource) {
+        return isSnapshotURI(resource, DEFAULT_MANIFEST_PATH, "RDF/XML");
+    }
+
+
+    @Override
+    public boolean isSnapshotURI(URI resource, String modelPath, String format) {
+        return getIndividual(resource, modelPath, format).hasRDFType(snapshotROClass);
+    }
+
+
+    @Override
+    public boolean isArchiveURI(URI resource) {
+        return isArchiveURI(resource, DEFAULT_MANIFEST_PATH, "RDF/XML");
+    }
+
+
+    @Override
+    public boolean isArchiveURI(URI resource, String modelPath, String format) {
+        return getIndividual(resource, modelPath, format).hasRDFType(archivedROClass);
+    }
+
+
+    @Override
+    public URI getLiveURIFromSnapshotOrArchive(URI resource)
+            throws URISyntaxException {
+        return getLiveURIFromSnapshotOrArchive(resource, DEFAULT_MANIFEST_PATH, "RDF/XML");
+    }
+
+
+    @Override
+    public URI getLiveURIFromSnapshotOrArchive(URI resource, String modelPath, String format)
+            throws URISyntaxException {
+        Individual source = getIndividual(resource, modelPath, format);
+        if (isSnapshotURI(resource, modelPath, format)) {
+            RDFNode roNode = source.getProperty(roevoIsSnapshotOf).getObject();
+            return new URI(roNode.toString());
+        } else if (isArchiveURI(resource, modelPath, format)) {
+            RDFNode roNode = source.getProperty(roevoIsArchiveOf).getObject();
+            return new URI(roNode.toString());
+        }
+        return null;
+    }
+
+
+    @Override
+    public URI getPreviousSnaphotOrArchive(URI liveRO, URI freshSnapshotOrARchive)
+            throws URISyntaxException {
+        return getPreviousSnaphotOrArchive(liveRO, freshSnapshotOrARchive, DEFAULT_MANIFEST_PATH, "RDF/XML");
+    }
+
+
+    @Override
+    public URI getPreviousSnaphotOrArchive(URI liveRO, URI freshSnapshotOrArchive, String modelPath, String format)
+            throws URISyntaxException {
+
+        Individual liveSource = getIndividual(liveRO, modelPath, format);
+
+        StmtIterator snaphotsIterator;
+        snaphotsIterator = liveSource.listProperties(roevoHasSnapshot);
+        StmtIterator archiveItertator;
+        archiveItertator = liveSource.listProperties(roevoHasArchive);
+
+        Individual freshSource = getIndividual(freshSnapshotOrArchive, modelPath, format);
+        RDFNode dateNode;
+        if (isSnapshotURI(freshSnapshotOrArchive, modelPath, format)) {
+            dateNode = freshSource.getProperty(roevoSnapshottedAtTime).getObject();
+        } else if (isArchiveURI(freshSnapshotOrArchive, modelPath, format)) {
+            dateNode = freshSource.getProperty(roevoArchivedAtTime).getObject();
+        } else {
+            return null;
+        }
+
+        DateTime freshTime = new DateTime(dateNode.asLiteral().getValue().toString());
+        DateTime predecessorTime = null;
+        URI result = null;
+
+        while (snaphotsIterator.hasNext()) {
+            URI tmpURI = new URI(snaphotsIterator.next().getObject().toString());
+            RDFNode node = getIndividual(tmpURI, modelPath, format).getProperty(roevoSnapshottedAtTime).getObject();
+            DateTime tmpTime = new DateTime(node.asLiteral().getValue().toString());
+            if ((tmpTime.compareTo(freshTime) == -1)
+                    && ((predecessorTime == null) || (tmpTime.compareTo(predecessorTime) == 1))) {
+                predecessorTime = tmpTime;
+                result = tmpURI;
+            }
+        }
+        while (archiveItertator.hasNext()) {
+            URI tmpURI = new URI(archiveItertator.next().getObject().toString());
+            RDFNode node = getIndividual(tmpURI, modelPath, format).getProperty(roevoArchivedAtTime).getObject();
+            DateTime tmpTime = new DateTime(node.asLiteral().getValue().toString());
+            if ((tmpTime.compareTo(freshTime) == -1)
+                    && ((predecessorTime == null) || (tmpTime.compareTo(predecessorTime) == 1))) {
+                predecessorTime = tmpTime;
+                result = tmpURI;
+            }
+        }
+        return result;
+    }
+
+
+    @Override
+    public void storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI) {
+        storeAggregatedDifferences(freshObjectURI, antecessorObjectURI, DEFAULT_MANIFEST_PATH, "RDF/XML");
+    }
+
+
+    @Override
+    public void storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath, String format) {
+        Individual freshObjectSource = getIndividual(freshObjectURI, modelPath, format);
+        Individual antecessorObjectSource = getIndividual(antecessorObjectURI, modelPath, format);
+        NodeIterator freshAggregatesIter = freshObjectSource.listPropertyValues(aggregates);
+        NodeIterator antecessorAggregatesIter = antecessorObjectSource.listPropertyValues(aggregates);
+        while (freshAggregatesIter.hasNext()) {
+
+        }
+        while (antecessorAggregatesIter.hasNext()) {
+
+        }
+    }
+
+
+    @Override
+    public Individual getIndividual(URI resource) {
+        return getIndividual(resource, DEFAULT_MANIFEST_PATH, "RDF/XML");
+    }
+
+
+    @Override
+    public Individual getIndividual(URI resource, String modelPath, String format) {
+        OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+        model.read(resource.resolve(modelPath).toString(), format);
+        Individual source = model.getIndividual(resource.toString());
+        return source;
+    }
+
+
+    @Override
+    public String getDefaultManifestPath() {
+        return DEFAULT_MANIFEST_PATH;
     }
 }

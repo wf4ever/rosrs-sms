@@ -1,0 +1,17 @@
+@base <../../> .
+@prefix : <ro1-sp1/> .
+@prefix ro: <http://purl.org/wf4ever/ro#> .
+@prefix ore: <http://www.openarchives.org/ore/terms/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix roevo: <http://purl.org/wf4ever/roevo#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+
+<ro1-sp1/.ro/manifest.rdf> a ro:Manifest ;
+    ore:describes <ro1-sp1/> ;
+    dct:created "2011-12-02T16:01:10Z"^^xsd:dateTime ;
+    dct:creator [ a foaf:Agent; foaf:name "RO manager" ] .
+
+<ro1-sp1/> a roevo:SnapshotRO ;
+	roevo:isSnapshotOf <ro1/> ;
+	roevo:snapshottedAtTime "2012-01-02T16:01:10Z"^^xsd:dateTime .
