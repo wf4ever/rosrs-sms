@@ -626,8 +626,9 @@ public interface SemanticMetadataService {
      *            URI of the freshest snapshot/archive
      * @param antecessorObjectURI
      *            URI of the previous snapshot/archive
+     * @return list of changes
      */
-    void storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI);
+    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI);
 
 
     /**
@@ -641,8 +642,9 @@ public interface SemanticMetadataService {
      *            relevant path to the RO manifest
      * @param format
      *            file format ("XML/RDF", "TTL" ...)
+     * @return list of changes
      */
-    void storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath, String format);
+    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath, String format);
 
 
     /**

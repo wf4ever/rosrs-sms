@@ -37,6 +37,7 @@ import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
+import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
@@ -45,6 +46,7 @@ import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.query.Syntax;
+import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.NodeIterator;
@@ -138,6 +140,9 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     private static final Property filesize = defaultModel.getProperty(RO_NAMESPACE + "filesize");
 
     private static final Property checksum = defaultModel.getProperty(RO_NAMESPACE + "checksum");
+
+    private static final Property roAnnotatesAggregatedResource = defaultModel.getProperty(RO_NAMESPACE
+            + "annotatesAggregatedResource");
 
     private static final Property aoBody = defaultModel.getProperty(AO_NAMESPACE + "body");
 
@@ -1252,25 +1257,202 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         return result;
     }
 
+    private enum Direction {
+        NEW, DELETED
+    }
 
     @Override
-    public void storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI) {
-        storeAggregatedDifferences(freshObjectURI, antecessorObjectURI, DEFAULT_MANIFEST_PATH, "RDF/XML");
+    public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI) {
+        return storeAggregatedDifferences(freshObjectURI, antecessorObjectURI, DEFAULT_MANIFEST_PATH, "RDF/XML");
+    }
+
+    @Override
+    public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath,
+            String format) {
+        Individual freshObjectSource = getIndividual(freshObjectURI, modelPath, format);
+        Individual antecessorObjectSource = getIndividual(antecessorObjectURI, modelPath, format);
+        List<RDFNode> freshAggregatesList = freshObjectSource.listPropertyValues(aggregates).toList();
+        List<RDFNode> antecessorAggregatesList = antecessorObjectSource.listPropertyValues(aggregates).toList();
+        String result = lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, modelPath, format,
+            freshAggregatesList, antecessorAggregatesList, Direction.NEW);
+        result += lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, modelPath, format,
+            antecessorAggregatesList, freshAggregatesList, Direction.DELETED);
+        return result;
+    }
+    
+    private String lookForAggregatedDifferents(URI freshObjectURI, URI antecessorObjectURI, String modelPath,
+            String format, List<RDFNode> pattern, List<RDFNode> compared, Direction direction) {
+        String result = "";
+        for (RDFNode patternNode : pattern) {
+            Boolean loopResult = null;
+            for (RDFNode comparedNode : compared) {
+                Boolean tmp = compareProprties(patternNode, comparedNode);
+                if (tmp != null) {
+                    loopResult = tmp;
+                }
+            }
+            result += serviceDetectedEVOmodification(loopResult, freshObjectURI, antecessorObjectURI, modelPath,
+                format, patternNode, direction);
+        }
+        return result;
     }
 
 
-    @Override
-    public void storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath, String format) {
-        Individual freshObjectSource = getIndividual(freshObjectURI, modelPath, format);
-        Individual antecessorObjectSource = getIndividual(antecessorObjectURI, modelPath, format);
-        NodeIterator freshAggregatesIter = freshObjectSource.listPropertyValues(aggregates);
-        NodeIterator antecessorAggregatesIter = antecessorObjectSource.listPropertyValues(aggregates);
-        while (freshAggregatesIter.hasNext()) {
-
+    private String serviceDetectedEVOmodification(Boolean loopResult, URI freshObjectURI, URI antecessorObjectURI,
+            String modelPath, String format, RDFNode node, Direction direction) {
+        OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+        model.read(freshObjectURI.resolve(modelPath).toString(), format);
+        Individual source = model.getIndividual(freshObjectURI.toString());
+        String result = "";
+        if (loopResult == null && direction == direction.NEW) {
+            result += "<" + freshObjectURI + "> <" + node.toString() + "> " + direction.toString() + "\n";
         }
-        while (antecessorAggregatesIter.hasNext()) {
 
+        else if (loopResult == false) {
+            if(direction == Direction.NEW) {
+                
+            }
+            else {
+                
+            }
+            result += "<" + freshObjectURI + "> <" + node.toString() + "> " + direction.toString() + "\n";
         }
+        return result;
+    }
+
+
+    private Boolean compareProprties(RDFNode pattern, RDFNode compared) {
+        if (pattern.isResource() && compared.isResource()) {
+            return compareTwoResources(pattern.asResource(), compared.asResource());
+        } else if (pattern.isLiteral() && compared.isLiteral()) {
+            return compareTwoLiterals(pattern.asLiteral(), compared.asLiteral());
+        }
+        return null;
+    }
+
+
+    private Boolean compareTwoLiterals(Literal pattern, Literal compared) {
+        //@TODO compare checksums
+        Boolean result = null;
+        if (pattern.equals(compared)) {
+            //@TODO compare checksums
+            return true;
+        }
+        return result;
+    }
+
+
+    private Boolean compareTwoResources(Resource pattern, Resource compared) {
+        Individual patternSource = pattern.as(Individual.class);
+        Individual comparedSource = compared.as(Individual.class);
+        if (patternSource.hasRDFType(roAggregatedAnnotationClass)
+                && comparedSource.hasRDFType(roAggregatedAnnotationClass)) {
+            if (pattern.getLocalName().equals(compared.getLocalName())) {
+                return compareTwoAggreagatedResources(patternSource, comparedSource)
+                        && compareTwoAggregatedAnnotationBody(patternSource, comparedSource);
+            } else {
+                return null;
+            }
+        } else {
+            if (pattern.getLocalName().equals(compared.getLocalName())) {
+                //@TODO compare checksums
+                return true;
+            } else {
+                return null;
+            }
+        }
+
+    }
+
+
+    private Boolean compareTwoAggreagatedResources(Individual pattern, Individual compared) {
+        List<RDFNode> patternList = pattern.listPropertyValues(roAnnotatesAggregatedResource).toList();
+        List<RDFNode> comparedList = compared.listPropertyValues(roAnnotatesAggregatedResource).toList();
+        if (patternList.size() != comparedList.size())
+            return false;
+        for (RDFNode patternNode : patternList) {
+            Boolean result = null;
+            for (RDFNode comparedNode : comparedList) {
+                if (comparedNode.isResource() && patternNode.isResource()) {
+                    if (comparedNode.asResource().getLocalName().equals(patternNode.asResource().getLocalName())) {
+                        result = true;
+                    }
+                } else if (comparedNode.isLiteral() && patternNode.isLiteral()) {
+                    if (comparedNode.asLiteral().equals(patternNode.asLiteral())) {
+                        result = true;
+                    }
+                }
+            }
+            if (result == null) {
+                return false;
+            }
+        }
+        for (RDFNode comparedNode : comparedList) {
+            Boolean result = null;
+            for (RDFNode patternNode : patternList) {
+                if (comparedNode.isResource() && patternNode.isResource()) {
+                    if (comparedNode.asResource().getLocalName().equals(patternNode.asResource().getLocalName())) {
+                        result = true;
+                    }
+                } else if (comparedNode.isLiteral() && patternNode.isLiteral()) {
+                    if (comparedNode.asLiteral().equals(patternNode.asLiteral())) {
+                        result = true;
+                    }
+                }
+            }
+            if (result == false || result == null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    private Boolean compareTwoAggregatedAnnotationBody(Individual patternSource, Individual comparedSource) {
+        Resource patternBody = patternSource.getProperty(aoBody).getResource();
+        Resource comparedBody = comparedSource.getProperty(aoBody).getResource();
+        OntModel patternModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+        patternModel.read(patternBody.getURI(), "TTL");
+        OntModel comparedModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+        comparedModel.read(comparedBody.getURI(), "TTL");
+
+        List<Statement> patternList = patternModel.listStatements().toList();
+        List<Statement> comparedList = comparedModel.listStatements().toList();
+
+        for (Statement s : patternList) {
+            if (!isStatementInList(s, comparedList)) {
+                return false;
+            }
+        }
+        for (Statement s : comparedList) {
+            if (!isStatementInList(s, patternList)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    private Boolean isStatementInList(Statement statement, List<Statement> list) {
+        String localName = statement.getSubject().getLocalName().toString();
+        for (Statement listStatement : list) {
+            if (listStatement.getSubject().getLocalName().toString().equals(localName)) {
+                if (listStatement.getObject().isResource() && statement.getObject().isResource()) {
+                    if (listStatement.getObject().asResource().getLocalName()
+                            .equals(statement.getObject().asResource().getLocalName())) {
+                        return true;
+                    }
+
+                }
+                if (listStatement.getObject().isLiteral() && statement.getObject().isLiteral()) {
+                    if (listStatement.getObject().asLiteral().toString()
+                            .equals(statement.getObject().asLiteral().toString())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
 

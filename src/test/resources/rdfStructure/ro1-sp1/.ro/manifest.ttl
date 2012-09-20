@@ -1,17 +1,39 @@
 @base <../../> .
 @prefix : <ro1-sp1/> .
 @prefix ro: <http://purl.org/wf4ever/ro#> .
+@prefix ao: <http://purl.org/ao/> .
 @prefix ore: <http://www.openarchives.org/ore/terms/> .
 @prefix dct: <http://purl.org/dc/terms/> .
 @prefix roevo: <http://purl.org/wf4ever/roevo#> .
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix rdfg: <http://www.w3.org/2004/03/trix/rdfg-1/> .
 
-<ro1-sp1/.ro/manifest.rdf> a ro:Manifest ;
+<ro1-sp1/.ro/manifest.ttl> a ro:Manifest ;
     ore:describes <ro1-sp1/> ;
     dct:created "2011-12-02T16:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Agent; foaf:name "RO manager" ] .
 
 <ro1-sp1/> a roevo:SnapshotRO ;
 	roevo:isSnapshotOf <ro1/> ;
-	roevo:snapshottedAtTime "2012-01-02T16:01:10Z"^^xsd:dateTime .
+	roevo:snapshottedAtTime "2012-01-02T16:01:10Z"^^xsd:dateTime ;
+	ore:aggregates :ann1 ;
+	ore:aggregates <afolder> ;
+	ore:aggregates <agregated-resource-file> .
+	
+:ann1 a ro:AggregatedAnnotation ;
+    ro:annotatesAggregatedResource <agregated-resource-file> ;
+    ao:body <ro1-sp1/.ro/ann1-body.ttl> ;
+    dct:created "2011-12-02T15:02:13Z"^^xsd:dateTime ;
+    dct:creator [ a foaf:Agent ; foaf:name "t2flow workflow annotation extractor" ] .
+    
+<ro1-sp1/.ro/ann1-body.ttl> a rdfg:Graph ;
+	dct:created "2010-05-14T12:02:12Z"^^xsd:dateTime ;
+	dct:creator [ a foaf:Person ; foaf:name "Marco Roos" ] .
+	
+<agregated-resource-file> a ro:Resource ;
+    dct:created "2011-12-02T15:02:10Z"^^xsd:dateTime ;
+    dct:creator [ a foaf:Person; foaf:name "Stian Soiland-Reyes" ] .
+    
+<afolder> a ro:Folder ;
+    ore:isDescribedBy <afolder.ttl> .

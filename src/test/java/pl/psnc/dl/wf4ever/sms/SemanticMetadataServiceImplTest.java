@@ -1219,7 +1219,6 @@ public class SemanticMetadataServiceImplTest {
         sms.close();
         Assert.assertNull("wrong antecessor URI", sp1Antecessor);
         Assert.assertEquals("wrong antecessor URI", sp2Antecessor, getResourceURI("ro1-sp1/"));
-
     }
 
 
@@ -1243,10 +1242,18 @@ public class SemanticMetadataServiceImplTest {
         URI liveFromRO = sms.getLiveURIFromSnapshotOrArchive(getResourceURI("ro1/"), ".ro/manifest.ttl", "TTL");
         URI liveFromSP = sms.getLiveURIFromSnapshotOrArchive(getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL");
         URI liveFromARCH = sms.getLiveURIFromSnapshotOrArchive(getResourceURI("ro1-arch1/"), ".ro/manifest.ttl", "TTL");
+        sms.close();
         Assert.assertNull("live RO does not have a parent RO", liveFromRO);
         Assert.assertEquals("wrong parent URI", liveFromSP, getResourceURI("ro1/"));
         Assert.assertEquals("wrong parent URI", liveFromARCH, getResourceURI("ro1/"));
 
+    }
+    
+    @Test
+    public final void testStoreROhistory()
+            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        sms.storeAggregatedDifferences(getResourceURI("ro1-sp1/"), getResourceURI("ro1-sp2/"), ".ro/manifest.ttl", "TTL");
     }
 
 
