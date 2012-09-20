@@ -1304,18 +1304,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         model.read(freshObjectURI.resolve(modelPath).toString(), format);
         Individual source = model.getIndividual(freshObjectURI.toString());
         String result = "";
-        if (loopResult == null && direction == direction.NEW) {
+        if (loopResult == null) {
             result += "<" + freshObjectURI + "> <" + node.toString() + "> " + direction.toString() + "\n";
         }
 
-        else if (loopResult == false) {
-            if(direction == Direction.NEW) {
-                
-            }
-            else {
-                
-            }
-            result += "<" + freshObjectURI + "> <" + node.toString() + "> " + direction.toString() + "\n";
+        else if (loopResult == false && direction == Direction.NEW) {
+            result += "<" + freshObjectURI + "> <" + node.toString() + "> " + "MODIFIED" + "\n";
         }
         return result;
     }
@@ -1347,6 +1341,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         Individual comparedSource = compared.as(Individual.class);
         if (patternSource.hasRDFType(roAggregatedAnnotationClass)
                 && comparedSource.hasRDFType(roAggregatedAnnotationClass)) {
+            //if (URI.create(pattern.getURI()).relativize(roURI))
             if (pattern.getLocalName().equals(compared.getLocalName())) {
                 return compareTwoAggreagatedResources(patternSource, comparedSource)
                         && compareTwoAggregatedAnnotationBody(patternSource, comparedSource);
