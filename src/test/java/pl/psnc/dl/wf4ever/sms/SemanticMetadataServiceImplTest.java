@@ -1253,7 +1253,9 @@ public class SemanticMetadataServiceImplTest {
     public final void testStoreROhistory()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
-        //sms.storeAggregatedDifferences(getResourceURI("ro1-sp1/"), getResourceURI("ro1-sp2/"), ".ro/manifest.ttl", "TTL");
+        InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
+        sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
+        sms.storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL");
     }
 
 
@@ -1266,5 +1268,4 @@ public class SemanticMetadataServiceImplTest {
                 + "rdfStructure" + FILE_SEPARATOR + resourceName;
         return new URI("file://" + result);
     }
-
 }

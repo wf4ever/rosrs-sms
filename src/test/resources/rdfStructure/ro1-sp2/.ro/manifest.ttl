@@ -46,10 +46,10 @@
     
 #information about changes
 
-:changeSpec1 a roevo:ChangeSpecification ;
-   roevo:fromVersion <ro1-sp1/> ;
-   roevo:toVersion <ro1-sp2/> ;
-   roevo:hasChange :change1 .
+#:changeSpec1 a roevo:ChangeSpecification ;
+#   roevo:fromVersion <ro1-sp1/> ;
+#   roevo:toVersion <ro1-sp2/> ;
+#   roevo:hasChange :change1 .
    
-:change1 a roevo:Addition, roevo:Change ;
-   roevo:relatedResource :res1 .
+#:change1 a roevo:Addition, roevo:Change ;
+#   roevo:relatedResource :res1 .
