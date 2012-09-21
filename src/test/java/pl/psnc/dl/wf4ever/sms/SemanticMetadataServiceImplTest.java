@@ -1248,14 +1248,18 @@ public class SemanticMetadataServiceImplTest {
         Assert.assertEquals("wrong parent URI", liveFromARCH, getResourceURI("ro1/"));
 
     }
-    
+
+
     @Test
     public final void testStoreROhistory()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
         InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
         sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
-        sms.storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL");
+        String result = sms.storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"),
+            ".ro/manifest.ttl", "TTL");
+        log.debug(result);
+        Assert.assertTrue(result.contains("ro1-sp2/ann2 MODIFICATION"));
     }
 
 

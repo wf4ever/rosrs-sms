@@ -18,10 +18,7 @@
 <ro1-sp2/> a roevo:SnapshotRO ;
 	roevo:isSnapshotOf <ro1/> ;
 	roevo:snapshottedAtTime "2012-03-02T16:01:10Z"^^xsd:dateTime ;
-	ore:aggregates :ann1 ;
-	ore:aggregates :res1 ;
-	ore:aggregates <afinalfolder> ;
-	ore:aggregates <agregated-resource-file> .
+	ore:aggregates :ann1, :ann2, :res1, <afinalfolder>, <agregated-resource-file> .
 	
 :ann1 a ro:AggregatedAnnotation ;
     ro:annotatesAggregatedResource <agregated-resource-file> ;
@@ -29,6 +26,12 @@
     dct:created "2011-12-02T15:02:13Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Agent ; foaf:name "t2flow workflow annotation extractor" ] .
     
+:ann2 a ro:AggregatedAnnotation ;
+    ro:annotatesAggregatedResource <agregated-resource-file> ;
+    ao:body <ro1-sp2/.ro/ann2-body.ttl> ;
+    dct:created "2011-12-02T15:02:13Z"^^xsd:dateTime ;
+    dct:creator [ a foaf:Agent ; foaf:name "t2flow workflow annotation extractor" ] .
+
 <ro1-sp2/.ro/ann1-body.ttl> a rdfg:Graph ;
 	dct:created "2010-05-14T12:02:12Z"^^xsd:dateTime ;
 	dct:creator [ a foaf:Person ; foaf:name "Marco Roos" ] .
