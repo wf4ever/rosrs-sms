@@ -22,7 +22,9 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
+import org.joda.time.DateTime;
 import org.openrdf.rio.RDFFormat;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
@@ -36,6 +38,7 @@ import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
+import com.hp.hpl.jena.ontology.OntProperty;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
@@ -44,6 +47,7 @@ import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
 import com.hp.hpl.jena.query.Syntax;
+import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.NodeIterator;
@@ -68,6 +72,8 @@ import de.fuberlin.wiwiss.ng4j.sparql.NamedGraphDataset;
  * 
  */
 public class SemanticMetadataServiceImpl implements SemanticMetadataService {
+
+    private static final String DEFAULT_MANIFEST_PATH = ".ro/manifest.rdf";
 
     private static final Logger log = Logger.getLogger(SemanticMetadataServiceImpl.class);
 
@@ -118,6 +124,17 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     private static final OntClass foafPersonClass = defaultModel.getOntClass(FOAF_NAMESPACE + "Person");
 
+    private static final OntClass ChangeSpecificationClass = defaultModel.getOntClass(ROEVO_NAMESPACE
+            + "ChangeSpecification");
+
+    private static final OntClass ChangeClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "Change");
+
+    private static final OntClass AdditionClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "Addition");
+
+    private static final OntClass ModificationClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "Modification");
+
+    private static final OntClass RemovalClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "Removal");
+
     private static final Property describes = defaultModel.getProperty(ORE_NAMESPACE + "describes");
 
     private static final Property isDescribedBy = defaultModel.getProperty(ORE_NAMESPACE + "isDescribedBy");
@@ -136,11 +153,16 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     private static final Property checksum = defaultModel.getProperty(RO_NAMESPACE + "checksum");
 
+    private static final Property roAnnotatesAggregatedResource = defaultModel.getProperty(RO_NAMESPACE
+            + "annotatesAggregatedResource");
+
     private static final Property aoBody = defaultModel.getProperty(AO_NAMESPACE + "body");
 
     private static final Property roevoIsSnapshotOf = defaultModel.getProperty(ROEVO_NAMESPACE + "isSnapshotOf");
 
     private static final Property roevoHasSnapshot = defaultModel.getProperty(ROEVO_NAMESPACE + "hasSnapshot");
+
+    private static final Property roevoHasChange = defaultModel.getProperty(ROEVO_NAMESPACE + "hasChange");
 
     private static final Property roevoSnapshottedAtTime = defaultModel.getProperty(ROEVO_NAMESPACE
             + "snapshottedAtTime");
@@ -155,6 +177,10 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     private static final Property roevoSnapshottedBy = defaultModel.getProperty(ROEVO_NAMESPACE + "snapshottedBy");
 
+    private static final Property roevoWasChangedBy = defaultModel.getProperty(ROEVO_NAMESPACE + "wasChangedBy");
+
+    private static final Property roevoRelatedResource = defaultModel.getProperty(ROEVO_NAMESPACE + "relatedResource");
+    
     private static final Property provHadOriginalSource = defaultModel
             .getProperty("http://www.w3.org/ns/prov#hadOriginalSource");
 
@@ -1146,5 +1172,353 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             cnt++;
         }
         return cnt;
+    }
+
+
+    @Override
+    public boolean isSnapshotURI(URI resource) {
+        return isSnapshotURI(resource, DEFAULT_MANIFEST_PATH, "RDF/XML");
+    }
+
+
+    @Override
+    public boolean isSnapshotURI(URI resource, String modelPath, String format) {
+        return getIndividual(resource, modelPath, format).hasRDFType(snapshotROClass);
+    }
+
+
+    @Override
+    public boolean isArchiveURI(URI resource) {
+        return isArchiveURI(resource, DEFAULT_MANIFEST_PATH, "RDF/XML");
+    }
+
+
+    @Override
+    public boolean isArchiveURI(URI resource, String modelPath, String format) {
+        return getIndividual(resource, modelPath, format).hasRDFType(archivedROClass);
+    }
+
+
+    @Override
+    public URI getLiveURIFromSnapshotOrArchive(URI resource)
+            throws URISyntaxException {
+        return getLiveURIFromSnapshotOrArchive(resource, DEFAULT_MANIFEST_PATH, "RDF/XML");
+    }
+
+
+    @Override
+    public URI getLiveURIFromSnapshotOrArchive(URI resource, String modelPath, String format)
+            throws URISyntaxException {
+        Individual source = getIndividual(resource, modelPath, format);
+        if (isSnapshotURI(resource, modelPath, format)) {
+            RDFNode roNode = source.getProperty(roevoIsSnapshotOf).getObject();
+            return new URI(roNode.toString());
+        } else if (isArchiveURI(resource, modelPath, format)) {
+            RDFNode roNode = source.getProperty(roevoIsArchiveOf).getObject();
+            return new URI(roNode.toString());
+        }
+        return null;
+    }
+
+
+    @Override
+    public URI getPreviousSnaphotOrArchive(URI liveRO, URI freshSnapshotOrARchive)
+            throws URISyntaxException {
+        return getPreviousSnaphotOrArchive(liveRO, freshSnapshotOrARchive, DEFAULT_MANIFEST_PATH, "RDF/XML");
+    }
+
+
+    @Override
+    public URI getPreviousSnaphotOrArchive(URI liveRO, URI freshSnapshotOrArchive, String modelPath, String format)
+            throws URISyntaxException {
+
+        Individual liveSource = getIndividual(liveRO, modelPath, format);
+
+        StmtIterator snaphotsIterator;
+        snaphotsIterator = liveSource.listProperties(roevoHasSnapshot);
+        StmtIterator archiveItertator;
+        archiveItertator = liveSource.listProperties(roevoHasArchive);
+
+        Individual freshSource = getIndividual(freshSnapshotOrArchive, modelPath, format);
+        RDFNode dateNode;
+        if (isSnapshotURI(freshSnapshotOrArchive, modelPath, format)) {
+            dateNode = freshSource.getProperty(roevoSnapshottedAtTime).getObject();
+        } else if (isArchiveURI(freshSnapshotOrArchive, modelPath, format)) {
+            dateNode = freshSource.getProperty(roevoArchivedAtTime).getObject();
+        } else {
+            return null;
+        }
+
+        DateTime freshTime = new DateTime(dateNode.asLiteral().getValue().toString());
+        DateTime predecessorTime = null;
+        URI result = null;
+
+        while (snaphotsIterator.hasNext()) {
+            URI tmpURI = new URI(snaphotsIterator.next().getObject().toString());
+            RDFNode node = getIndividual(tmpURI, modelPath, format).getProperty(roevoSnapshottedAtTime).getObject();
+            DateTime tmpTime = new DateTime(node.asLiteral().getValue().toString());
+            if ((tmpTime.compareTo(freshTime) == -1)
+                    && ((predecessorTime == null) || (tmpTime.compareTo(predecessorTime) == 1))) {
+                predecessorTime = tmpTime;
+                result = tmpURI;
+            }
+        }
+        while (archiveItertator.hasNext()) {
+            URI tmpURI = new URI(archiveItertator.next().getObject().toString());
+            RDFNode node = getIndividual(tmpURI, modelPath, format).getProperty(roevoArchivedAtTime).getObject();
+            DateTime tmpTime = new DateTime(node.asLiteral().getValue().toString());
+            if ((tmpTime.compareTo(freshTime) == -1)
+                    && ((predecessorTime == null) || (tmpTime.compareTo(predecessorTime) == 1))) {
+                predecessorTime = tmpTime;
+                result = tmpURI;
+            }
+        }
+        return result;
+    }
+
+
+    private enum Direction {
+        NEW,
+        DELETED
+    }
+
+
+    @Override
+    public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI) throws URISyntaxException {
+        return storeAggregatedDifferences(freshObjectURI, antecessorObjectURI, DEFAULT_MANIFEST_PATH, "RDF/XML");
+    }
+
+
+    @Override
+    public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath,
+            String format) throws URISyntaxException {
+        Individual freshObjectSource = getIndividual(freshObjectURI, modelPath, format);
+        Individual antecessorObjectSource = getIndividual(antecessorObjectURI, modelPath, format);
+        List<RDFNode> freshAggregatesList = freshObjectSource.listPropertyValues(aggregates).toList();
+        List<RDFNode> antecessorAggregatesList = antecessorObjectSource.listPropertyValues(aggregates).toList();
+        //String a = freshObjectURI.resolve(".ro/manifest.rdf").toString();
+        OntModel manifestModel = createOntModelForNamedGraph(freshObjectURI.resolve(".ro/manifest.rdf"));
+        Individual manifestInvidual = manifestModel.getIndividual(freshObjectURI.toString());
+        Individual changeSpecificationIndividual = manifestModel.createIndividual(ChangeSpecificationClass);
+        manifestInvidual.addProperty(roevoWasChangedBy, changeSpecificationIndividual);
+
+        String result = lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, freshAggregatesList,
+            antecessorAggregatesList, manifestModel,manifestInvidual, changeSpecificationIndividual, Direction.NEW);
+        result += lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, antecessorAggregatesList,
+            freshAggregatesList, manifestModel, manifestInvidual, changeSpecificationIndividual, Direction.DELETED);
+        try {
+            log.debug(IOUtils.toString(getManifest(freshObjectURI.resolve(".ro/manifest.rdf"), RDFFormat.TURTLE), "UTF-8"));
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+        return result;
+    }
+
+
+    private String lookForAggregatedDifferents(URI freshObjectURI, URI antecessorObjectURI, List<RDFNode> pattern,
+            List<RDFNode> compared, OntModel manifestModel, Individual manifestIndividual,
+            Individual changeSpecificationIndividual, Direction direction) {
+        String result = "";
+        for (RDFNode patternNode : pattern) {
+            Boolean loopResult = null;
+            for (RDFNode comparedNode : compared) {
+                Boolean tmp = compareProprties(patternNode, comparedNode);
+                if (tmp != null) {
+                    loopResult = tmp;
+                }
+            }
+            result += serviceDetectedEVOmodification(loopResult, freshObjectURI, antecessorObjectURI, patternNode,
+                manifestModel, manifestIndividual, changeSpecificationIndividual, direction);
+        }
+        return result;
+    }
+
+
+    private String serviceDetectedEVOmodification(Boolean loopResult, URI freshObjectURI, URI antecessorObjectURI,
+            RDFNode node, OntModel manifestModel, Individual manifestIndividual, Individual changeSpecificatinIndividual, Direction direction) {
+        String result = "";
+        //Null means they are not comparable. Resource is new or deleted depends on the direction. 
+        if (loopResult == null) {
+            if(direction == Direction.NEW) {
+                Individual changeIndividual = manifestModel.createIndividual(ChangeClass);
+                changeIndividual.addRDFType(AdditionClass);
+                changeIndividual.addProperty(roevoRelatedResource, node);
+                changeSpecificatinIndividual.addProperty(roevoHasChange, changeIndividual);
+                result+=freshObjectURI+" "+node.toString()+" "+direction;
+            } else {
+                Individual changeIndividual = manifestModel.createIndividual(ChangeClass);
+                changeIndividual.addRDFType(RemovalClass);
+                changeIndividual.addProperty(roevoRelatedResource, node);
+                changeSpecificatinIndividual.addProperty(roevoHasChange, changeIndividual);
+                result+=freshObjectURI+" "+node.toString()+" "+direction;
+            }
+        }
+        //False means there are some changes (Changes exists in two directions so they will be stored onlu once)
+        else if (loopResult == false && direction == Direction.NEW) {
+            Individual changeIndividual = manifestModel.createIndividual(ChangeClass);
+            changeIndividual.addRDFType(ModificationClass);
+            changeIndividual.addProperty(roevoRelatedResource, node);
+            changeSpecificatinIndividual.addProperty(roevoHasChange, changeIndividual);
+            result+=freshObjectURI+" "+node.toString()+" MODIFICATION";
+        }
+        return result;
+    }
+
+
+    private Boolean compareProprties(RDFNode pattern, RDFNode compared) {
+        if (pattern.isResource() && compared.isResource()) {
+            return compareTwoResources(pattern.asResource(), compared.asResource());
+        } else if (pattern.isLiteral() && compared.isLiteral()) {
+            return compareTwoLiterals(pattern.asLiteral(), compared.asLiteral());
+        }
+        return null;
+    }
+
+
+    private Boolean compareTwoLiterals(Literal pattern, Literal compared) {
+        //@TODO compare checksums
+        Boolean result = null;
+        if (pattern.equals(compared)) {
+            //@TODO compare checksums
+            return true;
+        }
+        return result;
+    }
+
+
+    private Boolean compareTwoResources(Resource pattern, Resource compared) {
+        Individual patternSource = pattern.as(Individual.class);
+        Individual comparedSource = compared.as(Individual.class);
+        if (patternSource.hasRDFType(roAggregatedAnnotationClass)
+                && comparedSource.hasRDFType(roAggregatedAnnotationClass)) {
+            //if (URI.create(pattern.getURI()).relativize(roURI)
+            if (pattern.getLocalName().equals(compared.getLocalName())) {
+                return compareTwoAggreagatedResources(patternSource, comparedSource)
+                        && compareTwoAggregatedAnnotationBody(patternSource, comparedSource);
+            } else {
+                return null;
+            }
+        } else {
+            if (pattern.getLocalName().equals(compared.getLocalName())) {
+                //@TODO compare checksums
+                return true;
+            } else {
+                return null;
+            }
+        }
+
+    }
+
+
+    private Boolean compareTwoAggreagatedResources(Individual pattern, Individual compared) {
+        List<RDFNode> patternList = pattern.listPropertyValues(roAnnotatesAggregatedResource).toList();
+        List<RDFNode> comparedList = compared.listPropertyValues(roAnnotatesAggregatedResource).toList();
+        if (patternList.size() != comparedList.size())
+            return false;
+        for (RDFNode patternNode : patternList) {
+            Boolean result = null;
+            for (RDFNode comparedNode : comparedList) {
+                if (comparedNode.isResource() && patternNode.isResource()) {
+                    if (comparedNode.asResource().getLocalName().equals(patternNode.asResource().getLocalName())) {
+                        result = true;
+                    }
+                } else if (comparedNode.isLiteral() && patternNode.isLiteral()) {
+                    if (comparedNode.asLiteral().equals(patternNode.asLiteral())) {
+                        result = true;
+                    }
+                }
+            }
+            if (result == null) {
+                return false;
+            }
+        }
+        for (RDFNode comparedNode : comparedList) {
+            Boolean result = null;
+            for (RDFNode patternNode : patternList) {
+                if (comparedNode.isResource() && patternNode.isResource()) {
+                    if (comparedNode.asResource().getLocalName().equals(patternNode.asResource().getLocalName())) {
+                        result = true;
+                    }
+                } else if (comparedNode.isLiteral() && patternNode.isLiteral()) {
+                    if (comparedNode.asLiteral().equals(patternNode.asLiteral())) {
+                        result = true;
+                    }
+                }
+            }
+            if (result == false || result == null) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    private Boolean compareTwoAggregatedAnnotationBody(Individual patternSource, Individual comparedSource) {
+        Resource patternBody = patternSource.getProperty(aoBody).getResource();
+        Resource comparedBody = comparedSource.getProperty(aoBody).getResource();
+        OntModel patternModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+        patternModel.read(patternBody.getURI(), "TTL");
+        OntModel comparedModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+        comparedModel.read(comparedBody.getURI(), "TTL");
+
+        List<Statement> patternList = patternModel.listStatements().toList();
+        List<Statement> comparedList = comparedModel.listStatements().toList();
+
+        for (Statement s : patternList) {
+            if (!isStatementInList(s, comparedList)) {
+                return false;
+            }
+        }
+        for (Statement s : comparedList) {
+            if (!isStatementInList(s, patternList)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+
+    private Boolean isStatementInList(Statement statement, List<Statement> list) {
+        String localName = statement.getSubject().getLocalName().toString();
+        for (Statement listStatement : list) {
+            if (listStatement.getSubject().getLocalName().toString().equals(localName)) {
+                if (listStatement.getObject().isResource() && statement.getObject().isResource()) {
+                    if (listStatement.getObject().asResource().getLocalName()
+                            .equals(statement.getObject().asResource().getLocalName())) {
+                        return true;
+                    }
+
+                }
+                if (listStatement.getObject().isLiteral() && statement.getObject().isLiteral()) {
+                    if (listStatement.getObject().asLiteral().toString()
+                            .equals(statement.getObject().asLiteral().toString())) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+
+    @Override
+    public Individual getIndividual(URI resource) {
+        return getIndividual(resource, DEFAULT_MANIFEST_PATH, "RDF/XML");
+    }
+
+
+    @Override
+    public Individual getIndividual(URI resource, String modelPath, String format) {
+        OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+        model.read(resource.resolve(modelPath).toString(), format);
+        Individual source = model.getIndividual(resource.toString());
+        return source;
+    }
+
+
+    @Override
+    public String getDefaultManifestPath() {
+        return DEFAULT_MANIFEST_PATH;
     }
 }
