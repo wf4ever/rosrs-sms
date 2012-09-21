@@ -1259,6 +1259,7 @@ public class SemanticMetadataServiceImplTest {
         String result = sms.storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"),
             ".ro/manifest.ttl", "TTL");
         log.debug(result);
+        Assert.assertTrue(result.contains("ro1-sp2/ann2 MODIFICATION"));
     }
 
 
