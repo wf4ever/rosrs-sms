@@ -19,7 +19,7 @@
 	roevo:isSnapshotOf <ro1/> ;
 	roevo:snapshottedAtTime "2012-03-02T16:01:10Z"^^xsd:dateTime ;
 	ore:aggregates :ann1 ;
-	#ore:aggregates :ann2 ;
+	ore:aggregates :res1 ;
 	ore:aggregates <afinalfolder> ;
 	ore:aggregates <agregated-resource-file> .
 	
@@ -37,9 +37,19 @@
     dct:created "2011-12-02T15:02:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Person; foaf:name "Stian Soiland-Reyes" ] .
 	
-:ann2 a ro:Resource ;
+:res1 a ro:Resource ;
     dct:created "2011-12-02T15:02:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Person; foaf:name "Stian Soiland-Reyes" ] .
     
 <afinalfolder> a ro:Folder ;
     ore:isDescribedBy <afolder.ttl> .
+    
+#information about changes
+
+:changeSpec1 a roevo:ChangeSpecification ;
+   roevo:fromVersion <ro1-sp1/> ;
+   roevo:toVersion <ro1-sp2/> ;
+   roevo:hasChange :change1 .
+   
+:change1 a roevo:Addition, roevo:Change ;
+   roevo:relatedResource :res1 .

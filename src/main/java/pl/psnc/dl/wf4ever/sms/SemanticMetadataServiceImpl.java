@@ -22,6 +22,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.openrdf.rio.RDFFormat;
@@ -123,6 +124,17 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     private static final OntClass foafPersonClass = defaultModel.getOntClass(FOAF_NAMESPACE + "Person");
 
+    private static final OntClass ChangeSpecificationClass = defaultModel.getOntClass(ROEVO_NAMESPACE
+            + "ChangeSpecification");
+
+    private static final OntClass ChangeClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "Change");
+
+    private static final OntClass AdditionClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "Addition");
+
+    private static final OntClass ModificationClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "Modification");
+
+    private static final OntClass RemovalClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "Removal");
+
     private static final Property describes = defaultModel.getProperty(ORE_NAMESPACE + "describes");
 
     private static final Property isDescribedBy = defaultModel.getProperty(ORE_NAMESPACE + "isDescribedBy");
@@ -150,6 +162,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     private static final Property roevoHasSnapshot = defaultModel.getProperty(ROEVO_NAMESPACE + "hasSnapshot");
 
+    private static final Property roevoHasChange = defaultModel.getProperty(ROEVO_NAMESPACE + "hasChange");
+
     private static final Property roevoSnapshottedAtTime = defaultModel.getProperty(ROEVO_NAMESPACE
             + "snapshottedAtTime");
 
@@ -163,6 +177,10 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     private static final Property roevoSnapshottedBy = defaultModel.getProperty(ROEVO_NAMESPACE + "snapshottedBy");
 
+    private static final Property roevoWasChangedBy = defaultModel.getProperty(ROEVO_NAMESPACE + "wasChangedBy");
+
+    private static final Property roevoRelatedResource = defaultModel.getProperty(ROEVO_NAMESPACE + "relatedResource");
+    
     private static final Property provHadOriginalSource = defaultModel
             .getProperty("http://www.w3.org/ns/prov#hadOriginalSource");
 
@@ -1257,31 +1275,49 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         return result;
     }
 
+
     private enum Direction {
-        NEW, DELETED
+        NEW,
+        DELETED
     }
 
+
     @Override
-    public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI) {
+    public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI) throws URISyntaxException {
         return storeAggregatedDifferences(freshObjectURI, antecessorObjectURI, DEFAULT_MANIFEST_PATH, "RDF/XML");
     }
 
+
     @Override
     public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath,
-            String format) {
+            String format) throws URISyntaxException {
         Individual freshObjectSource = getIndividual(freshObjectURI, modelPath, format);
         Individual antecessorObjectSource = getIndividual(antecessorObjectURI, modelPath, format);
         List<RDFNode> freshAggregatesList = freshObjectSource.listPropertyValues(aggregates).toList();
         List<RDFNode> antecessorAggregatesList = antecessorObjectSource.listPropertyValues(aggregates).toList();
-        String result = lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, modelPath, format,
-            freshAggregatesList, antecessorAggregatesList, Direction.NEW);
-        result += lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, modelPath, format,
-            antecessorAggregatesList, freshAggregatesList, Direction.DELETED);
+        //String a = freshObjectURI.resolve(".ro/manifest.rdf").toString();
+        OntModel manifestModel = createOntModelForNamedGraph(freshObjectURI.resolve(".ro/manifest.rdf"));
+        Individual manifestInvidual = manifestModel.getIndividual(freshObjectURI.toString());
+        Individual changeSpecificationIndividual = manifestModel.createIndividual(ChangeSpecificationClass);
+        manifestInvidual.addProperty(roevoWasChangedBy, changeSpecificationIndividual);
+
+        String result = lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, freshAggregatesList,
+            antecessorAggregatesList, manifestModel,manifestInvidual, changeSpecificationIndividual, Direction.NEW);
+        result += lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, antecessorAggregatesList,
+            freshAggregatesList, manifestModel, manifestInvidual, changeSpecificationIndividual, Direction.DELETED);
+        try {
+            log.debug(IOUtils.toString(getManifest(freshObjectURI.resolve(".ro/manifest.rdf"), RDFFormat.TURTLE), "UTF-8"));
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
         return result;
     }
-    
-    private String lookForAggregatedDifferents(URI freshObjectURI, URI antecessorObjectURI, String modelPath,
-            String format, List<RDFNode> pattern, List<RDFNode> compared, Direction direction) {
+
+
+    private String lookForAggregatedDifferents(URI freshObjectURI, URI antecessorObjectURI, List<RDFNode> pattern,
+            List<RDFNode> compared, OntModel manifestModel, Individual manifestIndividual,
+            Individual changeSpecificationIndividual, Direction direction) {
         String result = "";
         for (RDFNode patternNode : pattern) {
             Boolean loopResult = null;
@@ -1291,25 +1327,39 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
                     loopResult = tmp;
                 }
             }
-            result += serviceDetectedEVOmodification(loopResult, freshObjectURI, antecessorObjectURI, modelPath,
-                format, patternNode, direction);
+            result += serviceDetectedEVOmodification(loopResult, freshObjectURI, antecessorObjectURI, patternNode,
+                manifestModel, manifestIndividual, changeSpecificationIndividual, direction);
         }
         return result;
     }
 
 
     private String serviceDetectedEVOmodification(Boolean loopResult, URI freshObjectURI, URI antecessorObjectURI,
-            String modelPath, String format, RDFNode node, Direction direction) {
-        OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-        model.read(freshObjectURI.resolve(modelPath).toString(), format);
-        Individual source = model.getIndividual(freshObjectURI.toString());
+            RDFNode node, OntModel manifestModel, Individual manifestIndividual, Individual changeSpecificatinIndividual, Direction direction) {
         String result = "";
+        //Null means they are not comparable. Resource is new or deleted depends on the direction. 
         if (loopResult == null) {
-            result += "<" + freshObjectURI + "> <" + node.toString() + "> " + direction.toString() + "\n";
+            if(direction == Direction.NEW) {
+                Individual changeIndividual = manifestModel.createIndividual(ChangeClass);
+                changeIndividual.addRDFType(AdditionClass);
+                changeIndividual.addProperty(roevoRelatedResource, node);
+                changeSpecificatinIndividual.addProperty(roevoHasChange, changeIndividual);
+                result+=freshObjectURI+" "+node.toString()+" "+direction;
+            } else {
+                Individual changeIndividual = manifestModel.createIndividual(ChangeClass);
+                changeIndividual.addRDFType(RemovalClass);
+                changeIndividual.addProperty(roevoRelatedResource, node);
+                changeSpecificatinIndividual.addProperty(roevoHasChange, changeIndividual);
+                result+=freshObjectURI+" "+node.toString()+" "+direction;
+            }
         }
-
+        //False means there are some changes (Changes exists in two directions so they will be stored onlu once)
         else if (loopResult == false && direction == Direction.NEW) {
-            result += "<" + freshObjectURI + "> <" + node.toString() + "> " + "MODIFIED" + "\n";
+            Individual changeIndividual = manifestModel.createIndividual(ChangeClass);
+            changeIndividual.addRDFType(ModificationClass);
+            changeIndividual.addProperty(roevoRelatedResource, node);
+            changeSpecificatinIndividual.addProperty(roevoHasChange, changeIndividual);
+            result+=freshObjectURI+" "+node.toString()+" MODIFICATION";
         }
         return result;
     }
@@ -1341,7 +1391,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         Individual comparedSource = compared.as(Individual.class);
         if (patternSource.hasRDFType(roAggregatedAnnotationClass)
                 && comparedSource.hasRDFType(roAggregatedAnnotationClass)) {
-            //if (URI.create(pattern.getURI()).relativize(roURI))
+            //if (URI.create(pattern.getURI()).relativize(roURI)
             if (pattern.getLocalName().equals(compared.getLocalName())) {
                 return compareTwoAggreagatedResources(patternSource, comparedSource)
                         && compareTwoAggregatedAnnotationBody(patternSource, comparedSource);

@@ -1253,7 +1253,7 @@ public class SemanticMetadataServiceImplTest {
     public final void testStoreROhistory()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
-        sms.storeAggregatedDifferences(getResourceURI("ro1-sp1/"), getResourceURI("ro1-sp2/"), ".ro/manifest.ttl", "TTL");
+        //sms.storeAggregatedDifferences(getResourceURI("ro1-sp1/"), getResourceURI("ro1-sp2/"), ".ro/manifest.ttl", "TTL");
     }
 
 

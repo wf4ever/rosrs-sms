@@ -627,8 +627,9 @@ public interface SemanticMetadataService {
      * @param antecessorObjectURI
      *            URI of the previous snapshot/archive
      * @return list of changes
+     * @throws URISyntaxException 
      */
-    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI);
+    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI) throws URISyntaxException;
 
 
     /**
@@ -643,8 +644,9 @@ public interface SemanticMetadataService {
      * @param format
      *            file format ("XML/RDF", "TTL" ...)
      * @return list of changes
+     * @throws URISyntaxException 
      */
-    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath, String format);
+    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath, String format) throws URISyntaxException;
 
 
     /**
