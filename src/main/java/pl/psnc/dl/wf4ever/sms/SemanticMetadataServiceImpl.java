@@ -39,6 +39,7 @@ import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
 import com.hp.hpl.jena.ontology.OntProperty;
+import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
@@ -180,7 +181,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     private static final Property roevoWasChangedBy = defaultModel.getProperty(ROEVO_NAMESPACE + "wasChangedBy");
 
     private static final Property roevoRelatedResource = defaultModel.getProperty(ROEVO_NAMESPACE + "relatedResource");
-    
+
     private static final Property provHadOriginalSource = defaultModel
             .getProperty("http://www.w3.org/ns/prov#hadOriginalSource");
 
@@ -1284,40 +1285,35 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 
     @Override
-    public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI) throws URISyntaxException {
+    public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI)
+            throws URISyntaxException {
         return storeAggregatedDifferences(freshObjectURI, antecessorObjectURI, DEFAULT_MANIFEST_PATH, "RDF/XML");
     }
 
 
     @Override
     public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath,
-            String format) throws URISyntaxException {
+            String format)
+            throws URISyntaxException {
         Individual freshObjectSource = getIndividual(freshObjectURI, modelPath, format);
         Individual antecessorObjectSource = getIndividual(antecessorObjectURI, modelPath, format);
         List<RDFNode> freshAggregatesList = freshObjectSource.listPropertyValues(aggregates).toList();
         List<RDFNode> antecessorAggregatesList = antecessorObjectSource.listPropertyValues(aggregates).toList();
-        //String a = freshObjectURI.resolve(".ro/manifest.rdf").toString();
-        OntModel manifestModel = createOntModelForNamedGraph(freshObjectURI.resolve(".ro/manifest.rdf"));
-        Individual manifestInvidual = manifestModel.getIndividual(freshObjectURI.toString());
-        Individual changeSpecificationIndividual = manifestModel.createIndividual(ChangeSpecificationClass);
-        manifestInvidual.addProperty(roevoWasChangedBy, changeSpecificationIndividual);
+        OntModel freshROModel = createOntModelForNamedGraph(resolveURI(freshObjectURI, ".ro/manifest.rdf"));
+        Individual freshROInvidual = freshROModel.getIndividual(freshObjectURI.toString());
+        Individual changeSpecificationIndividual = freshROModel.createIndividual(ChangeSpecificationClass);
+        freshROInvidual.addProperty(roevoWasChangedBy, changeSpecificationIndividual);
 
         String result = lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, freshAggregatesList,
-            antecessorAggregatesList, manifestModel,manifestInvidual, changeSpecificationIndividual, Direction.NEW);
+            antecessorAggregatesList, freshROModel, freshROInvidual, changeSpecificationIndividual, Direction.NEW);
         result += lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, antecessorAggregatesList,
-            freshAggregatesList, manifestModel, manifestInvidual, changeSpecificationIndividual, Direction.DELETED);
-        try {
-            log.debug(IOUtils.toString(getManifest(freshObjectURI.resolve(".ro/manifest.rdf"), RDFFormat.TURTLE), "UTF-8"));
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+            freshAggregatesList, freshROModel, freshROInvidual, changeSpecificationIndividual, Direction.DELETED);
         return result;
     }
 
 
     private String lookForAggregatedDifferents(URI freshObjectURI, URI antecessorObjectURI, List<RDFNode> pattern,
-            List<RDFNode> compared, OntModel manifestModel, Individual manifestIndividual,
+            List<RDFNode> compared, OntModel freshROModel, Individual manifestIndividual,
             Individual changeSpecificationIndividual, Direction direction) {
         String result = "";
         for (RDFNode patternNode : pattern) {
@@ -1329,38 +1325,40 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
                 }
             }
             result += serviceDetectedEVOmodification(loopResult, freshObjectURI, antecessorObjectURI, patternNode,
-                manifestModel, manifestIndividual, changeSpecificationIndividual, direction);
+                freshROModel, manifestIndividual, changeSpecificationIndividual, direction);
         }
         return result;
     }
 
 
     private String serviceDetectedEVOmodification(Boolean loopResult, URI freshObjectURI, URI antecessorObjectURI,
-            RDFNode node, OntModel manifestModel, Individual manifestIndividual, Individual changeSpecificatinIndividual, Direction direction) {
+            RDFNode node, OntModel freshRoModel, Individual manifestIndividual,
+            Individual changeSpecificatinIndividual, Direction direction) {
         String result = "";
         //Null means they are not comparable. Resource is new or deleted depends on the direction. 
         if (loopResult == null) {
-            if(direction == Direction.NEW) {
-                Individual changeIndividual = manifestModel.createIndividual(ChangeClass);
+            if (direction == Direction.NEW) {
+                Individual changeIndividual = freshRoModel.createIndividual(ChangeClass);
                 changeIndividual.addRDFType(AdditionClass);
                 changeIndividual.addProperty(roevoRelatedResource, node);
                 changeSpecificatinIndividual.addProperty(roevoHasChange, changeIndividual);
-                result+=freshObjectURI+" "+node.toString()+" "+direction;
+                result += freshObjectURI + " " + node.toString() + " " + direction + "\n";
             } else {
-                Individual changeIndividual = manifestModel.createIndividual(ChangeClass);
+                Individual changeIndividual = freshRoModel.createIndividual(ChangeClass);
                 changeIndividual.addRDFType(RemovalClass);
                 changeIndividual.addProperty(roevoRelatedResource, node);
                 changeSpecificatinIndividual.addProperty(roevoHasChange, changeIndividual);
-                result+=freshObjectURI+" "+node.toString()+" "+direction;
+                result += freshObjectURI + " " + node.toString() + " " + direction + "\n";
             }
         }
         //False means there are some changes (Changes exists in two directions so they will be stored onlu once)
         else if (loopResult == false && direction == Direction.NEW) {
-            Individual changeIndividual = manifestModel.createIndividual(ChangeClass);
+            Individual changeIndividual = freshRoModel.createIndividual(ChangeClass);
             changeIndividual.addRDFType(ModificationClass);
             changeIndividual.addProperty(roevoRelatedResource, node);
             changeSpecificatinIndividual.addProperty(roevoHasChange, changeIndividual);
-            result+=freshObjectURI+" "+node.toString()+" MODIFICATION";
+            result += freshObjectURI + " " + node.toString() + " MODIFICATION" + "\n";
+            ;
         }
         return result;
     }
@@ -1520,5 +1518,15 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     @Override
     public String getDefaultManifestPath() {
         return DEFAULT_MANIFEST_PATH;
+    }
+
+
+    private URI resolveURI(URI base, String second) {
+        if ("file".equals(base.getScheme())) {
+            URI incorrectURI = base.resolve(second);
+            return URI.create(incorrectURI.toString().replaceFirst("file:/", "file:///"));
+        } else {
+            return base.resolve(second);
+        }
     }
 }
