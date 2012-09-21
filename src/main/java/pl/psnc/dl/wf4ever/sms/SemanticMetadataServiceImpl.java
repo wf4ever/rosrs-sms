@@ -22,7 +22,6 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.openrdf.rio.RDFFormat;
@@ -38,8 +37,6 @@ import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
-import com.hp.hpl.jena.ontology.OntProperty;
-import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
@@ -1528,5 +1525,36 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         } else {
             return base.resolve(second);
         }
+    }
+
+
+    @Override
+    public int changeURIInManifestAndAnnotationBodies(URI researchObject, URI oldURI, URI newURI) {
+        int cnt = changeURIInNamedGraph(getManifestURI(researchObject), oldURI, newURI);
+        OntModel model = createOntModelForNamedGraph(getManifestURI(researchObject));
+        List<RDFNode> bodies = model.listObjectsOfProperty(aoBody).toList();
+        for (RDFNode body : bodies) {
+            URI bodyURI = URI.create(body.asResource().getURI());
+            cnt += changeURIInNamedGraph(bodyURI, oldURI, newURI);
+        }
+        return cnt;
+    }
+
+
+    private int changeURIInNamedGraph(URI graph, URI oldURI, URI newURI) {
+        OntModel model = createOntModelForNamedGraph(graph);
+        Resource oldResource = model.createResource(oldURI.toString());
+        Resource newResource = model.createResource(newURI.toString());
+        List<Statement> s1 = model.listStatements(oldResource, null, (RDFNode) null).toList();
+        for (Statement s : s1) {
+            model.remove(s.getSubject(), s.getPredicate(), s.getObject());
+            model.add(newResource, s.getPredicate(), s.getObject());
+        }
+        List<Statement> s2 = model.listStatements(null, null, oldResource).toList();
+        for (Statement s : s2) {
+            model.remove(s.getSubject(), s.getPredicate(), s.getObject());
+            model.add(s.getSubject(), s.getPredicate(), newResource);
+        }
+        return s1.size() + s2.size();
     }
 }

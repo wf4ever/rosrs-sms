@@ -1263,6 +1263,26 @@ public class SemanticMetadataServiceImplTest {
     }
 
 
+    @Test
+    public final void testChangeURIInManifestAndAnnotationBodies()
+            throws ClassNotFoundException, IOException, NamingException, SQLException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        try {
+            InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
+            sms.updateManifest(manifestURI, is, RDFFormat.TURTLE);
+
+            is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
+            sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
+
+            int cnt = sms.changeURIInManifestAndAnnotationBodies(researchObjectURI, workflowURI, resourceFakeURI);
+            // 1 aggregates, 1 ann target, 1 type, 2 dcterms, 3 in ann body
+            Assert.assertEquals("6 URIs should be changed", 9, cnt);
+        } finally {
+            sms.close();
+        }
+    }
+
+
     /***** HELPERS *****/
 
     private URI getResourceURI(String resourceName)

@@ -627,9 +627,10 @@ public interface SemanticMetadataService {
      * @param antecessorObjectURI
      *            URI of the previous snapshot/archive
      * @return list of changes
-     * @throws URISyntaxException 
+     * @throws URISyntaxException
      */
-    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI) throws URISyntaxException;
+    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI)
+            throws URISyntaxException;
 
 
     /**
@@ -644,9 +645,10 @@ public interface SemanticMetadataService {
      * @param format
      *            file format ("XML/RDF", "TTL" ...)
      * @return list of changes
-     * @throws URISyntaxException 
+     * @throws URISyntaxException
      */
-    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath, String format) throws URISyntaxException;
+    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath, String format)
+            throws URISyntaxException;
 
 
     /**
@@ -679,5 +681,20 @@ public interface SemanticMetadataService {
      * @return the individual of the resource object
      */
     Individual getIndividual(URI resource, String modelPath, String format);
+
+
+    /**
+     * Change all occurrences of one URI into another in the context (manifest and annotation bodies) of one research
+     * object.
+     * 
+     * @param researchObject
+     *            RO URI
+     * @param oldURI
+     *            Old URI
+     * @param newURI
+     *            New URI
+     * @return number of changed triples
+     */
+    int changeURIInManifestAndAnnotationBodies(URI researchObject, URI oldURI, URI newURI);
 
 }
