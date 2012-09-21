@@ -1307,6 +1307,11 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             antecessorAggregatesList, freshROModel, freshROInvidual, changeSpecificationIndividual, Direction.NEW);
         result += lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, antecessorAggregatesList,
             freshAggregatesList, freshROModel, freshROInvidual, changeSpecificationIndividual, Direction.DELETED);
+        for(  RDFNode a : freshROInvidual.getProperty(roevoWasChangedBy).getObject().as(Individual.class).listPropertyValues(roevoHasChange).toList()) {
+            String d = a.asResource().toString();
+            String h = "";
+        }
+        
         return result;
     }
 
