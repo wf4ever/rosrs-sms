@@ -1308,12 +1308,13 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             antecessorAggregatesList, freshROModel, freshROInvidual, changeSpecificationIndividual, Direction.NEW);
         result += lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, antecessorAggregatesList,
             freshAggregatesList, freshROModel, freshROInvidual, changeSpecificationIndividual, Direction.DELETED);
-        for(  RDFNode a : freshROInvidual.getProperty(roevoWasChangedBy).getObject().as(Individual.class).listPropertyValues(roevoHasChange).toList()) {
+        for (RDFNode a : freshROInvidual.getProperty(roevoWasChangedBy).getObject().as(Individual.class)
+                .listPropertyValues(roevoHasChange).toList()) {
             String b = a.asResource().getProperty(roevoRelatedResource).toString();
             String g = a.as(Individual.class).getRDFType().toString();
             String h = "";
         }
-        
+
         return result;
     }
 
@@ -1322,10 +1323,15 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             List<RDFNode> compared, OntModel freshROModel, Individual manifestIndividual,
             Individual changeSpecificationIndividual, Direction direction) {
         String result = "";
+        Boolean tmp = null;
         for (RDFNode patternNode : pattern) {
             Boolean loopResult = null;
             for (RDFNode comparedNode : compared) {
-                Boolean tmp = compareProprties(patternNode, comparedNode);
+                if (direction == Direction.NEW) {
+                    tmp = compareProprties(patternNode, comparedNode, freshObjectURI, antecessorObjectURI);
+                } else {
+                    tmp = compareProprties(patternNode, comparedNode, antecessorObjectURI, freshObjectURI);
+                }
                 if (tmp != null) {
                     loopResult = tmp;
                 }
@@ -1364,15 +1370,18 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             changeIndividual.addProperty(roevoRelatedResource, node);
             changeSpecificatinIndividual.addProperty(roevoHasChange, changeIndividual);
             result += freshObjectURI + " " + node.toString() + " MODIFICATION" + "\n";
-            ;
+        }
+        //True means there are some unchanges objects
+        else if (loopResult == false && direction == Direction.NEW) {
+            result += freshObjectURI + " " + node.toString() + " UNCHANGED" + "\n";
         }
         return result;
     }
 
 
-    private Boolean compareProprties(RDFNode pattern, RDFNode compared) {
+    private Boolean compareProprties(RDFNode pattern, RDFNode compared, URI patternROURI, URI comparedROURI) {
         if (pattern.isResource() && compared.isResource()) {
-            return compareTwoResources(pattern.asResource(), compared.asResource());
+            return compareTwoResources(pattern.asResource(), compared.asResource(), patternROURI, comparedROURI);
         } else if (pattern.isLiteral() && compared.isLiteral()) {
             return compareTwoLiterals(pattern.asLiteral(), compared.asLiteral());
         }
@@ -1391,23 +1400,41 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     }
 
 
-    private Boolean compareTwoResources(Resource pattern, Resource compared) {
+    private Boolean compareRelativesURI(URI patternURI, URI comparedURI, URI baseForPatternURI, URI baseForComparedURI) {
+        return patternURI.relativize(baseForPatternURI).toString()
+                .equals(comparedURI.relativize(baseForComparedURI).toString());
+    }
+
+
+    private Boolean compareTwoResources(Resource pattern, Resource compared, URI patternROURI, URI comparedROURI) {
         Individual patternSource = pattern.as(Individual.class);
         Individual comparedSource = compared.as(Individual.class);
         if (patternSource.hasRDFType(roAggregatedAnnotationClass)
                 && comparedSource.hasRDFType(roAggregatedAnnotationClass)) {
-            //if (URI.create(pattern.getURI()).relativize(roURI)
-            if (pattern.getLocalName().equals(compared.getLocalName())) {
-                return compareTwoAggreagatedResources(patternSource, comparedSource)
-                        && compareTwoAggregatedAnnotationBody(patternSource, comparedSource);
-            } else {
+            try {
+                if (compareRelativesURI(new URI(pattern.getURI()), new URI(compared.getURI()), patternROURI,
+                    comparedROURI)) {
+                    return compareTwoAggreagatedResources(patternSource, comparedSource, patternROURI, comparedROURI)
+                            && compareTwoAggregatedAnnotationBody(patternSource, comparedSource, patternROURI,
+                                comparedROURI);
+                } else {
+                    return null;
+                }
+            } catch (URISyntaxException e) {
+                log.debug(e);
                 return null;
             }
         } else {
-            if (pattern.getLocalName().equals(compared.getLocalName())) {
-                //@TODO compare checksums
-                return true;
-            } else {
+            try {
+                if (compareRelativesURI(new URI(pattern.getURI()), new URI(compared.getURI()), patternROURI,
+                    comparedROURI)) {
+                    //@TODO compare checksums
+                    return true;
+                } else {
+                    return null;
+                }
+            } catch (URISyntaxException e) {
+                log.info(e);
                 return null;
             }
         }
@@ -1415,7 +1442,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     }
 
 
-    private Boolean compareTwoAggreagatedResources(Individual pattern, Individual compared) {
+    private Boolean compareTwoAggreagatedResources(Individual pattern, Individual compared, URI patternROURI,
+            URI comparedROURI) {
         List<RDFNode> patternList = pattern.listPropertyValues(roAnnotatesAggregatedResource).toList();
         List<RDFNode> comparedList = compared.listPropertyValues(roAnnotatesAggregatedResource).toList();
         if (patternList.size() != comparedList.size())
@@ -1424,8 +1452,13 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             Boolean result = null;
             for (RDFNode comparedNode : comparedList) {
                 if (comparedNode.isResource() && patternNode.isResource()) {
-                    if (comparedNode.asResource().getLocalName().equals(patternNode.asResource().getLocalName())) {
-                        result = true;
+                    try {
+                        if (compareRelativesURI(new URI(patternNode.asResource().getURI()), new URI(comparedNode
+                                .asResource().getURI()), patternROURI, comparedROURI)) {
+                            result = true;
+                        }
+                    } catch (URISyntaxException e) {
+                        log.debug(e);
                     }
                 } else if (comparedNode.isLiteral() && patternNode.isLiteral()) {
                     if (comparedNode.asLiteral().equals(patternNode.asLiteral())) {
@@ -1441,8 +1474,14 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             Boolean result = null;
             for (RDFNode patternNode : patternList) {
                 if (comparedNode.isResource() && patternNode.isResource()) {
-                    if (comparedNode.asResource().getLocalName().equals(patternNode.asResource().getLocalName())) {
-                        result = true;
+                    try {
+                        if (compareRelativesURI(new URI(patternNode.asResource().getURI()), new URI(comparedNode
+                                .asResource().getURI()), patternROURI, comparedROURI)) {
+                            result = true;
+                        }
+                    } catch (URISyntaxException e) {
+                        log.debug(e);
+                        return null;
                     }
                 } else if (comparedNode.isLiteral() && patternNode.isLiteral()) {
                     if (comparedNode.asLiteral().equals(patternNode.asLiteral())) {
@@ -1458,7 +1497,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     }
 
 
-    private Boolean compareTwoAggregatedAnnotationBody(Individual patternSource, Individual comparedSource) {
+    private Boolean compareTwoAggregatedAnnotationBody(Individual patternSource, Individual comparedSource,
+            URI patternROURI, URI comparedROURI) {
         Resource patternBody = patternSource.getProperty(aoBody).getResource();
         Resource comparedBody = comparedSource.getProperty(aoBody).getResource();
         OntModel patternModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
@@ -1470,34 +1510,41 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         List<Statement> comparedList = comparedModel.listStatements().toList();
 
         for (Statement s : patternList) {
-            if (!isStatementInList(s, comparedList)) {
-                return false;
+            try {
+                if (!isStatementInList(s, comparedList, patternROURI, comparedROURI)) {
+                    return false;
+                }
+            } catch (URISyntaxException e) {
+                log.debug(e);
+                return true;
             }
         }
         for (Statement s : comparedList) {
-            if (!isStatementInList(s, patternList)) {
-                return false;
+            try {
+                if (!isStatementInList(s, patternList, comparedROURI, patternROURI)) {
+                    return false;
+                }
+            } catch (URISyntaxException e) {
+                log.debug(e);
+                return true;
             }
         }
         return true;
     }
 
 
-    private Boolean isStatementInList(Statement statement, List<Statement> list) {
-        String localName = statement.getSubject().getLocalName().toString();
+    private Boolean isStatementInList(Statement statement, List<Statement> list, URI patternURI, URI comparedURI) throws URISyntaxException {
         for (Statement listStatement : list) {
-            if (listStatement.getSubject().getLocalName().toString().equals(localName)) {
-                if (listStatement.getObject().isResource() && statement.getObject().isResource()) {
-                    if (listStatement.getObject().asResource().getLocalName()
-                            .equals(statement.getObject().asResource().getLocalName())) {
+            if (compareRelativesURI(new URI(statement.getSubject().asResource().getURI()), new URI(listStatement.getSubject().asResource().getURI()), patternURI, comparedURI)) {
+                if (compareRelativesURI(new URI(statement.getPredicate().asResource().getURI()), new URI(listStatement.getPredicate().asResource().getURI()), patternURI, comparedURI)) {//comppare URI
+                    if (compareRelativesURI(new URI(statement.getObject().asResource().getURI()), new URI(listStatement.getObject().asResource().getURI()), patternURI, comparedURI)) {
                         return true;
-                    }
-
-                }
-                if (listStatement.getObject().isLiteral() && statement.getObject().isLiteral()) {
-                    if (listStatement.getObject().asLiteral().toString()
-                            .equals(statement.getObject().asLiteral().toString())) {
-                        return true;
+        }
+                    if (listStatement.getObject().isLiteral() && statement.getObject().isLiteral()) {
+                        if (listStatement.getObject().asLiteral().toString()
+                                .equals(statement.getObject().asLiteral().toString())) {
+                            return true;
+                        }
                     }
                 }
             }
