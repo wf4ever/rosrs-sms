@@ -627,9 +627,10 @@ public interface SemanticMetadataService {
      * @param antecessorObjectURI
      *            URI of the previous snapshot/archive
      * @return list of changes
-     * @throws URISyntaxException 
+     * @throws URISyntaxException
      */
-    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI) throws URISyntaxException;
+    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI)
+            throws URISyntaxException;
 
 
     /**
@@ -644,9 +645,10 @@ public interface SemanticMetadataService {
      * @param format
      *            file format ("XML/RDF", "TTL" ...)
      * @return list of changes
-     * @throws URISyntaxException 
+     * @throws URISyntaxException
      */
-    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath, String format) throws URISyntaxException;
+    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath, String format)
+            throws URISyntaxException;
 
 
     /**
@@ -679,5 +681,17 @@ public interface SemanticMetadataService {
      * @return the individual of the resource object
      */
     Individual getIndividual(URI resource, String modelPath, String format);
+
+
+    /**
+     * Get resolved URI from base and relative path. Created because of the JAVA URI bug.
+     * 
+     * @param base
+     *            base URI
+     * @param secund
+     *            relative URI
+     * @return the resolved URI
+     */
+    URI resolveURI(URI base, String second);
 
 }

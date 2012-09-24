@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -54,6 +55,7 @@ import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.vocabulary.DCTerms;
 
+import de.fuberlin.wiwiss.ng4j.NamedGraph;
 import de.fuberlin.wiwiss.ng4j.NamedGraphSet;
 import de.fuberlin.wiwiss.ng4j.Quad;
 import de.fuberlin.wiwiss.ng4j.impl.NamedGraphSetImpl;
@@ -297,8 +299,6 @@ public class SemanticMetadataServiceImplTest {
 
             InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
             sms.updateManifest(manifestURI, is, RDFFormat.TURTLE);
-
-            log.debug(IOUtils.toString(sms.getManifest(manifestURI, RDFFormat.TURTLE), "UTF-8"));
 
             OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
             model.read(sms.getManifest(manifestURI, RDFFormat.RDFXML), null);
@@ -1256,14 +1256,39 @@ public class SemanticMetadataServiceImplTest {
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
         InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
         sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
-        String result = sms.storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"),
+        sms.storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"),
             ".ro/manifest.ttl", "TTL");
-        log.debug(result);
-        Assert.assertTrue(result.contains("ro1-sp2/ann2 MODIFICATION"));
+        OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+        model.read(sms.getManifest(getResourceURI("ro1-sp2/.ro/manifest.rdf"), RDFFormat.RDFXML),null);
+        Individual snaphotIndividual =  model.getIndividual(getResourceURI("ro1-sp2/").toString());
+        List<RDFNode> changesList = snaphotIndividual.getProperty(model.createProperty("http://purl.org/wf4ever/roevo#wasChangedBy")).getObject().as(Individual.class)
+        .listPropertyValues(model.createProperty("http://purl.org/wf4ever/roevo#hasChange")).toList();
+        
+        Assert.assertTrue(isChangeInTheChangesList("file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp2/ann3", "http://purl.org/wf4ever/roevo#Modification", model, changesList));
+        Assert.assertTrue(isChangeInTheChangesList("file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp2/res1", "http://purl.org/wf4ever/roevo#Addition", model, changesList));
+        Assert.assertTrue(isChangeInTheChangesList("file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp2/afinalfolder", "http://purl.org/wf4ever/roevo#Addition", model, changesList));
+        Assert.assertTrue(isChangeInTheChangesList("file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp2/ann2", "http://purl.org/wf4ever/roevo#Modification", model, changesList));
+        Assert.assertTrue(isChangeInTheChangesList("file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp1/afolder", "http://purl.org/wf4ever/roevo#Removal", model, changesList));
+
     }
 
 
     /***** HELPERS *****/
+
+    private Boolean isChangeInTheChangesList(String relatedObjectURI, String rdfClass, OntModel model,
+            List<RDFNode> changesList) {
+        for (RDFNode change : changesList) {
+            Boolean partialResult1 = change.asResource()
+                    .getProperty(model.createProperty("http://purl.org/wf4ever/roevo#relatedResource")).getObject()
+                    .toString().equals(relatedObjectURI);
+            Boolean partialREsult2 = change.as(Individual.class).hasRDFType(rdfClass);
+            if (partialResult1 && partialREsult2) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     private URI getResourceURI(String resourceName)
             throws URISyntaxException {

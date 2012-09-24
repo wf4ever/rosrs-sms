@@ -1308,13 +1308,6 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             antecessorAggregatesList, freshROModel, freshROInvidual, changeSpecificationIndividual, Direction.NEW);
         result += lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, antecessorAggregatesList,
             freshAggregatesList, freshROModel, freshROInvidual, changeSpecificationIndividual, Direction.DELETED);
-        for (RDFNode a : freshROInvidual.getProperty(roevoWasChangedBy).getObject().as(Individual.class)
-                .listPropertyValues(roevoHasChange).toList()) {
-            String b = a.asResource().getProperty(roevoRelatedResource).toString();
-            String g = a.as(Individual.class).getRDFType().toString();
-            String h = "";
-        }
-
         return result;
     }
 
@@ -1401,8 +1394,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 
     private Boolean compareRelativesURI(URI patternURI, URI comparedURI, URI baseForPatternURI, URI baseForComparedURI) {
-        return patternURI.relativize(baseForPatternURI).toString()
-                .equals(comparedURI.relativize(baseForComparedURI).toString());
+        return baseForPatternURI.relativize(patternURI).toString()
+                .equals(baseForComparedURI.relativize(comparedURI).toString());
     }
 
 
@@ -1461,7 +1454,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
                         log.debug(e);
                     }
                 } else if (comparedNode.isLiteral() && patternNode.isLiteral()) {
-                    if (comparedNode.asLiteral().equals(patternNode.asLiteral())) {
+                    if (compareTwoLiterals(comparedNode.asLiteral(), patternNode.asLiteral())) {
                         result = true;
                     }
                 }
@@ -1484,7 +1477,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
                         return null;
                     }
                 } else if (comparedNode.isLiteral() && patternNode.isLiteral()) {
-                    if (comparedNode.asLiteral().equals(patternNode.asLiteral())) {
+                    if (compareTwoLiterals(comparedNode.asLiteral(),patternNode.asLiteral())) {
                         result = true;
                     }
                 }
@@ -1533,16 +1526,21 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     }
 
 
-    private Boolean isStatementInList(Statement statement, List<Statement> list, URI patternURI, URI comparedURI) throws URISyntaxException {
+    private Boolean isStatementInList(Statement statement, List<Statement> list, URI patternURI, URI comparedURI)
+            throws URISyntaxException {
         for (Statement listStatement : list) {
-            if (compareRelativesURI(new URI(statement.getSubject().asResource().getURI()), new URI(listStatement.getSubject().asResource().getURI()), patternURI, comparedURI)) {
-                if (compareRelativesURI(new URI(statement.getPredicate().asResource().getURI()), new URI(listStatement.getPredicate().asResource().getURI()), patternURI, comparedURI)) {//comppare URI
-                    if (compareRelativesURI(new URI(statement.getObject().asResource().getURI()), new URI(listStatement.getObject().asResource().getURI()), patternURI, comparedURI)) {
-                        return true;
-        }
+            if (compareRelativesURI(new URI(statement.getSubject().asResource().getURI()), new URI(listStatement
+                    .getSubject().asResource().getURI()), patternURI, comparedURI)) {
+                if (compareRelativesURI(new URI(statement.getPredicate().asResource().getURI()), new URI(listStatement
+                        .getPredicate().asResource().getURI()), patternURI, comparedURI)) {
+                    if (statement.getObject().isResource() && listStatement.getObject().isResource()) {
+                        if (compareRelativesURI(new URI(statement.getObject().asResource().getURI()), new URI(
+                                listStatement.getObject().asResource().getURI()), patternURI, comparedURI)) {
+                            return true;
+                        }
+                    }
                     if (listStatement.getObject().isLiteral() && statement.getObject().isLiteral()) {
-                        if (listStatement.getObject().asLiteral().toString()
-                                .equals(statement.getObject().asLiteral().toString())) {
+                        if (compareTwoLiterals(listStatement.getObject().asLiteral(), statement.getObject().asLiteral())) {
                             return true;
                         }
                     }
@@ -1574,7 +1572,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     }
 
 
-    private URI resolveURI(URI base, String second) {
+    @Override
+    public URI resolveURI(URI base, String second) {
         if ("file".equals(base.getScheme())) {
             URI incorrectURI = base.resolve(second);
             return URI.create(incorrectURI.toString().replaceFirst("file:/", "file:///"));
