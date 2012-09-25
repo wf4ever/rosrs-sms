@@ -22,7 +22,6 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.openrdf.rio.RDFFormat;
@@ -38,8 +37,6 @@ import com.hp.hpl.jena.ontology.Individual;
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
-import com.hp.hpl.jena.ontology.OntProperty;
-import com.hp.hpl.jena.ontology.OntResource;
 import com.hp.hpl.jena.query.Query;
 import com.hp.hpl.jena.query.QueryExecution;
 import com.hp.hpl.jena.query.QueryExecutionFactory;
@@ -1295,6 +1292,13 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath,
             String format)
             throws URISyntaxException {
+        if (freshObjectURI == null) {
+            throw new NullPointerException("Frsh object URI can not be null");
+        }
+        if (antecessorObjectURI == null) {
+            return "";
+        }
+
         Individual freshObjectSource = getIndividual(freshObjectURI, modelPath, format);
         Individual antecessorObjectSource = getIndividual(antecessorObjectURI, modelPath, format);
         List<RDFNode> freshAggregatesList = freshObjectSource.listPropertyValues(aggregates).toList();
@@ -1477,7 +1481,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
                         return null;
                     }
                 } else if (comparedNode.isLiteral() && patternNode.isLiteral()) {
-                    if (compareTwoLiterals(comparedNode.asLiteral(),patternNode.asLiteral())) {
+                    if (compareTwoLiterals(comparedNode.asLiteral(), patternNode.asLiteral())) {
                         result = true;
                     }
                 }
