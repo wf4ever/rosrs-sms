@@ -670,7 +670,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         ontModel.addSubModel(defaultModel);
         return ontModel;
     }
-
+   
 
     private NamedGraph getOrCreateGraph(NamedGraphSet graphset, URI namedGraphURI) {
         return graphset.containsGraph(namedGraphURI.toString()) ? graphset.getGraph(namedGraphURI.toString())
@@ -1304,20 +1304,26 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         List<RDFNode> freshAggregatesList = freshObjectSource.listPropertyValues(aggregates).toList();
         List<RDFNode> antecessorAggregatesList = antecessorObjectSource.listPropertyValues(aggregates).toList();
         OntModel freshROModel = createOntModelForNamedGraph(resolveURI(freshObjectURI, ".ro/manifest.rdf"));
+        //if evo_inf exists remove it 
+        if (graphset.containsGraph(resolveURI(freshObjectURI, ".ro/evo_inf.rdf").toString())){
+            graphset.removeGraph(resolveURI(freshObjectURI, ".ro/evo_inf.rdf").toString());
+        }
+        OntModel freshROEvoInfoModel = createOntModelForNamedGraph(resolveURI(freshObjectURI, ".ro/evo_inf.rdf"));
         Individual freshROInvidual = freshROModel.getIndividual(freshObjectURI.toString());
-        Individual changeSpecificationIndividual = freshROModel.createIndividual(ChangeSpecificationClass);
-        freshROInvidual.addProperty(roevoWasChangedBy, changeSpecificationIndividual);
-
+        Individual changeSpecificationIndividual = freshROEvoInfoModel.createIndividual(ChangeSpecificationClass);
+        //@TODO ask Piotrek!!
+        freshROInvidual.addProperty(roevoWasChangedBy, changeSpecificationIndividual.getURI());
+        
         String result = lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, freshAggregatesList,
-            antecessorAggregatesList, freshROModel, freshROInvidual, changeSpecificationIndividual, Direction.NEW);
+            antecessorAggregatesList, freshROEvoInfoModel, changeSpecificationIndividual, Direction.NEW);
         result += lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, antecessorAggregatesList,
-            freshAggregatesList, freshROModel, freshROInvidual, changeSpecificationIndividual, Direction.DELETED);
+            freshAggregatesList, freshROEvoInfoModel, changeSpecificationIndividual, Direction.DELETED);
         return result;
     }
 
 
     private String lookForAggregatedDifferents(URI freshObjectURI, URI antecessorObjectURI, List<RDFNode> pattern,
-            List<RDFNode> compared, OntModel freshROModel, Individual manifestIndividual,
+            List<RDFNode> compared, OntModel freshROModel,
             Individual changeSpecificationIndividual, Direction direction) {
         String result = "";
         Boolean tmp = null;
@@ -1334,14 +1340,14 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
                 }
             }
             result += serviceDetectedEVOmodification(loopResult, freshObjectURI, antecessorObjectURI, patternNode,
-                freshROModel, manifestIndividual, changeSpecificationIndividual, direction);
+                freshROModel, changeSpecificationIndividual, direction);
         }
         return result;
     }
 
 
     private String serviceDetectedEVOmodification(Boolean loopResult, URI freshObjectURI, URI antecessorObjectURI,
-            RDFNode node, OntModel freshRoModel, Individual manifestIndividual,
+            RDFNode node, OntModel freshRoModel,
             Individual changeSpecificatinIndividual, Direction direction) {
         String result = "";
         //Null means they are not comparable. Resource is new or deleted depends on the direction. 
@@ -1584,5 +1590,11 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         } else {
             return base.resolve(second);
         }
+    }
+
+
+    @Override
+    public InputStream getEvoInfo(URI researchObjectURI) {
+        return getNamedGraph(resolveURI(researchObjectURI, ".ro/manifest.rdf"), RDFFormat.RDFXML); 
     }
 }

@@ -694,4 +694,13 @@ public interface SemanticMetadataService {
      */
     URI resolveURI(URI base, String second);
 
+    /**
+     * Get the evolution information of research object.
+     * 
+     * @param researchObjectURI
+     *              the URI of research object
+     * @return Input Stream with the evolution information
+     */
+    InputStream getEvoInfo(URI researchObjectURI);
+    
 }
