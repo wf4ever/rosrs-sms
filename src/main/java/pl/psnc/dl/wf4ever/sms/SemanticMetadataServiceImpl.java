@@ -1595,6 +1595,6 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     @Override
     public InputStream getEvoInfo(URI researchObjectURI) {
-        return getNamedGraph(resolveURI(researchObjectURI, ".ro/manifest.rdf"), RDFFormat.RDFXML); 
+        return getNamedGraph(resolveURI(researchObjectURI, ".ro/evo_inf.rdf"), RDFFormat.RDFXML); 
     }
 }
