@@ -1308,12 +1308,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         if (graphset.containsGraph(resolveURI(freshObjectURI, ".ro/evo_inf.rdf").toString())){
             graphset.removeGraph(resolveURI(freshObjectURI, ".ro/evo_inf.rdf").toString());
         }
+        
         OntModel freshROEvoInfoModel = createOntModelForNamedGraph(resolveURI(freshObjectURI, ".ro/evo_inf.rdf"));
         Individual freshROInvidual = freshROModel.getIndividual(freshObjectURI.toString());
-        Individual changeSpecificationIndividual = freshROEvoInfoModel.createIndividual(ChangeSpecificationClass);
-        //@TODO ask Piotrek!!
-        freshROInvidual.addProperty(roevoWasChangedBy, changeSpecificationIndividual.getURI());
-        
+        Individual changeSpecificationIndividual = freshROEvoInfoModel.createIndividual(resolveURI(freshObjectURI, ".ro/evo_inf.rdf").toString(), ChangeSpecificationClass);
+        //Individual changeSpecificationIndividual = freshROEvoInfoModel.createIndividual(ChangeSpecificationClass);
+        freshROInvidual.addProperty(roevoWasChangedBy,freshROModel.createResource(resolveURI(freshObjectURI, ".ro/evo_inf.rdf").toString()));
         String result = lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, freshAggregatesList,
             antecessorAggregatesList, freshROEvoInfoModel, changeSpecificationIndividual, Direction.NEW);
         result += lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, antecessorAggregatesList,

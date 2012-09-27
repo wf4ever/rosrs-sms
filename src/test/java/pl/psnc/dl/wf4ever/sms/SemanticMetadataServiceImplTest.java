@@ -39,6 +39,7 @@ import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
 import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.ontology.Individual;
+import com.hp.hpl.jena.ontology.ObjectProperty;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
 import com.hp.hpl.jena.query.Query;
@@ -1260,19 +1261,11 @@ public class SemanticMetadataServiceImplTest {
             "TTL");
         
         OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-        model.read(sms.getManifest(getResourceURI("ro1-sp2/.ro/evoo_info.rdf"), RDFFormat.RDFXML), null);
-        //Individual snaphotIndividual = model.getIndividual(getResourceURI("ro1-sp2/").toString());
-        //List<RDFNode> changesList = snaphotIndividual
-        //        .getProperty(model.createProperty("http://purl.org/wf4ever/roevo#wasChangedBy")).getObject()
-        //        .as(Individual.class)
-        //        .listPropertyValues(model.createProperty("http://purl.org/wf4ever/roevo#hasChange")).toList();
-     
-        String w = (IOUtils.toString(sms.getManifest(getResourceURI("ro1-sp2/.ro/evok_inf.rdf"), RDFFormat.RDFXML), "UTF-8"));
-        String a = (IOUtils.toString(sms.getManifest(getResourceURI("ro1-sp2/.ro/manifest.rdf"), RDFFormat.RDFXML), "UTF-8"));
-        String b = "";
-        String c= b;
-
-        /*
+        model.read(sms.getManifest(getResourceURI("ro1-sp2/.ro/evo_inf.rdf"), RDFFormat.RDFXML), null);
+        Individual evoInfoSource = model.getIndividual(getResourceURI("ro1-sp2/.ro/evo_inf.rdf").toString());
+        List<RDFNode> changesList = evoInfoSource.listPropertyValues(model.createProperty("http://purl.org/wf4ever/roevo#hasChange")).toList();
+        
+        
         Assert.assertTrue(isChangeInTheChangesList(
             "file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp2/ann3",
             "http://purl.org/wf4ever/roevo#Modification", model, changesList));
@@ -1288,7 +1281,6 @@ public class SemanticMetadataServiceImplTest {
         Assert.assertTrue(isChangeInTheChangesList(
             "file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp1/afolder",
             "http://purl.org/wf4ever/roevo#Removal", model, changesList));
-         */
 
     }
 
@@ -1317,7 +1309,7 @@ public class SemanticMetadataServiceImplTest {
     /***** HELPERS *****/
 
     private Boolean isChangeInTheChangesList(String relatedObjectURI, String rdfClass, OntModel model,
-            List<Resource> changesList) {
+            List<RDFNode> changesList) {
         for (RDFNode change : changesList) {
             Boolean partialResult1 = change.asResource()
                     .getProperty(model.createProperty("http://purl.org/wf4ever/roevo#relatedResource")).getObject()
