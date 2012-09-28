@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -32,6 +33,10 @@ import org.openrdf.rio.RDFFormat;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
+import pl.psnc.dl.wf4ever.vocabulary.AO;
+import pl.psnc.dl.wf4ever.vocabulary.FOAF;
+import pl.psnc.dl.wf4ever.vocabulary.ORE;
+import pl.psnc.dl.wf4ever.vocabulary.RO;
 
 import com.google.common.collect.Multimap;
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
@@ -103,31 +108,6 @@ public class SemanticMetadataServiceImplTest {
     private final static URI folderURI = URI.create("http://example.org/ROs/ro1/afolder");
 
     private final URI annotationBody1URI = URI.create("http://example.org/ROs/ro1/.ro/ann1");
-
-    private static final String RO_NAMESPACE = "http://purl.org/wf4ever/ro#";
-
-    private final Property aggregates = ModelFactory.createDefaultModel().createProperty(
-        "http://www.openarchives.org/ore/terms/aggregates");
-
-    private final Property proxyIn = ModelFactory.createDefaultModel().createProperty(
-        "http://www.openarchives.org/ore/terms/proxyIn");
-
-    private final Property proxyFor = ModelFactory.createDefaultModel().createProperty(
-        "http://www.openarchives.org/ore/terms/proxyFor");
-
-    private final Property foafName = ModelFactory.createDefaultModel()
-            .createProperty("http://xmlns.com/foaf/0.1/name");
-
-    private final Property annotatesAggregatedResource = ModelFactory.createDefaultModel().createProperty(
-        RO_NAMESPACE + "annotatesAggregatedResource");
-
-    private final Property body = ModelFactory.createDefaultModel().createProperty("http://purl.org/ao/body");
-
-    private final Property name = ModelFactory.createDefaultModel().createProperty(RO_NAMESPACE + "name");
-
-    private final Property filesize = ModelFactory.createDefaultModel().createProperty(RO_NAMESPACE + "filesize");
-
-    private final Property checksum = ModelFactory.createDefaultModel().createProperty(RO_NAMESPACE + "checksum");
 
     private static final String PROJECT_PATH = System.getProperty("user.dir");
 
@@ -236,8 +216,8 @@ public class SemanticMetadataServiceImplTest {
             Individual ro = model.getIndividual(researchObjectURI.toString());
             Assert.assertNotNull("Manifest must contain ro:Manifest", manifest);
             Assert.assertNotNull("Manifest must contain ro:ResearchObject", ro);
-            Assert.assertTrue("Manifest must be a ro:Manifest", manifest.hasRDFType(RO_NAMESPACE + "Manifest"));
-            Assert.assertTrue("RO must be a ro:ResearchObject", ro.hasRDFType(RO_NAMESPACE + "ResearchObject"));
+            Assert.assertTrue("Manifest must be a ro:Manifest", manifest.hasRDFType(RO.NAMESPACE + "Manifest"));
+            Assert.assertTrue("RO must be a ro:ResearchObject", ro.hasRDFType(RO.NAMESPACE + "ResearchObject"));
 
             Literal createdLiteral = manifest.getPropertyValue(DCTerms.created).asLiteral();
             Assert.assertNotNull("Manifest must contain dcterms:created", createdLiteral);
@@ -298,8 +278,6 @@ public class SemanticMetadataServiceImplTest {
             InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
             sms.updateManifest(manifestURI, is, RDFFormat.TURTLE);
 
-            log.debug(IOUtils.toString(sms.getManifest(manifestURI, RDFFormat.TURTLE), "UTF-8"));
-
             OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
             model.read(sms.getManifest(manifestURI, RDFFormat.RDFXML), null);
 
@@ -330,11 +308,11 @@ public class SemanticMetadataServiceImplTest {
             Assert.assertTrue("Old creator has been deleted", !creators.contains(userProfile.getName()));
 
             Assert.assertTrue("RO must aggregate resources",
-                model.contains(ro, aggregates, model.createResource(workflowURI.toString())));
+                model.contains(ro, ORE.aggregates, model.createResource(workflowURI.toString())));
             Assert.assertTrue("RO must aggregate resources",
-                model.contains(ro, aggregates, model.createResource(ann1URI.toString())));
+                model.contains(ro, ORE.aggregates, model.createResource(ann1URI.toString())));
             Assert.assertTrue("RO must not aggregate previous resources",
-                !model.contains(ro, aggregates, model.createResource(resourceFakeURI.toString())));
+                !model.contains(ro, ORE.aggregates, model.createResource(resourceFakeURI.toString())));
             validateProxy(model, manifest, researchObjectURI.toString() + "proxy1", workflowURI.toString());
         } finally {
             sms.close();
@@ -347,9 +325,9 @@ public class SemanticMetadataServiceImplTest {
         Assert.assertNotNull("Manifest must contain " + proxyURI, proxy);
         Assert.assertTrue(String.format("Proxy %s must be a ore:Proxy", proxyURI),
             proxy.hasRDFType("http://www.openarchives.org/ore/terms/Proxy"));
-        Assert.assertEquals("Proxy for must be valid", proxyForURI, proxy.getPropertyResourceValue(proxyFor).getURI());
+        Assert.assertEquals("Proxy for must be valid", proxyForURI, proxy.getPropertyResourceValue(ORE.oreProxyFor).getURI());
         Assert.assertEquals("Proxy in must be valid", researchObjectURI.toString(),
-            proxy.getPropertyResourceValue(proxyIn).getURI());
+            proxy.getPropertyResourceValue(ORE.oreProxyIn).getURI());
     }
 
 
@@ -417,8 +395,8 @@ public class SemanticMetadataServiceImplTest {
             Individual ro = model.getIndividual(researchObjectURI.toString());
             Assert.assertNotNull("Manifest must contain ro:Manifest", manifest);
             Assert.assertNotNull("Manifest must contain ro:ResearchObject", ro);
-            Assert.assertTrue("Manifest must be a ro:Manifest", manifest.hasRDFType(RO_NAMESPACE + "Manifest"));
-            Assert.assertTrue("RO must be a ro:ResearchObject", ro.hasRDFType(RO_NAMESPACE + "ResearchObject"));
+            Assert.assertTrue("Manifest must be a ro:Manifest", manifest.hasRDFType(RO.NAMESPACE + "Manifest"));
+            Assert.assertTrue("RO must be a ro:ResearchObject", ro.hasRDFType(RO.NAMESPACE + "ResearchObject"));
 
             Literal createdLiteral = manifest.getPropertyValue(DCTerms.created).asLiteral();
             Assert.assertNotNull("Manifest must contain dcterms:created", createdLiteral);
@@ -442,7 +420,7 @@ public class SemanticMetadataServiceImplTest {
             Individual creator = userModel.getIndividual(creatorResource.getURI());
             Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
             Assert.assertEquals("Creator name must be correct", userProfile.getName(),
-                creator.getPropertyValue(foafName).asLiteral().getString());
+                creator.getPropertyValue(FOAF.foafName).asLiteral().getString());
 
             log.debug(IOUtils.toString(sms.getManifest(manifestURI, RDFFormat.RDFXML), "UTF-8"));
         } finally {
@@ -476,7 +454,7 @@ public class SemanticMetadataServiceImplTest {
             graphset.read(sms.getManifest(manifestURI, RDFFormat.TRIG), "TRIG", null);
 
             Quad sampleAgg = new Quad(Node.createURI(manifestURI.toString()), Node.createURI(researchObjectURI
-                    .toString()), Node.createURI(aggregates.getURI()), Node.createURI(workflowURI.toString()));
+                    .toString()), Node.createURI(ORE.aggregates.getURI()), Node.createURI(workflowURI.toString()));
             Assert.assertTrue("Contains a sample aggregation", graphset.containsQuad(sampleAgg));
 
             Quad sampleAnn = new Quad(Node.createURI(annotationBody1URI.toString()), Node.createURI(workflowURI
@@ -615,7 +593,7 @@ public class SemanticMetadataServiceImplTest {
         Individual resource = model.getIndividual(resourceURI.toString());
         Assert.assertNotNull("Resource cannot be null", resource);
         Assert.assertTrue(String.format("Resource %s must be a ro:Resource", resourceURI),
-            resource.hasRDFType(RO_NAMESPACE + "Resource"));
+            resource.hasRDFType(RO.NAMESPACE + "Resource"));
 
         RDFNode createdLiteral = resource.getPropertyValue(DCTerms.created);
         Assert.assertNotNull("Resource must contain dcterms:created", createdLiteral);
@@ -630,20 +608,20 @@ public class SemanticMetadataServiceImplTest {
         Individual creator = userModel.getIndividual(creatorResource.getURI());
         Assert.assertNotNull("User named graph must contain dcterms:creator", creator);
         Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
-        Assert.assertEquals("Creator name must be correct", userProfile.getName(), creator.getPropertyValue(foafName)
+        Assert.assertEquals("Creator name must be correct", userProfile.getName(), creator.getPropertyValue(FOAF.foafName)
                 .asLiteral().getString());
 
-        Literal nameLiteral = resource.getPropertyValue(name).asLiteral();
+        Literal nameLiteral = resource.getPropertyValue(RO.name).asLiteral();
         Assert.assertNotNull("Resource must contain ro:name", nameLiteral);
         Assert.assertEquals("Name type is xsd:string", XSDDatatype.XSDstring, nameLiteral.getDatatype());
         Assert.assertEquals("Name is valid", resourceInfo.getName(), nameLiteral.asLiteral().getString());
 
-        Literal filesizeLiteral = resource.getPropertyValue(filesize).asLiteral();
+        Literal filesizeLiteral = resource.getPropertyValue(RO.filesize).asLiteral();
         Assert.assertNotNull("Resource must contain ro:filesize", filesizeLiteral);
         Assert.assertEquals("Filesize type is xsd:long", XSDDatatype.XSDlong, filesizeLiteral.getDatatype());
         Assert.assertEquals("Filesize is valid", resourceInfo.getSizeInBytes(), filesizeLiteral.asLiteral().getLong());
 
-        Resource checksumResource = resource.getPropertyValue(checksum).asResource();
+        Resource checksumResource = resource.getPropertyValue(RO.checksum).asResource();
         Assert.assertNotNull("Resource must contain ro:checksum", checksumResource);
         URI checksumURN = new URI(checksumResource.getURI());
         Pattern p = Pattern.compile("urn:(\\w+):([0-9a-fA-F]+)");
@@ -903,7 +881,7 @@ public class SemanticMetadataServiceImplTest {
             Individual resource = model.getIndividual(workflowURI.toString());
             Assert.assertNotNull("Resource cannot be null", resource);
             Assert.assertTrue(String.format("Resource %s must be a ro:Resource", workflowURI),
-                resource.hasRDFType(RO_NAMESPACE + "Resource"));
+                resource.hasRDFType(RO.NAMESPACE + "Resource"));
 
             is = getClass().getClassLoader().getResourceAsStream("direct-annotations-construct.sparql");
             String constructQuery = IOUtils.toString(is, "UTF-8");
@@ -1039,7 +1017,7 @@ public class SemanticMetadataServiceImplTest {
             Assert.assertNotNull("User named graph must contain dcterms:creator", creator);
             Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
             Assert.assertEquals("Creator name must be correct", userProfile.getName(),
-                creator.getPropertyValue(foafName).asLiteral().getString());
+                creator.getPropertyValue(FOAF.foafName).asLiteral().getString());
 
             sms.removeUser(userProfile.getUri());
             userModel.removeAll();
@@ -1103,10 +1081,10 @@ public class SemanticMetadataServiceImplTest {
             Resource workflow2 = model.getResource(workflow2URI.toString());
             Resource abody = model.getResource(annotationBody1URI.toString());
 
-            Assert.assertTrue(model.contains(researchObject, aggregates, annotation));
-            Assert.assertTrue(model.contains(annotation, annotatesAggregatedResource, workflow));
-            Assert.assertTrue(model.contains(annotation, annotatesAggregatedResource, workflow2));
-            Assert.assertTrue(model.contains(annotation, body, abody));
+            Assert.assertTrue(model.contains(researchObject, ORE.aggregates, annotation));
+            Assert.assertTrue(model.contains(annotation, RO.annotatesAggregatedResource, workflow));
+            Assert.assertTrue(model.contains(annotation, RO.annotatesAggregatedResource, workflow2));
+            Assert.assertTrue(model.contains(annotation, AO.aoBody, abody));
         } finally {
             sms.close();
         }
@@ -1132,12 +1110,12 @@ public class SemanticMetadataServiceImplTest {
             Resource workflow2 = model.getResource(workflow2URI.toString());
             Resource abody = model.getResource(annotationBody1URI.toString());
 
-            Assert.assertTrue(model.contains(researchObject, aggregates, annotation));
-            Assert.assertTrue(model.contains(annotation, annotatesAggregatedResource, workflow));
-            Assert.assertFalse(model.contains(annotation, annotatesAggregatedResource, workflow2));
-            Assert.assertTrue(model.contains(annotation, annotatesAggregatedResource, researchObject));
-            Assert.assertFalse(model.contains(annotation, body, abody));
-            Assert.assertTrue(model.contains(annotation, body, workflow2));
+            Assert.assertTrue(model.contains(researchObject, ORE.aggregates, annotation));
+            Assert.assertTrue(model.contains(annotation, RO.annotatesAggregatedResource, workflow));
+            Assert.assertFalse(model.contains(annotation, RO.annotatesAggregatedResource, workflow2));
+            Assert.assertTrue(model.contains(annotation, RO.annotatesAggregatedResource, researchObject));
+            Assert.assertFalse(model.contains(annotation, AO.aoBody, abody));
+            Assert.assertTrue(model.contains(annotation, AO.aoBody, workflow2));
         } finally {
             sms.close();
         }
@@ -1256,10 +1234,54 @@ public class SemanticMetadataServiceImplTest {
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
         InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
         sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
-        String result = sms.storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"),
-            ".ro/manifest.ttl", "TTL");
-        log.debug(result);
-        Assert.assertTrue(result.contains("ro1-sp2/ann2 MODIFICATION"));
+        sms.storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"), ".ro/manifest.ttl",
+            "TTL");
+        
+        OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+        model.read(sms.getManifest(getResourceURI("ro1-sp2/.ro/evo_inf.rdf"), RDFFormat.RDFXML), null);
+        Individual evoInfoSource = model.getIndividual(getResourceURI("ro1-sp2/.ro/evo_inf.rdf").toString());
+        List<RDFNode> changesList = evoInfoSource.listPropertyValues(model.createProperty("http://purl.org/wf4ever/roevo#hasChange")).toList();
+        sms.close();
+        
+        Assert.assertTrue(isChangeInTheChangesList(
+            "file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp2/ann3",
+            "http://purl.org/wf4ever/roevo#Modification", model, changesList));
+        Assert.assertTrue(isChangeInTheChangesList(
+            "file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp2/res1",
+            "http://purl.org/wf4ever/roevo#Addition", model, changesList));
+        Assert.assertTrue(isChangeInTheChangesList(
+            "file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp2/afinalfolder",
+            "http://purl.org/wf4ever/roevo#Addition", model, changesList));
+        Assert.assertTrue(isChangeInTheChangesList(
+            "file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp2/ann2",
+            "http://purl.org/wf4ever/roevo#Modification", model, changesList));
+        Assert.assertTrue(isChangeInTheChangesList(
+            "file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp1/afolder",
+            "http://purl.org/wf4ever/roevo#Removal", model, changesList));
+
+    }
+
+    @Test(expected = NullPointerException.class)
+    public final void testStoreROhistoryWithWrongParametrs()
+            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
+        sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
+        sms.storeAggregatedDifferences(null, getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL");
+        sms.close();
+    }
+
+
+    @Test
+    public final void testStoreROhistoryWithNoAccenestor()
+            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp1/.ro/manifest.ttl");
+        sms.addNamedGraph(getResourceURI("ro1-sp1/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
+        String result = sms.storeAggregatedDifferences(getResourceURI("ro1-sp1/"), null);
+        Assert.assertEquals("", result);
+        sms.close();
+        //@TODO read created model and look for the possible written changes
     }
 
 
@@ -1284,6 +1306,21 @@ public class SemanticMetadataServiceImplTest {
 
 
     /***** HELPERS *****/
+
+    private Boolean isChangeInTheChangesList(String relatedObjectURI, String rdfClass, OntModel model,
+            List<RDFNode> changesList) {
+        for (RDFNode change : changesList) {
+            Boolean partialResult1 = change.asResource()
+                    .getProperty(model.createProperty("http://purl.org/wf4ever/roevo#relatedResource")).getObject()
+                    .toString().equals(relatedObjectURI);
+            Boolean partialREsult2 = change.as(Individual.class).hasRDFType(rdfClass);
+            if (partialResult1 && partialREsult2) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     private URI getResourceURI(String resourceName)
             throws URISyntaxException {

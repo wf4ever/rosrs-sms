@@ -28,13 +28,19 @@ import org.openrdf.rio.RDFFormat;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
+import pl.psnc.dl.wf4ever.vocabulary.AO;
+import pl.psnc.dl.wf4ever.vocabulary.FOAF;
+import pl.psnc.dl.wf4ever.vocabulary.ORE;
+import pl.psnc.dl.wf4ever.vocabulary.PROV;
+import pl.psnc.dl.wf4ever.vocabulary.RO;
+import pl.psnc.dl.wf4ever.vocabulary.ROEVO;
+import pl.psnc.dl.wf4ever.vocabulary.W4E;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.hp.hpl.jena.datatypes.xsd.XSDDateTime;
 import com.hp.hpl.jena.graph.Node;
 import com.hp.hpl.jena.ontology.Individual;
-import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
 import com.hp.hpl.jena.ontology.OntModelSpec;
 import com.hp.hpl.jena.query.Query;
@@ -44,18 +50,15 @@ import com.hp.hpl.jena.query.QueryFactory;
 import com.hp.hpl.jena.query.QuerySolution;
 import com.hp.hpl.jena.query.ResultSet;
 import com.hp.hpl.jena.query.ResultSetFormatter;
-import com.hp.hpl.jena.query.Syntax;
 import com.hp.hpl.jena.rdf.model.Literal;
 import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.NodeIterator;
-import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
 import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.rdf.model.Statement;
 import com.hp.hpl.jena.rdf.model.StmtIterator;
-import com.hp.hpl.jena.shared.PrefixMapping;
 import com.hp.hpl.jena.vocabulary.DCTerms;
 
 import de.fuberlin.wiwiss.ng4j.NamedGraph;
@@ -71,128 +74,18 @@ import de.fuberlin.wiwiss.ng4j.sparql.NamedGraphDataset;
  */
 public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
-    private static final String DEFAULT_MANIFEST_PATH = ".ro/manifest.rdf";
-
     private static final Logger log = Logger.getLogger(SemanticMetadataServiceImpl.class);
 
-    private static final Syntax sparqlSyntax = Syntax.syntaxARQ;
-
-    private static final String ORE_NAMESPACE = "http://www.openarchives.org/ore/terms/";
-
-    private static final String RO_NAMESPACE = "http://purl.org/wf4ever/ro#";
-
-    private static final String ROEVO_NAMESPACE = "http://purl.org/wf4ever/roevo#";
-
-    private static final String FOAF_NAMESPACE = "http://xmlns.com/foaf/0.1/";
-
-    private static final String AO_NAMESPACE = "http://purl.org/ao/";
-
-    private static final URI DEFAULT_NAMED_GRAPH_URI = URI.create("sms");
-
-    private static final PrefixMapping standardNamespaces = PrefixMapping.Factory.create()
-            .setNsPrefix("ore", ORE_NAMESPACE).setNsPrefix("ro", RO_NAMESPACE).setNsPrefix("roevo", ROEVO_NAMESPACE)
-            .setNsPrefix("dcterms", DCTerms.NS).setNsPrefix("foaf", FOAF_NAMESPACE).lock();
-
     private final NamedGraphSet graphset;
-
-    private static final OntModel defaultModel = ModelFactory.createOntologyModel(
-        new OntModelSpec(OntModelSpec.OWL_MEM),
-        ModelFactory.createDefaultModel().read(RO_NAMESPACE).read(ROEVO_NAMESPACE));
-
-    private static final OntClass researchObjectClass = defaultModel.getOntClass(RO_NAMESPACE + "ResearchObject");
-
-    private static final OntClass liveROClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "LiveRO");
-
-    private static final OntClass snapshotROClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "SnapshotRO");
-
-    private static final OntClass archivedROClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "ArchivedRO");
-
-    private static final OntClass manifestClass = defaultModel.getOntClass(RO_NAMESPACE + "Manifest");
-
-    private static final OntClass resourceClass = defaultModel.getOntClass(RO_NAMESPACE + "Resource");
-
-    private static final OntClass roFolderClass = defaultModel.getOntClass(RO_NAMESPACE + "Folder");
-
-    private static final OntClass roAggregatedAnnotationClass = defaultModel.getOntClass(RO_NAMESPACE
-            + "AggregatedAnnotation");
-
-    private static final OntClass oreProxyClass = defaultModel.getOntClass(ORE_NAMESPACE + "Proxy");
-
-    private static final OntClass foafAgentClass = defaultModel.getOntClass(FOAF_NAMESPACE + "Agent");
-
-    private static final OntClass foafPersonClass = defaultModel.getOntClass(FOAF_NAMESPACE + "Person");
-
-    private static final OntClass ChangeSpecificationClass = defaultModel.getOntClass(ROEVO_NAMESPACE
-            + "ChangeSpecification");
-
-    private static final OntClass ChangeClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "Change");
-
-    private static final OntClass AdditionClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "Addition");
-
-    private static final OntClass ModificationClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "Modification");
-
-    private static final OntClass RemovalClass = defaultModel.getOntClass(ROEVO_NAMESPACE + "Removal");
-
-    private static final Property describes = defaultModel.getProperty(ORE_NAMESPACE + "describes");
-
-    private static final Property isDescribedBy = defaultModel.getProperty(ORE_NAMESPACE + "isDescribedBy");
-
-    private static final Property aggregates = defaultModel.getProperty(ORE_NAMESPACE + "aggregates");
-
-    private static final Property oreProxyIn = defaultModel.getProperty(ORE_NAMESPACE + "proxyIn");
-
-    private static final Property oreProxyFor = defaultModel.getProperty(ORE_NAMESPACE + "proxyFor");
-
-    private static final Property foafName = defaultModel.getProperty(FOAF_NAMESPACE + "name");
-
-    private static final Property name = defaultModel.getProperty(RO_NAMESPACE + "name");
-
-    private static final Property filesize = defaultModel.getProperty(RO_NAMESPACE + "filesize");
-
-    private static final Property checksum = defaultModel.getProperty(RO_NAMESPACE + "checksum");
-
-    private static final Property roAnnotatesAggregatedResource = defaultModel.getProperty(RO_NAMESPACE
-            + "annotatesAggregatedResource");
-
-    private static final Property aoBody = defaultModel.getProperty(AO_NAMESPACE + "body");
-
-    private static final Property roevoIsSnapshotOf = defaultModel.getProperty(ROEVO_NAMESPACE + "isSnapshotOf");
-
-    private static final Property roevoHasSnapshot = defaultModel.getProperty(ROEVO_NAMESPACE + "hasSnapshot");
-
-    private static final Property roevoHasChange = defaultModel.getProperty(ROEVO_NAMESPACE + "hasChange");
-
-    private static final Property roevoSnapshottedAtTime = defaultModel.getProperty(ROEVO_NAMESPACE
-            + "snapshottedAtTime");
-
-    private static final Property roevoArchivedBy = defaultModel.getProperty(ROEVO_NAMESPACE + "archivedBy");
-
-    private static final Property roevoIsArchiveOf = defaultModel.getProperty(ROEVO_NAMESPACE + "isArchiveOf");
-
-    private static final Property roevoHasArchive = defaultModel.getProperty(ROEVO_NAMESPACE + "hasArchive");
-
-    private static final Property roevoArchivedAtTime = defaultModel.getProperty(ROEVO_NAMESPACE + "archivedAtTime");
-
-    private static final Property roevoSnapshottedBy = defaultModel.getProperty(ROEVO_NAMESPACE + "snapshottedBy");
-
-    private static final Property roevoWasChangedBy = defaultModel.getProperty(ROEVO_NAMESPACE + "wasChangedBy");
-
-    private static final Property roevoRelatedResource = defaultModel.getProperty(ROEVO_NAMESPACE + "relatedResource");
-
-    private static final Property provHadOriginalSource = defaultModel
-            .getProperty("http://www.w3.org/ns/prov#hadOriginalSource");
-
-    public static final Property annotatesAggregatedResource = defaultModel.getProperty(RO_NAMESPACE
-            + "annotatesAggregatedResource");
 
     private final String getResourceQueryTmpl = "DESCRIBE <%s> WHERE { }";
 
     private final String getUserQueryTmpl = "DESCRIBE <%s> WHERE { }";
 
-    private final String findResearchObjectsQueryTmpl = "PREFIX ro: <" + RO_NAMESPACE + "> SELECT ?ro "
+    private final String findResearchObjectsQueryTmpl = "PREFIX ro: <" + RO.NAMESPACE + "> SELECT ?ro "
             + "WHERE { ?ro a ro:ResearchObject. FILTER regex(str(?ro), \"^%s\") . }";
 
-    private final String findResearchObjectsByCreatorQueryTmpl = "PREFIX ro: <" + RO_NAMESPACE + "> PREFIX dcterms: <"
+    private final String findResearchObjectsByCreatorQueryTmpl = "PREFIX ro: <" + RO.NAMESPACE + "> PREFIX dcterms: <"
             + DCTerms.NS + "> SELECT ?ro WHERE { ?ro a ro:ResearchObject ; dcterms:creator <%s> . }";
 
     private final Connection connection;
@@ -209,9 +102,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         }
 
         graphset = new NamedGraphSetDB(connection, "sms");
-
-        defaultModel.setNsPrefixes(standardNamespaces);
-
+        W4E.defaultModel.setNsPrefixes(W4E.standardNamespaces);
         createUserProfile(user);
     }
 
@@ -220,8 +111,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         if (!containsNamedGraph(user.getUri())) {
             OntModel userModel = createOntModelForNamedGraph(user.getUri());
             userModel.removeAll();
-            Individual agent = userModel.createIndividual(user.getUri().toString(), foafAgentClass);
-            userModel.add(agent, foafName, user.getName());
+            Individual agent = userModel.createIndividual(user.getUri().toString(), FOAF.foafAgentClass);
+            userModel.add(agent, FOAF.foafName, user.getName());
         }
     }
 
@@ -275,19 +166,19 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         if (manifest != null) {
             throw new IllegalArgumentException("URI already exists: " + manifestURI);
         }
-        manifest = manifestModel.createIndividual(manifestURI.toString(), manifestClass);
-        Individual ro = manifestModel.createIndividual(researchObjectURI.toString(), researchObjectClass);
-        ro.addRDFType(liveROClass);
+        manifest = manifestModel.createIndividual(manifestURI.toString(), RO.manifestClass);
+        Individual ro = manifestModel.createIndividual(researchObjectURI.toString(), RO.researchObjectClass);
+        ro.addRDFType(ROEVO.liveROClass);
 
-        manifestModel.add(ro, isDescribedBy, manifest);
+        manifestModel.add(ro, ORE.isDescribedBy, manifest);
         manifestModel.add(ro, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
         manifestModel.add(ro, DCTerms.creator, manifestModel.createResource(user.getUri().toString()));
 
-        manifestModel.add(manifest, describes, ro);
+        manifestModel.add(manifest, ORE.describes, ro);
         manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
 
         if (source != null) {
-            manifestModel.add(ro, provHadOriginalSource, manifestModel.createResource(source.toString()));
+            manifestModel.add(ro, PROV.provHadOriginalSource, manifestModel.createResource(source.toString()));
         }
     }
 
@@ -305,9 +196,9 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         OntModel liveManifestModel = createOntModelForNamedGraph(liveManifestURI);
         Individual liveManifest = liveManifestModel.getIndividual(liveManifestURI.toString());
 
-        manifest = manifestModel.createIndividual(manifestURI.toString(), manifestClass);
-        Individual ro = manifestModel.createIndividual(researchObject.toString(), researchObjectClass);
-        ro.addRDFType(snapshotROClass);
+        manifest = manifestModel.createIndividual(manifestURI.toString(), RO.manifestClass);
+        Individual ro = manifestModel.createIndividual(researchObject.toString(), RO.researchObjectClass);
+        ro.addRDFType(ROEVO.snapshotROClass);
 
         RDFNode creator, created;
         Resource liveRO;
@@ -323,19 +214,19 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             }
             creator = liveRO.getPropertyResourceValue(DCTerms.creator);
             created = liveRO.as(Individual.class).getPropertyValue(DCTerms.created);
-            liveManifestModel.add(liveRO, roevoHasSnapshot, ro);
+            liveManifestModel.add(liveRO, ROEVO.roevoHasSnapshot, ro);
         }
 
-        manifestModel.add(ro, isDescribedBy, manifest);
+        manifestModel.add(ro, ORE.isDescribedBy, manifest);
         manifestModel.add(ro, DCTerms.created, created);
         manifestModel.add(ro, DCTerms.creator, creator);
 
-        manifestModel.add(manifest, describes, ro);
+        manifestModel.add(manifest, ORE.describes, ro);
         manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
 
-        manifestModel.add(ro, roevoIsSnapshotOf, liveRO);
-        manifestModel.add(ro, roevoSnapshottedAtTime, manifestModel.createTypedLiteral(Calendar.getInstance()));
-        manifestModel.add(ro, roevoSnapshottedBy, manifestModel.createResource(user.getUri().toString()));
+        manifestModel.add(ro, ROEVO.roevoIsSnapshotOf, liveRO);
+        manifestModel.add(ro, ROEVO.roevoSnapshottedAtTime, manifestModel.createTypedLiteral(Calendar.getInstance()));
+        manifestModel.add(ro, ROEVO.roevoSnapshottedBy, manifestModel.createResource(user.getUri().toString()));
 
         //TODO add wasRevisionOf
     }
@@ -354,9 +245,9 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         OntModel liveManifestModel = createOntModelForNamedGraph(liveManifestURI);
         Individual liveManifest = liveManifestModel.getIndividual(liveManifestURI.toString());
 
-        manifest = manifestModel.createIndividual(manifestURI.toString(), manifestClass);
-        Individual ro = manifestModel.createIndividual(researchObject.toString(), researchObjectClass);
-        ro.addRDFType(archivedROClass);
+        manifest = manifestModel.createIndividual(manifestURI.toString(), RO.manifestClass);
+        Individual ro = manifestModel.createIndividual(researchObject.toString(), RO.researchObjectClass);
+        ro.addRDFType(ROEVO.archivedROClass);
 
         RDFNode creator, created;
         Resource liveRO;
@@ -372,19 +263,19 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             }
             creator = liveRO.getPropertyResourceValue(DCTerms.creator);
             created = liveRO.as(Individual.class).getPropertyValue(DCTerms.created);
-            liveManifestModel.add(liveRO, roevoHasArchive, ro);
+            liveManifestModel.add(liveRO, ROEVO.roevoHasArchive, ro);
         }
 
-        manifestModel.add(ro, isDescribedBy, manifest);
+        manifestModel.add(ro, ORE.isDescribedBy, manifest);
         manifestModel.add(ro, DCTerms.created, created);
         manifestModel.add(ro, DCTerms.creator, creator);
 
-        manifestModel.add(manifest, describes, ro);
+        manifestModel.add(manifest, ORE.describes, ro);
         manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
 
-        manifestModel.add(ro, roevoIsArchiveOf, liveRO);
-        manifestModel.add(ro, roevoArchivedAtTime, manifestModel.createTypedLiteral(Calendar.getInstance()));
-        manifestModel.add(ro, roevoArchivedBy, manifestModel.createResource(user.getUri().toString()));
+        manifestModel.add(ro, ROEVO.roevoIsArchiveOf, liveRO);
+        manifestModel.add(ro, ROEVO.roevoArchivedAtTime, manifestModel.createTypedLiteral(Calendar.getInstance()));
+        manifestModel.add(ro, ROEVO.roevoArchivedBy, manifestModel.createResource(user.getUri().toString()));
 
         //TODO add wasRevisionOf
     }
@@ -394,24 +285,6 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     public void updateManifest(URI manifestURI, InputStream is, RDFFormat rdfFormat) {
         // TODO validate the manifest?
         addNamedGraph(manifestURI, is, rdfFormat);
-
-        //
-        // // leave only one dcterms:created - the earliest
-        // Individual manifest = manifestModel.getIndividual(manifestURI.toString());
-        // NodeIterator it = manifestModel.listObjectsOfProperty(manifest,
-        // DCTerms.created);
-        // Calendar earliest = null;
-        // while (it.hasNext()) {
-        // Calendar created = ((XSDDateTime)
-        // it.next().asLiteral().getValue()).asCalendar();
-        // if (earliest == null || created.before(earliest))
-        // earliest = created;
-        // }
-        // if (earliest != null) {
-        // manifestModel.removeAll(manifest, DCTerms.created, null);
-        // manifestModel.add(manifest, DCTerms.created,
-        // manifestModel.createTypedLiteral(earliest));
-        // }
     }
 
 
@@ -445,16 +318,16 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         Individual resource = manifestModel.getIndividual(resourceURI.toString());
         if (resource == null) {
             created = true;
-            resource = manifestModel.createIndividual(resourceURI.toString(), resourceClass);
+            resource = manifestModel.createIndividual(resourceURI.toString(), RO.resourceClass);
         }
-        manifestModel.add(ro, aggregates, resource);
+        manifestModel.add(ro, ORE.aggregates, resource);
         if (resourceInfo != null) {
             if (resourceInfo.getName() != null) {
-                manifestModel.add(resource, name, manifestModel.createTypedLiteral(resourceInfo.getName()));
+                manifestModel.add(resource, RO.name, manifestModel.createTypedLiteral(resourceInfo.getName()));
             }
-            manifestModel.add(resource, filesize, manifestModel.createTypedLiteral(resourceInfo.getSizeInBytes()));
+            manifestModel.add(resource, RO.filesize, manifestModel.createTypedLiteral(resourceInfo.getSizeInBytes()));
             if (resourceInfo.getChecksum() != null && resourceInfo.getDigestMethod() != null) {
-                manifestModel.add(resource, checksum, manifestModel.createResource(String.format("urn:%s:%s",
+                manifestModel.add(resource, RO.checksum, manifestModel.createResource(String.format("urn:%s:%s",
                     resourceInfo.getDigestMethod(), resourceInfo.getChecksum())));
             }
         }
@@ -482,19 +355,19 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         if (resource == null) {
             throw new IllegalArgumentException("URI not found: " + resourceURI);
         }
-        manifestModel.remove(ro, aggregates, resource);
+        manifestModel.remove(ro, ORE.aggregates, resource);
 
-        StmtIterator it = manifestModel.listStatements(null, aggregates, resource);
+        StmtIterator it = manifestModel.listStatements(null, ORE.aggregates, resource);
         if (!it.hasNext()) {
             manifestModel.removeAll(resource, null, null);
         }
 
-        ResIterator it2 = manifestModel.listSubjectsWithProperty(annotatesAggregatedResource, resource);
+        ResIterator it2 = manifestModel.listSubjectsWithProperty(RO.annotatesAggregatedResource, resource);
         while (it2.hasNext()) {
             Resource ann = it2.next();
-            manifestModel.remove(ann, annotatesAggregatedResource, resource);
-            if (!ann.hasProperty(annotatesAggregatedResource)) {
-                Resource annBody = ann.getPropertyResourceValue(aoBody);
+            manifestModel.remove(ann, RO.annotatesAggregatedResource, resource);
+            if (!ann.hasProperty(RO.annotatesAggregatedResource)) {
+                Resource annBody = ann.getPropertyResourceValue(AO.aoBody);
                 if (annBody != null && annBody.isURIResource()) {
                     URI annBodyURI = URI.create(annBody.getURI());
                     if (containsNamedGraph(annBodyURI)) {
@@ -596,7 +469,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         tmpGraphSet.addGraph(graphset.getGraph(namedGraphURI.toString()));
 
         OntModel annotationModel = createOntModelForNamedGraph(namedGraphURI);
-        NodeIterator it = annotationModel.listObjectsOfProperty(aoBody);
+        NodeIterator it = annotationModel.listObjectsOfProperty(AO.aoBody);
         while (it.hasNext()) {
             RDFNode annotationBodyRef = it.next();
             URI childURI = URI.create(annotationBodyRef.asResource().getURI());
@@ -667,7 +540,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         NamedGraph namedGraph = getOrCreateGraph(graphset, namedGraphURI);
         OntModel ontModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,
             ModelFactory.createModelForGraph(namedGraph));
-        ontModel.addSubModel(defaultModel);
+        ontModel.addSubModel(W4E.defaultModel);
         return ontModel;
     }
 
@@ -693,7 +566,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         if (resource == null) {
             return false;
         }
-        return resource.hasRDFType(roFolderClass);
+        return resource.hasRDFType(RO.roFolderClass);
     }
 
 
@@ -711,7 +584,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     public boolean isROMetadataNamedGraph(URI researchObjectURI, URI graphURI) {
         Node manifest = Node.createURI(getManifestURI(researchObjectURI).toString());
         Node deprecatedManifest = Node.createURI(getDeprecatedManifestURI(researchObjectURI).toString());
-        Node bodyNode = Node.createURI(aoBody.getURI());
+        Node bodyNode = Node.createURI(AO.aoBody.getURI());
         Node annBody = Node.createURI(graphURI.toString());
         boolean isManifest = getManifestURI(researchObjectURI).equals(graphURI);
         boolean isDeprecatedManifest = getDeprecatedManifestURI(researchObjectURI).equals(graphURI);
@@ -724,6 +597,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     @Override
     public void removeNamedGraph(URI researchObjectURI, URI graphURI) {
+        //@TODO Remove evo_inf file
         graphURI = graphURI.normalize();
         if (!graphset.containsGraph(graphURI.toString())) {
             throw new IllegalArgumentException("URI not found: " + graphURI);
@@ -735,11 +609,18 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         int i = 0;
         while (i < graphsToDelete.size()) {
             OntModel manifestModel = createOntModelForNamedGraph(graphsToDelete.get(i));
-            NodeIterator it = manifestModel.listObjectsOfProperty(aoBody);
+            NodeIterator it = manifestModel.listObjectsOfProperty(AO.aoBody);
             while (it.hasNext()) {
                 RDFNode annotationBodyRef = it.next();
                 URI graphURI2 = URI.create(annotationBodyRef.asResource().getURI());
                 // TODO make sure that this named graph is internal
+                if (graphset.containsGraph(graphURI2.toString()) && !graphsToDelete.contains(graphURI2)) {
+                    graphsToDelete.add(graphURI2);
+                }
+            }
+            List<RDFNode> evos = manifestModel.listObjectsOfProperty(ROEVO.roevoWasChangedBy).toList();
+            for (RDFNode evo : evos) {
+                URI graphURI2 = URI.create(evo.asResource().getURI());
                 if (graphset.containsGraph(graphURI2.toString()) && !graphsToDelete.contains(graphURI2)) {
                     graphsToDelete.add(graphURI2);
                 }
@@ -759,8 +640,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     private OntModel createOntModelForAllNamedGraphs(OntModelSpec spec) {
         OntModel ontModel = ModelFactory.createOntologyModel(spec,
-            graphset.asJenaModel(DEFAULT_NAMED_GRAPH_URI.toString()));
-        ontModel.addSubModel(defaultModel);
+            graphset.asJenaModel(W4E.DEFAULT_NAMED_GRAPH_URI.toString()));
+        ontModel.addSubModel(W4E.defaultModel);
         return ontModel;
     }
 
@@ -810,7 +691,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             throw new NullPointerException("Query cannot be null");
         Query query = null;
         try {
-            query = QueryFactory.create(queryS, sparqlSyntax);
+            query = QueryFactory.create(queryS, W4E.sparqlSyntax);
         } catch (Exception e) {
             throw new IllegalArgumentException("Wrong query syntax: " + e.getMessage());
         }
@@ -919,9 +800,9 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
                 Object object;
                 if (s.getObject().isResource()) {
                     // Need to check both because the model has no inference
-                    if (s.getObject().as(Individual.class).hasRDFType(foafAgentClass)
-                            || s.getObject().as(Individual.class).hasRDFType(foafPersonClass)) {
-                        object = s.getObject().asResource().getProperty(foafName).getLiteral().getValue();
+                    if (s.getObject().as(Individual.class).hasRDFType(FOAF.foafAgentClass)
+                            || s.getObject().as(Individual.class).hasRDFType(FOAF.foafPersonClass)) {
+                        object = s.getObject().asResource().getProperty(FOAF.foafName).getLiteral().getValue();
                     } else {
                         if (s.getObject().isURIResource()) {
                             object = new URI(s.getObject().asResource().getURI());
@@ -968,7 +849,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(researchObject.normalize()));
         Resource researchObjectR = manifestModel.createResource(researchObject.toString());
         Resource resourceR = manifestModel.createResource(resource.normalize().toString());
-        return manifestModel.contains(researchObjectR, aggregates, resourceR);
+        return manifestModel.contains(researchObjectR, ORE.aggregates, resourceR);
     }
 
 
@@ -976,7 +857,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     public boolean isAnnotation(URI researchObject, URI resource) {
         OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(researchObject.normalize()));
         Individual resourceR = manifestModel.getIndividual(resource.normalize().toString());
-        return resourceR != null && resourceR.hasRDFType(roAggregatedAnnotationClass);
+        return resourceR != null && resourceR.hasRDFType(RO.roAggregatedAnnotationClass);
     }
 
 
@@ -986,9 +867,9 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         Resource researchObjectR = manifestModel.createResource(researchObject.toString());
         Resource resourceR = manifestModel.createResource(resource.normalize().toString());
         URI proxyURI = generateProxyURI(researchObject);
-        Individual proxy = manifestModel.createIndividual(proxyURI.toString(), oreProxyClass);
-        manifestModel.add(proxy, oreProxyIn, researchObjectR);
-        manifestModel.add(proxy, oreProxyFor, resourceR);
+        Individual proxy = manifestModel.createIndividual(proxyURI.toString(), ORE.oreProxyClass);
+        manifestModel.add(proxy, ORE.oreProxyIn, researchObjectR);
+        manifestModel.add(proxy, ORE.oreProxyFor, resourceR);
         return proxyURI;
     }
 
@@ -1002,7 +883,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     public boolean isProxy(URI researchObject, URI resource) {
         OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(researchObject.normalize()));
         Individual resourceR = manifestModel.getIndividual(resource.normalize().toString());
-        return resourceR != null && resourceR.hasRDFType(oreProxyClass);
+        return resourceR != null && resourceR.hasRDFType(ORE.oreProxyClass);
     }
 
 
@@ -1016,10 +897,10 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     public URI getProxyForResource(URI researchObject, URI resource) {
         OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(researchObject.normalize()));
         Resource resourceR = manifestModel.createResource(resource.normalize().toString());
-        ResIterator it = manifestModel.listSubjectsWithProperty(oreProxyFor, resourceR);
+        ResIterator it = manifestModel.listSubjectsWithProperty(ORE.oreProxyFor, resourceR);
         while (it.hasNext()) {
             Individual r = it.next().as(Individual.class);
-            if (r != null && r.hasRDFType(oreProxyClass)) {
+            if (r != null && r.hasRDFType(ORE.oreProxyClass)) {
                 return URI.create(r.getURI());
             }
         }
@@ -1031,8 +912,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     public URI getProxyFor(URI researchObject, URI proxy) {
         OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(researchObject.normalize()));
         Individual proxyR = manifestModel.getIndividual(proxy.normalize().toString());
-        if (proxyR.hasProperty(oreProxyFor)) {
-            return URI.create(proxyR.getPropertyResourceValue(oreProxyFor).getURI());
+        if (proxyR.hasProperty(ORE.oreProxyFor)) {
+            return URI.create(proxyR.getPropertyResourceValue(ORE.oreProxyFor).getURI());
         } else {
             return null;
         }
@@ -1053,12 +934,13 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         Resource researchObjectR = manifestModel.createResource(researchObject.toString());
         Resource body = manifestModel.createResource(annotationBody.normalize().toString());
         URI annotationURI = generateAnnotationURI(researchObject);
-        Individual annotation = manifestModel.createIndividual(annotationURI.toString(), roAggregatedAnnotationClass);
-        manifestModel.add(researchObjectR, aggregates, annotation);
-        manifestModel.add(annotation, aoBody, body);
+        Individual annotation = manifestModel
+                .createIndividual(annotationURI.toString(), RO.roAggregatedAnnotationClass);
+        manifestModel.add(researchObjectR, ORE.aggregates, annotation);
+        manifestModel.add(annotation, AO.aoBody, body);
         for (URI targetURI : annotationTargets) {
             Resource target = manifestModel.createResource(targetURI.normalize().toString());
-            manifestModel.add(annotation, annotatesAggregatedResource, target);
+            manifestModel.add(annotation, RO.annotatesAggregatedResource, target);
         }
         manifestModel.add(annotation, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
         Resource agent = manifestModel.createResource(user.getUri().toString());
@@ -1077,12 +959,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(researchObject.normalize()));
         Resource body = manifestModel.createResource(annotationBody.normalize().toString());
         Individual annotation = manifestModel.getIndividual(annotationURI.toString());
-        manifestModel.removeAll(annotation, aoBody, null);
-        manifestModel.removeAll(annotation, annotatesAggregatedResource, null);
-        manifestModel.add(annotation, aoBody, body);
+        manifestModel.removeAll(annotation, AO.aoBody, null);
+        manifestModel.removeAll(annotation, RO.annotatesAggregatedResource, null);
+        manifestModel.add(annotation, AO.aoBody, body);
         for (URI targetURI : annotationTargets) {
             Resource target = manifestModel.createResource(targetURI.normalize().toString());
-            manifestModel.add(annotation, annotatesAggregatedResource, target);
+            manifestModel.add(annotation, RO.annotatesAggregatedResource, target);
         }
     }
 
@@ -1091,8 +973,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     public URI getAnnotationBody(URI researchObject, URI annotation) {
         OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(researchObject.normalize()));
         Individual annotationR = manifestModel.getIndividual(annotation.normalize().toString());
-        if (annotationR.hasProperty(aoBody)) {
-            return URI.create(annotationR.getPropertyResourceValue(aoBody).getURI());
+        if (annotationR.hasProperty(AO.aoBody)) {
+            return URI.create(annotationR.getPropertyResourceValue(AO.aoBody).getURI());
         } else {
             return null;
         }
@@ -1175,32 +1057,32 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     @Override
     public boolean isSnapshotURI(URI resource) {
-        return isSnapshotURI(resource, DEFAULT_MANIFEST_PATH, "RDF/XML");
+        return isSnapshotURI(resource, W4E.DEFAULT_MANIFEST_PATH, "RDF/XML");
     }
 
 
     @Override
     public boolean isSnapshotURI(URI resource, String modelPath, String format) {
-        return getIndividual(resource, modelPath, format).hasRDFType(snapshotROClass);
+        return getIndividual(resource, modelPath, format).hasRDFType(ROEVO.snapshotROClass);
     }
 
 
     @Override
     public boolean isArchiveURI(URI resource) {
-        return isArchiveURI(resource, DEFAULT_MANIFEST_PATH, "RDF/XML");
+        return isArchiveURI(resource, W4E.DEFAULT_MANIFEST_PATH, "RDF/XML");
     }
 
 
     @Override
     public boolean isArchiveURI(URI resource, String modelPath, String format) {
-        return getIndividual(resource, modelPath, format).hasRDFType(archivedROClass);
+        return getIndividual(resource, modelPath, format).hasRDFType(ROEVO.archivedROClass);
     }
 
 
     @Override
     public URI getLiveURIFromSnapshotOrArchive(URI resource)
             throws URISyntaxException {
-        return getLiveURIFromSnapshotOrArchive(resource, DEFAULT_MANIFEST_PATH, "RDF/XML");
+        return getLiveURIFromSnapshotOrArchive(resource, W4E.DEFAULT_MANIFEST_PATH, "RDF/XML");
     }
 
 
@@ -1209,10 +1091,10 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             throws URISyntaxException {
         Individual source = getIndividual(resource, modelPath, format);
         if (isSnapshotURI(resource, modelPath, format)) {
-            RDFNode roNode = source.getProperty(roevoIsSnapshotOf).getObject();
+            RDFNode roNode = source.getProperty(ROEVO.roevoIsSnapshotOf).getObject();
             return new URI(roNode.toString());
         } else if (isArchiveURI(resource, modelPath, format)) {
-            RDFNode roNode = source.getProperty(roevoIsArchiveOf).getObject();
+            RDFNode roNode = source.getProperty(ROEVO.roevoIsArchiveOf).getObject();
             return new URI(roNode.toString());
         }
         return null;
@@ -1222,7 +1104,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     @Override
     public URI getPreviousSnaphotOrArchive(URI liveRO, URI freshSnapshotOrARchive)
             throws URISyntaxException {
-        return getPreviousSnaphotOrArchive(liveRO, freshSnapshotOrARchive, DEFAULT_MANIFEST_PATH, "RDF/XML");
+        return getPreviousSnaphotOrArchive(liveRO, freshSnapshotOrARchive, W4E.DEFAULT_MANIFEST_PATH, "RDF/XML");
     }
 
 
@@ -1233,16 +1115,16 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         Individual liveSource = getIndividual(liveRO, modelPath, format);
 
         StmtIterator snaphotsIterator;
-        snaphotsIterator = liveSource.listProperties(roevoHasSnapshot);
+        snaphotsIterator = liveSource.listProperties(ROEVO.roevoHasSnapshot);
         StmtIterator archiveItertator;
-        archiveItertator = liveSource.listProperties(roevoHasArchive);
+        archiveItertator = liveSource.listProperties(ROEVO.roevoHasArchive);
 
         Individual freshSource = getIndividual(freshSnapshotOrArchive, modelPath, format);
         RDFNode dateNode;
         if (isSnapshotURI(freshSnapshotOrArchive, modelPath, format)) {
-            dateNode = freshSource.getProperty(roevoSnapshottedAtTime).getObject();
+            dateNode = freshSource.getProperty(ROEVO.roevoSnapshottedAtTime).getObject();
         } else if (isArchiveURI(freshSnapshotOrArchive, modelPath, format)) {
-            dateNode = freshSource.getProperty(roevoArchivedAtTime).getObject();
+            dateNode = freshSource.getProperty(ROEVO.roevoArchivedAtTime).getObject();
         } else {
             return null;
         }
@@ -1253,7 +1135,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
         while (snaphotsIterator.hasNext()) {
             URI tmpURI = new URI(snaphotsIterator.next().getObject().toString());
-            RDFNode node = getIndividual(tmpURI, modelPath, format).getProperty(roevoSnapshottedAtTime).getObject();
+            RDFNode node = getIndividual(tmpURI, modelPath, format).getProperty(ROEVO.roevoSnapshottedAtTime)
+                    .getObject();
             DateTime tmpTime = new DateTime(node.asLiteral().getValue().toString());
             if ((tmpTime.compareTo(freshTime) == -1)
                     && ((predecessorTime == null) || (tmpTime.compareTo(predecessorTime) == 1))) {
@@ -1263,7 +1146,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         }
         while (archiveItertator.hasNext()) {
             URI tmpURI = new URI(archiveItertator.next().getObject().toString());
-            RDFNode node = getIndividual(tmpURI, modelPath, format).getProperty(roevoArchivedAtTime).getObject();
+            RDFNode node = getIndividual(tmpURI, modelPath, format).getProperty(ROEVO.roevoArchivedAtTime).getObject();
             DateTime tmpTime = new DateTime(node.asLiteral().getValue().toString());
             if ((tmpTime.compareTo(freshTime) == -1)
                     && ((predecessorTime == null) || (tmpTime.compareTo(predecessorTime) == 1))) {
@@ -1284,7 +1167,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     @Override
     public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI)
             throws URISyntaxException {
-        return storeAggregatedDifferences(freshObjectURI, antecessorObjectURI, DEFAULT_MANIFEST_PATH, "RDF/XML");
+        return storeAggregatedDifferences(freshObjectURI, antecessorObjectURI, W4E.DEFAULT_MANIFEST_PATH, "RDF/XML");
     }
 
 
@@ -1292,78 +1175,98 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath,
             String format)
             throws URISyntaxException {
+        if (freshObjectURI == null) {
+            throw new NullPointerException("Frsh object URI can not be null");
+        }
+        if (antecessorObjectURI == null) {
+            return "";
+        }
+
         Individual freshObjectSource = getIndividual(freshObjectURI, modelPath, format);
         Individual antecessorObjectSource = getIndividual(antecessorObjectURI, modelPath, format);
-        List<RDFNode> freshAggregatesList = freshObjectSource.listPropertyValues(aggregates).toList();
-        List<RDFNode> antecessorAggregatesList = antecessorObjectSource.listPropertyValues(aggregates).toList();
+        List<RDFNode> freshAggregatesList = freshObjectSource.listPropertyValues(ORE.aggregates).toList();
+        List<RDFNode> antecessorAggregatesList = antecessorObjectSource.listPropertyValues(ORE.aggregates).toList();
         OntModel freshROModel = createOntModelForNamedGraph(resolveURI(freshObjectURI, ".ro/manifest.rdf"));
-        Individual freshROInvidual = freshROModel.getIndividual(freshObjectURI.toString());
-        Individual changeSpecificationIndividual = freshROModel.createIndividual(ChangeSpecificationClass);
-        freshROInvidual.addProperty(roevoWasChangedBy, changeSpecificationIndividual);
+        //@TODO check if evo_inf exists remove it ??
+        if (graphset.containsGraph(resolveURI(freshObjectURI, ".ro/evo_inf.rdf").toString())) {
+            graphset.removeGraph(resolveURI(freshObjectURI, ".ro/evo_inf.rdf").toString());
+        }
 
+        OntModel freshROEvoInfoModel = createOntModelForNamedGraph(resolveURI(freshObjectURI, ".ro/evo_inf.rdf"));
+        Individual freshROInvidual = freshROModel.getIndividual(freshObjectURI.toString());
+        Individual changeSpecificationIndividual = freshROEvoInfoModel.createIndividual(
+            resolveURI(freshObjectURI, ".ro/evo_inf.rdf").toString(), ROEVO.ChangeSpecificationClass);
+        freshROInvidual.addProperty(ROEVO.roevoWasChangedBy,
+            freshROModel.createResource(resolveURI(freshObjectURI, ".ro/evo_inf.rdf").toString()));
         String result = lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, freshAggregatesList,
-            antecessorAggregatesList, freshROModel, freshROInvidual, changeSpecificationIndividual, Direction.NEW);
+            antecessorAggregatesList, freshROEvoInfoModel, changeSpecificationIndividual, Direction.NEW);
         result += lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, antecessorAggregatesList,
-            freshAggregatesList, freshROModel, freshROInvidual, changeSpecificationIndividual, Direction.DELETED);
+            freshAggregatesList, freshROEvoInfoModel, changeSpecificationIndividual, Direction.DELETED);
         return result;
     }
 
 
     private String lookForAggregatedDifferents(URI freshObjectURI, URI antecessorObjectURI, List<RDFNode> pattern,
-            List<RDFNode> compared, OntModel freshROModel, Individual manifestIndividual,
-            Individual changeSpecificationIndividual, Direction direction) {
+            List<RDFNode> compared, OntModel freshROModel, Individual changeSpecificationIndividual, Direction direction) {
         String result = "";
+        Boolean tmp = null;
         for (RDFNode patternNode : pattern) {
             Boolean loopResult = null;
             for (RDFNode comparedNode : compared) {
-                Boolean tmp = compareProprties(patternNode, comparedNode);
+                if (direction == Direction.NEW) {
+                    tmp = compareProprties(patternNode, comparedNode, freshObjectURI, antecessorObjectURI);
+                } else {
+                    tmp = compareProprties(patternNode, comparedNode, antecessorObjectURI, freshObjectURI);
+                }
                 if (tmp != null) {
                     loopResult = tmp;
                 }
             }
             result += serviceDetectedEVOmodification(loopResult, freshObjectURI, antecessorObjectURI, patternNode,
-                freshROModel, manifestIndividual, changeSpecificationIndividual, direction);
+                freshROModel, changeSpecificationIndividual, direction);
         }
         return result;
     }
 
 
     private String serviceDetectedEVOmodification(Boolean loopResult, URI freshObjectURI, URI antecessorObjectURI,
-            RDFNode node, OntModel freshRoModel, Individual manifestIndividual,
-            Individual changeSpecificatinIndividual, Direction direction) {
+            RDFNode node, OntModel freshRoModel, Individual changeSpecificatinIndividual, Direction direction) {
         String result = "";
         //Null means they are not comparable. Resource is new or deleted depends on the direction. 
         if (loopResult == null) {
             if (direction == Direction.NEW) {
-                Individual changeIndividual = freshRoModel.createIndividual(ChangeClass);
-                changeIndividual.addRDFType(AdditionClass);
-                changeIndividual.addProperty(roevoRelatedResource, node);
-                changeSpecificatinIndividual.addProperty(roevoHasChange, changeIndividual);
+                Individual changeIndividual = freshRoModel.createIndividual(ROEVO.ChangeClass);
+                changeIndividual.addRDFType(ROEVO.AdditionClass);
+                changeIndividual.addProperty(ROEVO.roevoRelatedResource, node);
+                changeSpecificatinIndividual.addProperty(ROEVO.roevoHasChange, changeIndividual);
                 result += freshObjectURI + " " + node.toString() + " " + direction + "\n";
             } else {
-                Individual changeIndividual = freshRoModel.createIndividual(ChangeClass);
-                changeIndividual.addRDFType(RemovalClass);
-                changeIndividual.addProperty(roevoRelatedResource, node);
-                changeSpecificatinIndividual.addProperty(roevoHasChange, changeIndividual);
+                Individual changeIndividual = freshRoModel.createIndividual(ROEVO.ChangeClass);
+                changeIndividual.addRDFType(ROEVO.RemovalClass);
+                changeIndividual.addProperty(ROEVO.roevoRelatedResource, node);
+                changeSpecificatinIndividual.addProperty(ROEVO.roevoHasChange, changeIndividual);
                 result += freshObjectURI + " " + node.toString() + " " + direction + "\n";
             }
         }
         //False means there are some changes (Changes exists in two directions so they will be stored onlu once)
         else if (loopResult == false && direction == Direction.NEW) {
-            Individual changeIndividual = freshRoModel.createIndividual(ChangeClass);
-            changeIndividual.addRDFType(ModificationClass);
-            changeIndividual.addProperty(roevoRelatedResource, node);
-            changeSpecificatinIndividual.addProperty(roevoHasChange, changeIndividual);
+            Individual changeIndividual = freshRoModel.createIndividual(ROEVO.ChangeClass);
+            changeIndividual.addRDFType(ROEVO.ModificationClass);
+            changeIndividual.addProperty(ROEVO.roevoRelatedResource, node);
+            changeSpecificatinIndividual.addProperty(ROEVO.roevoHasChange, changeIndividual);
             result += freshObjectURI + " " + node.toString() + " MODIFICATION" + "\n";
-            ;
+        }
+        //True means there are some unchanges objects
+        else if (loopResult == false && direction == Direction.NEW) {
+            result += freshObjectURI + " " + node.toString() + " UNCHANGED" + "\n";
         }
         return result;
     }
 
 
-    private Boolean compareProprties(RDFNode pattern, RDFNode compared) {
+    private Boolean compareProprties(RDFNode pattern, RDFNode compared, URI patternROURI, URI comparedROURI) {
         if (pattern.isResource() && compared.isResource()) {
-            return compareTwoResources(pattern.asResource(), compared.asResource());
+            return compareTwoResources(pattern.asResource(), compared.asResource(), patternROURI, comparedROURI);
         } else if (pattern.isLiteral() && compared.isLiteral()) {
             return compareTwoLiterals(pattern.asLiteral(), compared.asLiteral());
         }
@@ -1382,44 +1285,67 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     }
 
 
-    private Boolean compareTwoResources(Resource pattern, Resource compared) {
-        Individual patternSource = pattern.as(Individual.class);
-        Individual comparedSource = compared.as(Individual.class);
-        if (patternSource.hasRDFType(roAggregatedAnnotationClass)
-                && comparedSource.hasRDFType(roAggregatedAnnotationClass)) {
-            //if (URI.create(pattern.getURI()).relativize(roURI)
-            if (pattern.getLocalName().equals(compared.getLocalName())) {
-                return compareTwoAggreagatedResources(patternSource, comparedSource)
-                        && compareTwoAggregatedAnnotationBody(patternSource, comparedSource);
-            } else {
-                return null;
-            }
-        } else {
-            if (pattern.getLocalName().equals(compared.getLocalName())) {
-                //@TODO compare checksums
-                return true;
-            } else {
-                return null;
-            }
-        }
-
+    private Boolean compareRelativesURI(URI patternURI, URI comparedURI, URI baseForPatternURI, URI baseForComparedURI) {
+        return baseForPatternURI.relativize(patternURI).toString()
+                .equals(baseForComparedURI.relativize(comparedURI).toString());
     }
 
 
-    private Boolean compareTwoAggreagatedResources(Individual pattern, Individual compared) {
-        List<RDFNode> patternList = pattern.listPropertyValues(roAnnotatesAggregatedResource).toList();
-        List<RDFNode> comparedList = compared.listPropertyValues(roAnnotatesAggregatedResource).toList();
+    private Boolean compareTwoResources(Resource pattern, Resource compared, URI patternROURI, URI comparedROURI) {
+        Individual patternSource = pattern.as(Individual.class);
+        Individual comparedSource = compared.as(Individual.class);
+        if (patternSource.hasRDFType(RO.roAggregatedAnnotationClass)
+                && comparedSource.hasRDFType(RO.roAggregatedAnnotationClass)) {
+            try {
+                if (compareRelativesURI(new URI(pattern.getURI()), new URI(compared.getURI()), patternROURI,
+                    comparedROURI)) {
+                    return compareTwoAggreagatedResources(patternSource, comparedSource, patternROURI, comparedROURI)
+                            && compareTwoAggregatedAnnotationBody(patternSource, comparedSource, patternROURI,
+                                comparedROURI);
+                } else {
+                    return null;
+                }
+            } catch (URISyntaxException e) {
+                log.debug(e);
+                return null;
+            }
+        } else {
+            try {
+                if (compareRelativesURI(new URI(pattern.getURI()), new URI(compared.getURI()), patternROURI,
+                    comparedROURI)) {
+                    //@TODO compare checksums
+                    return true;
+                } else {
+                    return null;
+                }
+            } catch (URISyntaxException e) {
+                log.info(e);
+                return null;
+            }
+        }
+    }
+
+
+    private Boolean compareTwoAggreagatedResources(Individual pattern, Individual compared, URI patternROURI,
+            URI comparedROURI) {
+        List<RDFNode> patternList = pattern.listPropertyValues(RO.roAnnotatesAggregatedResource).toList();
+        List<RDFNode> comparedList = compared.listPropertyValues(RO.roAnnotatesAggregatedResource).toList();
         if (patternList.size() != comparedList.size())
             return false;
         for (RDFNode patternNode : patternList) {
             Boolean result = null;
             for (RDFNode comparedNode : comparedList) {
                 if (comparedNode.isResource() && patternNode.isResource()) {
-                    if (comparedNode.asResource().getLocalName().equals(patternNode.asResource().getLocalName())) {
-                        result = true;
+                    try {
+                        if (compareRelativesURI(new URI(patternNode.asResource().getURI()), new URI(comparedNode
+                                .asResource().getURI()), patternROURI, comparedROURI)) {
+                            result = true;
+                        }
+                    } catch (URISyntaxException e) {
+                        log.debug(e);
                     }
                 } else if (comparedNode.isLiteral() && patternNode.isLiteral()) {
-                    if (comparedNode.asLiteral().equals(patternNode.asLiteral())) {
+                    if (compareTwoLiterals(comparedNode.asLiteral(), patternNode.asLiteral())) {
                         result = true;
                     }
                 }
@@ -1432,11 +1358,17 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             Boolean result = null;
             for (RDFNode patternNode : patternList) {
                 if (comparedNode.isResource() && patternNode.isResource()) {
-                    if (comparedNode.asResource().getLocalName().equals(patternNode.asResource().getLocalName())) {
-                        result = true;
+                    try {
+                        if (compareRelativesURI(new URI(patternNode.asResource().getURI()), new URI(comparedNode
+                                .asResource().getURI()), patternROURI, comparedROURI)) {
+                            result = true;
+                        }
+                    } catch (URISyntaxException e) {
+                        log.debug(e);
+                        return null;
                     }
                 } else if (comparedNode.isLiteral() && patternNode.isLiteral()) {
-                    if (comparedNode.asLiteral().equals(patternNode.asLiteral())) {
+                    if (compareTwoLiterals(comparedNode.asLiteral(), patternNode.asLiteral())) {
                         result = true;
                     }
                 }
@@ -1449,9 +1381,10 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     }
 
 
-    private Boolean compareTwoAggregatedAnnotationBody(Individual patternSource, Individual comparedSource) {
-        Resource patternBody = patternSource.getProperty(aoBody).getResource();
-        Resource comparedBody = comparedSource.getProperty(aoBody).getResource();
+    private Boolean compareTwoAggregatedAnnotationBody(Individual patternSource, Individual comparedSource,
+            URI patternROURI, URI comparedROURI) {
+        Resource patternBody = patternSource.getProperty(AO.aoBody).getResource();
+        Resource comparedBody = comparedSource.getProperty(AO.aoBody).getResource();
         OntModel patternModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
         patternModel.read(patternBody.getURI(), "TTL");
         OntModel comparedModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
@@ -1461,34 +1394,46 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         List<Statement> comparedList = comparedModel.listStatements().toList();
 
         for (Statement s : patternList) {
-            if (!isStatementInList(s, comparedList)) {
-                return false;
+            try {
+                if (!isStatementInList(s, comparedList, patternROURI, comparedROURI)) {
+                    return false;
+                }
+            } catch (URISyntaxException e) {
+                log.debug(e);
+                return true;
             }
         }
         for (Statement s : comparedList) {
-            if (!isStatementInList(s, patternList)) {
-                return false;
+            try {
+                if (!isStatementInList(s, patternList, comparedROURI, patternROURI)) {
+                    return false;
+                }
+            } catch (URISyntaxException e) {
+                log.debug(e);
+                return true;
             }
         }
         return true;
     }
 
 
-    private Boolean isStatementInList(Statement statement, List<Statement> list) {
-        String localName = statement.getSubject().getLocalName().toString();
+    private Boolean isStatementInList(Statement statement, List<Statement> list, URI patternURI, URI comparedURI)
+            throws URISyntaxException {
         for (Statement listStatement : list) {
-            if (listStatement.getSubject().getLocalName().toString().equals(localName)) {
-                if (listStatement.getObject().isResource() && statement.getObject().isResource()) {
-                    if (listStatement.getObject().asResource().getLocalName()
-                            .equals(statement.getObject().asResource().getLocalName())) {
-                        return true;
+            if (compareRelativesURI(new URI(statement.getSubject().asResource().getURI()), new URI(listStatement
+                    .getSubject().asResource().getURI()), patternURI, comparedURI)) {
+                if (compareRelativesURI(new URI(statement.getPredicate().asResource().getURI()), new URI(listStatement
+                        .getPredicate().asResource().getURI()), patternURI, comparedURI)) {
+                    if (statement.getObject().isResource() && listStatement.getObject().isResource()) {
+                        if (compareRelativesURI(new URI(statement.getObject().asResource().getURI()), new URI(
+                                listStatement.getObject().asResource().getURI()), patternURI, comparedURI)) {
+                            return true;
+                        }
                     }
-
-                }
-                if (listStatement.getObject().isLiteral() && statement.getObject().isLiteral()) {
-                    if (listStatement.getObject().asLiteral().toString()
-                            .equals(statement.getObject().asLiteral().toString())) {
-                        return true;
+                    if (listStatement.getObject().isLiteral() && statement.getObject().isLiteral()) {
+                        if (compareTwoLiterals(listStatement.getObject().asLiteral(), statement.getObject().asLiteral())) {
+                            return true;
+                        }
                     }
                 }
             }
@@ -1499,7 +1444,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     @Override
     public Individual getIndividual(URI resource) {
-        return getIndividual(resource, DEFAULT_MANIFEST_PATH, "RDF/XML");
+        return getIndividual(resource, W4E.DEFAULT_MANIFEST_PATH, "RDF/XML");
     }
 
 
@@ -1514,11 +1459,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     @Override
     public String getDefaultManifestPath() {
-        return DEFAULT_MANIFEST_PATH;
+        return W4E.DEFAULT_MANIFEST_PATH;
     }
 
 
-    private URI resolveURI(URI base, String second) {
+    @Override
+    public URI resolveURI(URI base, String second) {
         if ("file".equals(base.getScheme())) {
             URI incorrectURI = base.resolve(second);
             return URI.create(incorrectURI.toString().replaceFirst("file:/", "file:///"));
@@ -1532,7 +1478,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     public int changeURIInManifestAndAnnotationBodies(URI researchObject, URI oldURI, URI newURI) {
         int cnt = changeURIInNamedGraph(getManifestURI(researchObject), oldURI, newURI);
         OntModel model = createOntModelForNamedGraph(getManifestURI(researchObject));
-        List<RDFNode> bodies = model.listObjectsOfProperty(aoBody).toList();
+        List<RDFNode> bodies = model.listObjectsOfProperty(AO.aoBody).toList();
         for (RDFNode body : bodies) {
             URI bodyURI = URI.create(body.asResource().getURI());
             cnt += changeURIInNamedGraph(bodyURI, oldURI, newURI);
@@ -1556,5 +1502,10 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             model.add(s.getSubject(), s.getPredicate(), newResource);
         }
         return s1.size() + s2.size();
+    }
+
+
+    public InputStream getEvoInfo(URI researchObjectURI) {
+        return getNamedGraph(resolveURI(researchObjectURI, ".ro/evo_inf.rdf"), RDFFormat.TURTLE);
     }
 }

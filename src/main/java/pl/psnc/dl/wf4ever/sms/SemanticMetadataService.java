@@ -697,4 +697,26 @@ public interface SemanticMetadataService {
      */
     int changeURIInManifestAndAnnotationBodies(URI researchObject, URI oldURI, URI newURI);
 
+
+    /**
+     * Get resolved URI from base and relative path. Created because of the JAVA URI bug.
+     * 
+     * @param base
+     *            base URI
+     * @param secund
+     *            relative URI
+     * @return the resolved URI
+     */
+    URI resolveURI(URI base, String second);
+
+
+    /**
+     * Get the evolution information of research object.
+     * 
+     * @param researchObjectURI
+     *            the URI of research object
+     * @return Input Stream with the evolution information
+     */
+    InputStream getEvoInfo(URI researchObjectURI);
+
 }
