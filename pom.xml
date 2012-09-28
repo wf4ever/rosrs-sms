@@ -1,9 +1,8 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>pl.psnc.dl.wf4ever</groupId>
 	<artifactId>rosrs-sms</artifactId>
-	<version>3.0.3-SNAPSHOT</version>
+	<version>3.0.3</version>
 	<name>ROSRS Semantic Metadata Service</name>
 	<inceptionYear>2010</inceptionYear>
 	<developers>
@@ -100,7 +99,7 @@
 	</build>
 	<scm>
 		<developerConnection>scm:git:git@github.com:wf4ever/rosrs-sms.git</developerConnection>
-		<tag>rosrs-sms-3.0.1</tag>
+		<tag>rosrs-sms-3.0.3</tag>
 	</scm>
 	<repositories>
 		<repository>
