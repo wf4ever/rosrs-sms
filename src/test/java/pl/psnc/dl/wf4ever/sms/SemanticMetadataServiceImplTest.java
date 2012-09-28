@@ -325,7 +325,8 @@ public class SemanticMetadataServiceImplTest {
         Assert.assertNotNull("Manifest must contain " + proxyURI, proxy);
         Assert.assertTrue(String.format("Proxy %s must be a ore:Proxy", proxyURI),
             proxy.hasRDFType("http://www.openarchives.org/ore/terms/Proxy"));
-        Assert.assertEquals("Proxy for must be valid", proxyForURI, proxy.getPropertyResourceValue(ORE.oreProxyFor).getURI());
+        Assert.assertEquals("Proxy for must be valid", proxyForURI, proxy.getPropertyResourceValue(ORE.oreProxyFor)
+                .getURI());
         Assert.assertEquals("Proxy in must be valid", researchObjectURI.toString(),
             proxy.getPropertyResourceValue(ORE.oreProxyIn).getURI());
     }
@@ -608,8 +609,8 @@ public class SemanticMetadataServiceImplTest {
         Individual creator = userModel.getIndividual(creatorResource.getURI());
         Assert.assertNotNull("User named graph must contain dcterms:creator", creator);
         Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
-        Assert.assertEquals("Creator name must be correct", userProfile.getName(), creator.getPropertyValue(FOAF.foafName)
-                .asLiteral().getString());
+        Assert.assertEquals("Creator name must be correct", userProfile.getName(),
+            creator.getPropertyValue(FOAF.foafName).asLiteral().getString());
 
         Literal nameLiteral = resource.getPropertyValue(RO.name).asLiteral();
         Assert.assertNotNull("Resource must contain ro:name", nameLiteral);
@@ -1236,30 +1237,27 @@ public class SemanticMetadataServiceImplTest {
         sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
         sms.storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"), ".ro/manifest.ttl",
             "TTL");
-        
+
         OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
         model.read(sms.getManifest(getResourceURI("ro1-sp2/.ro/evo_inf.rdf"), RDFFormat.RDFXML), null);
         Individual evoInfoSource = model.getIndividual(getResourceURI("ro1-sp2/.ro/evo_inf.rdf").toString());
-        List<RDFNode> changesList = evoInfoSource.listPropertyValues(model.createProperty("http://purl.org/wf4ever/roevo#hasChange")).toList();
+        List<RDFNode> changesList = evoInfoSource.listPropertyValues(
+            model.createProperty("http://purl.org/wf4ever/roevo#hasChange")).toList();
         sms.close();
-        
-        Assert.assertTrue(isChangeInTheChangesList(
-            "file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp2/ann3",
+
+        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann3").toString(),
             "http://purl.org/wf4ever/roevo#Modification", model, changesList));
-        Assert.assertTrue(isChangeInTheChangesList(
-            "file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp2/res1",
+        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/res1").toString(),
             "http://purl.org/wf4ever/roevo#Addition", model, changesList));
-        Assert.assertTrue(isChangeInTheChangesList(
-            "file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp2/afinalfolder",
+        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/afinalfolder").toString(),
             "http://purl.org/wf4ever/roevo#Addition", model, changesList));
-        Assert.assertTrue(isChangeInTheChangesList(
-            "file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp2/ann2",
+        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann2").toString(),
             "http://purl.org/wf4ever/roevo#Modification", model, changesList));
-        Assert.assertTrue(isChangeInTheChangesList(
-            "file:///home/pejot/code/rosrs-sms/src/test/resources/rdfStructure/ro1-sp1/afolder",
+        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp1/afolder").toString(),
             "http://purl.org/wf4ever/roevo#Removal", model, changesList));
 
     }
+
 
     @Test(expected = NullPointerException.class)
     public final void testStoreROhistoryWithWrongParametrs()
