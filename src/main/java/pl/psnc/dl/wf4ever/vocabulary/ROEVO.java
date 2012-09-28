@@ -2,14 +2,14 @@ package pl.psnc.dl.wf4ever.vocabulary;
 
 import com.hp.hpl.jena.ontology.OntClass;
 import com.hp.hpl.jena.ontology.OntModel;
+import com.hp.hpl.jena.ontology.OntModelSpec;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
 
 public class ROEVO {
 
     public static final String NAMESPACE = "http://purl.org/wf4ever/roevo#";
-    public static OntModel ontModel = ModelFactory.createOntologyModel(NAMESPACE);
-    
+    public static OntModel ontModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,ModelFactory.createDefaultModel().read(NAMESPACE));
     public static final OntClass liveROClass = ontModel.getOntClass(NAMESPACE + "LiveRO");
     public static final OntClass snapshotROClass = ontModel.getOntClass(NAMESPACE + "SnapshotRO");
     public static final OntClass archivedROClass = ontModel.getOntClass(NAMESPACE + "ArchivedRO");
