@@ -37,6 +37,7 @@ import pl.psnc.dl.wf4ever.vocabulary.AO;
 import pl.psnc.dl.wf4ever.vocabulary.FOAF;
 import pl.psnc.dl.wf4ever.vocabulary.ORE;
 import pl.psnc.dl.wf4ever.vocabulary.RO;
+import pl.psnc.dl.wf4ever.vocabulary.ROEVO;
 
 import com.google.common.collect.Multimap;
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
@@ -325,10 +326,10 @@ public class SemanticMetadataServiceImplTest {
         Assert.assertNotNull("Manifest must contain " + proxyURI, proxy);
         Assert.assertTrue(String.format("Proxy %s must be a ore:Proxy", proxyURI),
             proxy.hasRDFType("http://www.openarchives.org/ore/terms/Proxy"));
-        Assert.assertEquals("Proxy for must be valid", proxyForURI, proxy.getPropertyResourceValue(ORE.oreProxyFor)
+        Assert.assertEquals("Proxy for must be valid", proxyForURI, proxy.getPropertyResourceValue(ORE.proxyFor)
                 .getURI());
         Assert.assertEquals("Proxy in must be valid", researchObjectURI.toString(),
-            proxy.getPropertyResourceValue(ORE.oreProxyIn).getURI());
+            proxy.getPropertyResourceValue(ORE.proxyIn).getURI());
     }
 
 
@@ -421,7 +422,7 @@ public class SemanticMetadataServiceImplTest {
             Individual creator = userModel.getIndividual(creatorResource.getURI());
             Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
             Assert.assertEquals("Creator name must be correct", userProfile.getName(),
-                creator.getPropertyValue(FOAF.foafName).asLiteral().getString());
+                creator.getPropertyValue(FOAF.name).asLiteral().getString());
 
             log.debug(IOUtils.toString(sms.getManifest(manifestURI, RDFFormat.RDFXML), "UTF-8"));
         } finally {
@@ -610,7 +611,7 @@ public class SemanticMetadataServiceImplTest {
         Assert.assertNotNull("User named graph must contain dcterms:creator", creator);
         Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
         Assert.assertEquals("Creator name must be correct", userProfile.getName(),
-            creator.getPropertyValue(FOAF.foafName).asLiteral().getString());
+            creator.getPropertyValue(FOAF.name).asLiteral().getString());
 
         Literal nameLiteral = resource.getPropertyValue(RO.name).asLiteral();
         Assert.assertNotNull("Resource must contain ro:name", nameLiteral);
@@ -1018,7 +1019,7 @@ public class SemanticMetadataServiceImplTest {
             Assert.assertNotNull("User named graph must contain dcterms:creator", creator);
             Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
             Assert.assertEquals("Creator name must be correct", userProfile.getName(),
-                creator.getPropertyValue(FOAF.foafName).asLiteral().getString());
+                creator.getPropertyValue(FOAF.name).asLiteral().getString());
 
             sms.removeUser(userProfile.getUri());
             userModel.removeAll();
@@ -1085,7 +1086,7 @@ public class SemanticMetadataServiceImplTest {
             Assert.assertTrue(model.contains(researchObject, ORE.aggregates, annotation));
             Assert.assertTrue(model.contains(annotation, RO.annotatesAggregatedResource, workflow));
             Assert.assertTrue(model.contains(annotation, RO.annotatesAggregatedResource, workflow2));
-            Assert.assertTrue(model.contains(annotation, AO.aoBody, abody));
+            Assert.assertTrue(model.contains(annotation, AO.body, abody));
         } finally {
             sms.close();
         }
@@ -1115,8 +1116,8 @@ public class SemanticMetadataServiceImplTest {
             Assert.assertTrue(model.contains(annotation, RO.annotatesAggregatedResource, workflow));
             Assert.assertFalse(model.contains(annotation, RO.annotatesAggregatedResource, workflow2));
             Assert.assertTrue(model.contains(annotation, RO.annotatesAggregatedResource, researchObject));
-            Assert.assertFalse(model.contains(annotation, AO.aoBody, abody));
-            Assert.assertTrue(model.contains(annotation, AO.aoBody, workflow2));
+            Assert.assertFalse(model.contains(annotation, AO.body, abody));
+            Assert.assertTrue(model.contains(annotation, AO.body, workflow2));
         } finally {
             sms.close();
         }
@@ -1246,15 +1247,15 @@ public class SemanticMetadataServiceImplTest {
         sms.close();
 
         Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann3").toString(),
-            "http://purl.org/wf4ever/roevo#Modification", model, changesList));
+            ROEVO.ModificationClass.toString(), model, changesList));
         Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/res1").toString(),
-            "http://purl.org/wf4ever/roevo#Addition", model, changesList));
+            ROEVO.AdditionClass.getURI(), model, changesList));
         Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/afinalfolder").toString(),
-            "http://purl.org/wf4ever/roevo#Addition", model, changesList));
+            ROEVO.AdditionClass.getURI(), model, changesList));
         Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann2").toString(),
-            "http://purl.org/wf4ever/roevo#Modification", model, changesList));
+            ROEVO.ModificationClass.getURI(), model, changesList));
         Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp1/afolder").toString(),
-            "http://purl.org/wf4ever/roevo#Removal", model, changesList));
+            ROEVO.RemovalClass.getURI(), model, changesList));
 
     }
 
