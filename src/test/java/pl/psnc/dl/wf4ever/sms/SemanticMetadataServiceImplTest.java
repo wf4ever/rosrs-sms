@@ -424,7 +424,6 @@ public class SemanticMetadataServiceImplTest {
             Assert.assertEquals("Creator name must be correct", userProfile.getName(),
                 creator.getPropertyValue(FOAF.name).asLiteral().getString());
 
-            log.debug(IOUtils.toString(sms.getManifest(manifestURI, RDFFormat.RDFXML), "UTF-8"));
         } finally {
             sms.close();
         }
@@ -566,8 +565,6 @@ public class SemanticMetadataServiceImplTest {
             sms.addResource(researchObjectURI, ann1URI, ann1Info);
             InputStream is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
             sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
-
-            log.debug(IOUtils.toString(sms.getResource(researchObjectURI, workflowURI, RDFFormat.RDFXML), "UTF-8"));
 
             OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
             model.read(sms.getResource(researchObjectURI, workflowURI, RDFFormat.RDFXML), researchObjectURI.toString());
@@ -982,9 +979,6 @@ public class SemanticMetadataServiceImplTest {
             OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
             model.read(sms2.getNamedGraphWithRelativeURIs(annotationBody1URI, researchObjectURI, RDFFormat.RDFXML), "",
                 "RDF/XML");
-
-            log.debug(IOUtils.toString(
-                sms2.getNamedGraphWithRelativeURIs(annotationBody1URI, researchObjectURI, RDFFormat.RDFXML), "UTF-8"));
 
             ResIterator x = model.listSubjects();
             while (x.hasNext()) {
