@@ -14,8 +14,8 @@ public class FOAF {
         new OntModelSpec(OntModelSpec.OWL_MEM),
         ModelFactory.createDefaultModel().read(RO.NAMESPACE).read(ROEVO.NAMESPACE));
     
-    public static final OntClass foafAgentClass = defaultModel.getOntClass(NAMESPACE + "Agent");
-    public static final OntClass foafPersonClass = defaultModel.getOntClass(NAMESPACE + "Person");
-    public static final Property foafName = defaultModel.getProperty(NAMESPACE + "name");
+    public static final OntClass Agent = defaultModel.getOntClass(NAMESPACE + "Agent");
+    public static final OntClass Person = defaultModel.getOntClass(NAMESPACE + "Person");
+    public static final Property name = defaultModel.getProperty(NAMESPACE + "name");
     
 }

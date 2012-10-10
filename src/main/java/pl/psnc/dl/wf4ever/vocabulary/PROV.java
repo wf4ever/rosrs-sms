@@ -9,6 +9,6 @@ public class PROV {
 
     public static final String NAMESPACE = "http://www.w3.org/ns/prov#";
     public static OntModel ontModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM,ModelFactory.createDefaultModel().read(NAMESPACE));
-    public static final Property provHadOriginalSource = ontModel.getProperty(NAMESPACE + "hadOriginalSource");
+    public static final Property hadOriginalSource = ontModel.getProperty(NAMESPACE + "hadOriginalSource");
 
 }
