@@ -31,8 +31,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openrdf.rio.RDFFormat;
 
-import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
-import pl.psnc.dl.wf4ever.dlibra.UserProfile;
+import pl.psnc.dl.wf4ever.common.ResourceInfo;
+import pl.psnc.dl.wf4ever.common.UserProfile;
+import pl.psnc.dl.wf4ever.common.UserProfile.Role;
 import pl.psnc.dl.wf4ever.vocabulary.AO;
 import pl.psnc.dl.wf4ever.vocabulary.FOAF;
 import pl.psnc.dl.wf4ever.vocabulary.ORE;
@@ -84,8 +85,7 @@ public class SemanticMetadataServiceImplTest {
 
     private final static URI wrongResearchObjectURI = URI.create("http://wrong.example.org/ROs/wrongRo/");
 
-    private final static UserProfile userProfile = new UserProfile("jank", "pass", "Jan Kowalski",
-            UserProfile.Role.AUTHENTICATED);
+    private final static UserProfile userProfile = new UserProfile("jank", "Jan Kowalski", Role.AUTHENTICATED);
 
     private final static URI workflowURI = URI.create("http://example.org/ROs/ro1/a%20workflow.t2flow");
 
@@ -95,15 +95,17 @@ public class SemanticMetadataServiceImplTest {
     private final static URI workflow2URI = URI.create("http://example.org/ROs/ro2/runme.t2flow");
 
     private final ResourceInfo workflowInfo = new ResourceInfo("a%20workflow.t2flow", "ABC123455666344E", 646365L,
-            "SHA1");
+            "SHA1", null, "application/vnd.taverna.t2flow+xml");
 
     private final static URI ann1URI = URI.create("http://example.org/ROs/ro1/ann1");
 
-    private final ResourceInfo ann1Info = new ResourceInfo("ann1", "A0987654321EDCB", 6L, "MD5");
+    private final ResourceInfo ann1Info = new ResourceInfo("ann1", "A0987654321EDCB", 6L, "MD5", null,
+            "application/rdf+xml");
 
     private final static URI resourceFakeURI = URI.create("http://example.org/ROs/ro1/xyz");
 
-    private final ResourceInfo resourceFakeInfo = new ResourceInfo("xyz", "A0987654321EDCB", 6L, "MD5");
+    private final ResourceInfo resourceFakeInfo = new ResourceInfo("xyz", "A0987654321EDCB", 6L, "MD5", null,
+            "text/plain");
 
     private final static URI folderURI = URI.create("http://example.org/ROs/ro1/afolder");
 
@@ -486,7 +488,8 @@ public class SemanticMetadataServiceImplTest {
             Assert.assertTrue(sms.addResource(researchObjectURI, workflowURI, workflowInfo));
             Assert.assertTrue(sms.addResource(researchObjectURI, ann1URI, ann1Info));
             Assert.assertFalse(sms.addResource(researchObjectURI, workflowURI, null));
-            Assert.assertFalse(sms.addResource(researchObjectURI, workflowURI, new ResourceInfo(null, null, 0, null)));
+            Assert.assertFalse(sms.addResource(researchObjectURI, workflowURI, new ResourceInfo(null, null, 0, null,
+                    null, "")));
         } finally {
             sms.close();
         }

@@ -26,8 +26,8 @@ import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.openrdf.rio.RDFFormat;
 
-import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
-import pl.psnc.dl.wf4ever.dlibra.UserProfile;
+import pl.psnc.dl.wf4ever.common.ResourceInfo;
+import pl.psnc.dl.wf4ever.common.UserProfile;
 import pl.psnc.dl.wf4ever.vocabulary.AO;
 import pl.psnc.dl.wf4ever.vocabulary.FOAF;
 import pl.psnc.dl.wf4ever.vocabulary.ORE;

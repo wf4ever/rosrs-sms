@@ -12,8 +12,8 @@ import javax.naming.NamingException;
 
 import org.openrdf.rio.RDFFormat;
 
-import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
-import pl.psnc.dl.wf4ever.dlibra.UserProfile;
+import pl.psnc.dl.wf4ever.common.ResourceInfo;
+import pl.psnc.dl.wf4ever.common.UserProfile;
 
 import com.google.common.collect.Multimap;
 import com.hp.hpl.jena.ontology.Individual;
