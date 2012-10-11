@@ -174,7 +174,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 
     @Override
-    public void createLiveResearchObject(ResearchObject researchObject, URI source) {
+    public void createLiveResearchObject(ResearchObject researchObject, ResearchObject source) {
         OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
         Individual manifest = manifestModel.getIndividual(researchObject.getManifestUri().toString());
         if (manifest != null) {
@@ -192,7 +192,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
 
         if (source != null) {
-            manifestModel.add(ro, PROV.hadOriginalSource, manifestModel.createResource(source.toString()));
+            manifestModel.add(ro, PROV.hadOriginalSource, manifestModel.createResource(source.getUri().toString()));
         }
     }
 

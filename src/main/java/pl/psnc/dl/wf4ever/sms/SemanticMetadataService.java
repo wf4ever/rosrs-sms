@@ -58,7 +58,7 @@ public interface SemanticMetadataService {
      * @param source
      *            URI of a source of the research object, may be null
      */
-    void createLiveResearchObject(ResearchObject researchObject, URI source);
+    void createLiveResearchObject(ResearchObject researchObject, ResearchObject source);
 
 
     /**
