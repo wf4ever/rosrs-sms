@@ -28,6 +28,7 @@ import org.openrdf.rio.RDFFormat;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
+import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
 import pl.psnc.dl.wf4ever.vocabulary.AO;
 import pl.psnc.dl.wf4ever.vocabulary.FOAF;
 import pl.psnc.dl.wf4ever.vocabulary.ORE;
@@ -104,6 +105,19 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         graphset = new NamedGraphSetDB(connection, "sms");
         W4E.defaultModel.setNsPrefixes(W4E.standardNamespaces);
         createUserProfile(user);
+    }
+
+
+    public SemanticMetadataServiceImpl(UserProfile user, URI researchObject, InputStream manifest, RDFFormat rdfFormat) {
+        this.user = user;
+        this.connection = null;
+
+        graphset = new NamedGraphSetImpl();
+        W4E.defaultModel.setNsPrefixes(W4E.standardNamespaces);
+        createUserProfile(user);
+
+        createResearchObject(researchObject);
+        updateManifest(researchObject, manifest, rdfFormat);
     }
 
 
@@ -857,7 +871,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     public boolean isAnnotation(URI researchObject, URI resource) {
         OntModel manifestModel = createOntModelForNamedGraph(getManifestURI(researchObject.normalize()));
         Individual resourceR = manifestModel.getIndividual(resource.normalize().toString());
-        return resourceR != null && resourceR.hasRDFType(RO.AggregatedAnnotationClass);
+        return resourceR != null && resourceR.hasRDFType(RO.AggregatedAnnotation);
     }
 
 
@@ -934,8 +948,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         Resource researchObjectR = manifestModel.createResource(researchObject.toString());
         Resource body = manifestModel.createResource(annotationBody.normalize().toString());
         URI annotationURI = generateAnnotationURI(researchObject);
-        Individual annotation = manifestModel
-                .createIndividual(annotationURI.toString(), RO.AggregatedAnnotationClass);
+        Individual annotation = manifestModel.createIndividual(annotationURI.toString(), RO.AggregatedAnnotation);
         manifestModel.add(researchObjectR, ORE.aggregates, annotation);
         manifestModel.add(annotation, AO.body, body);
         for (URI targetURI : annotationTargets) {
@@ -1135,8 +1148,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
         while (snaphotsIterator.hasNext()) {
             URI tmpURI = new URI(snaphotsIterator.next().getObject().toString());
-            RDFNode node = getIndividual(tmpURI, modelPath, format).getProperty(ROEVO.snapshottedAtTime)
-                    .getObject();
+            RDFNode node = getIndividual(tmpURI, modelPath, format).getProperty(ROEVO.snapshottedAtTime).getObject();
             DateTime tmpTime = new DateTime(node.asLiteral().getValue().toString());
             if ((tmpTime.compareTo(freshTime) == -1)
                     && ((predecessorTime == null) || (tmpTime.compareTo(predecessorTime) == 1))) {
@@ -1294,8 +1306,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     private Boolean compareTwoResources(Resource pattern, Resource compared, URI patternROURI, URI comparedROURI) {
         Individual patternSource = pattern.as(Individual.class);
         Individual comparedSource = compared.as(Individual.class);
-        if (patternSource.hasRDFType(RO.AggregatedAnnotationClass)
-                && comparedSource.hasRDFType(RO.AggregatedAnnotationClass)) {
+        if (patternSource.hasRDFType(RO.AggregatedAnnotation) && comparedSource.hasRDFType(RO.AggregatedAnnotation)) {
             try {
                 if (compareRelativesURI(new URI(pattern.getURI()), new URI(compared.getURI()), patternROURI,
                     comparedROURI)) {
@@ -1505,7 +1516,38 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     }
 
 
+    @Override
     public InputStream getEvoInfo(URI researchObjectURI) {
         return getNamedGraph(resolveURI(researchObjectURI, ".ro/evo_inf.rdf"), RDFFormat.TURTLE);
+    }
+
+
+    @Override
+    public List<URI> getAggregatedResources(URI researchObject)
+            throws ManifestTraversingException {
+        OntModel model = createOntModelForNamedGraph(researchObject);
+        StmtIterator list = model.listStatements();
+        Individual source = model.getIndividual(researchObject.toString());
+        if (source == null) {
+            throw new ManifestTraversingException();
+        }
+        List<RDFNode> aggregatesList = source.listPropertyValues(ORE.aggregates).toList();
+        List<URI> aggregated = new ArrayList<URI>();
+        for (RDFNode node : aggregatesList) {
+            try {
+                if (!isAnnotation(researchObject, new URI(node.asResource().getURI()))) {
+                    aggregated.add(new URI(node.asResource().getURI()));
+                }
+            } catch (URISyntaxException e) {
+                continue;
+            }
+        }
+        return aggregated;
+    }
+
+
+    @Override
+    public List<URI> getAnnotationTargets(URI researchObject, URI annotationURI) {
+        return null;
     }
 }

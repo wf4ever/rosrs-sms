@@ -14,7 +14,7 @@ public class RO {
     public static final OntClass Manifest = ontModel.getOntClass(NAMESPACE + "Manifest");
     public static final OntClass Resource = ontModel.getOntClass(NAMESPACE + "Resource");
     public static final OntClass Folder = ontModel.getOntClass(NAMESPACE + "Folder");
-    public static final OntClass AggregatedAnnotationClass = ontModel.getOntClass(NAMESPACE + "AggregatedAnnotation");
+    public static final OntClass AggregatedAnnotation = ontModel.getOntClass(NAMESPACE + "AggregatedAnnotation");
 
     public static final Property name = ontModel.getProperty(NAMESPACE + "name");
     public static final Property filesize = ontModel.getProperty(NAMESPACE + "filesize");

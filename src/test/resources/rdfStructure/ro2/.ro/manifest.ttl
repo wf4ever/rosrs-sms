@@ -1,5 +1,5 @@
-@base <../../> .
-@prefix : <ro2/> .
+@base <../> .
+@prefix : <.> .
 @prefix ro: <http://purl.org/wf4ever/ro#> .
 @prefix ao: <http://purl.org/ao/> .
 @prefix ore: <http://www.openarchives.org/ore/terms/> .
@@ -9,9 +9,9 @@
 @prefix foaf: <http://xmlns.com/foaf/0.1/> .
 @prefix rdfg: <http://www.w3.org/2004/03/trix/rdfg-1/> .
 
-<ro2/.ro/manifest.rdf> a ro:Manifest ;
+<.ro/manifest.rdf> a ro:Manifest ;
     ore:describes <ro2/> ;
     dct:created "2012-05-02T16:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Agent; foaf:name "RO manager" ] .
 
-<ro1/> a ro:ResearchObject, ore:Aggregation .
+<.> a ro:ResearchObject, ore:Aggregation .

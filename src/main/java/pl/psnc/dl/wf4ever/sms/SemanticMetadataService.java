@@ -14,6 +14,7 @@ import org.openrdf.rio.RDFFormat;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
+import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
 
 import com.google.common.collect.Multimap;
 import com.hp.hpl.jena.ontology.Individual;
@@ -718,5 +719,26 @@ public interface SemanticMetadataService {
      * @return Input Stream with the evolution information
      */
     InputStream getEvoInfo(URI researchObjectURI);
+
+    /**
+     * Get the list of aggregated resources.
+     * 
+     * @param researchObject
+     *              the research object URI
+     * @return the list of aggregated resources.
+     * @throws ManifestTraversingException 
+     */
+    List<URI> getAggregatedResources(URI researchObject) throws ManifestTraversingException;
+
+    /**
+     * Get the list of annotation targets.
+     * 
+     * @param researchObject
+     *              the research object URI
+     * @param annotation URI
+     *              the annotation URI          
+     * @return the list of annotation targets.
+     */
+    List<URI> getAnnotationTargets(URI researchObject, URI annotationURI);
 
 }

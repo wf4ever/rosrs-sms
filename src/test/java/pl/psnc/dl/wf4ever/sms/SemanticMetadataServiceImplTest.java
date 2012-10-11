@@ -5,6 +5,9 @@ package pl.psnc.dl.wf4ever.sms;
 
 import static org.junit.Assert.fail;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -33,6 +36,7 @@ import org.openrdf.rio.RDFFormat;
 
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
+import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
 import pl.psnc.dl.wf4ever.vocabulary.AO;
 import pl.psnc.dl.wf4ever.vocabulary.FOAF;
 import pl.psnc.dl.wf4ever.vocabulary.ORE;
@@ -607,8 +611,8 @@ public class SemanticMetadataServiceImplTest {
         Individual creator = userModel.getIndividual(creatorResource.getURI());
         Assert.assertNotNull("User named graph must contain dcterms:creator", creator);
         Assert.assertTrue("Creator must be a foaf:Agent", creator.hasRDFType("http://xmlns.com/foaf/0.1/Agent"));
-        Assert.assertEquals("Creator name must be correct", userProfile.getName(),
-            creator.getPropertyValue(FOAF.name).asLiteral().getString());
+        Assert.assertEquals("Creator name must be correct", userProfile.getName(), creator.getPropertyValue(FOAF.name)
+                .asLiteral().getString());
 
         Literal nameLiteral = resource.getPropertyValue(RO.name).asLiteral();
         Assert.assertNotNull("Resource must contain ro:name", nameLiteral);
@@ -1162,11 +1166,14 @@ public class SemanticMetadataServiceImplTest {
     public final void testIsSnapshot()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
-        Assert.assertTrue("snapshot does not recognized",
-            sms.isSnapshotURI(getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL"));
-        Assert.assertFalse("snapshot wrongly recognized",
-            sms.isSnapshotURI(getResourceURI("ro1/"), ".ro/manifest.ttl", "TTL"));
-        sms.close();
+        try {
+            Assert.assertTrue("snapshot does not recognized",
+                sms.isSnapshotURI(getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL"));
+            Assert.assertFalse("snapshot wrongly recognized",
+                sms.isSnapshotURI(getResourceURI("ro1/"), ".ro/manifest.ttl", "TTL"));
+        } finally {
+            sms.close();
+        }
     }
 
 
@@ -1174,11 +1181,14 @@ public class SemanticMetadataServiceImplTest {
     public final void testIsArchive()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
-        Assert.assertTrue("snapshot does not recognized",
-            sms.isArchiveURI(getResourceURI("ro1-arch1/"), ".ro/manifest.ttl", "TTL"));
-        Assert.assertFalse("snapshot wrongly recognized",
-            sms.isArchiveURI(getResourceURI("ro1/"), ".ro/manifest.ttl", "TTL"));
-        sms.close();
+        try {
+            Assert.assertTrue("snapshot does not recognized",
+                sms.isArchiveURI(getResourceURI("ro1-arch1/"), ".ro/manifest.ttl", "TTL"));
+            Assert.assertFalse("snapshot wrongly recognized",
+                sms.isArchiveURI(getResourceURI("ro1/"), ".ro/manifest.ttl", "TTL"));
+        } finally {
+            sms.close();
+        }
     }
 
 
@@ -1186,13 +1196,16 @@ public class SemanticMetadataServiceImplTest {
     public final void testGetPreviousSnaphotOrArchive()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
-        URI sp1Antecessor = sms.getPreviousSnaphotOrArchive(getResourceURI("ro1/"), getResourceURI("ro1-sp1/"),
-            ".ro/manifest.ttl", "TTL");
-        URI sp2Antecessor = sms.getPreviousSnaphotOrArchive(getResourceURI("ro1/"), getResourceURI("ro1-sp2/"),
-            ".ro/manifest.ttl", "TTL");
-        sms.close();
-        Assert.assertNull("wrong antecessor URI", sp1Antecessor);
-        Assert.assertEquals("wrong antecessor URI", sp2Antecessor, getResourceURI("ro1-sp1/"));
+        try {
+            URI sp1Antecessor = sms.getPreviousSnaphotOrArchive(getResourceURI("ro1/"), getResourceURI("ro1-sp1/"),
+                ".ro/manifest.ttl", "TTL");
+            URI sp2Antecessor = sms.getPreviousSnaphotOrArchive(getResourceURI("ro1/"), getResourceURI("ro1-sp2/"),
+                ".ro/manifest.ttl", "TTL");
+            Assert.assertNull("wrong antecessor URI", sp1Antecessor);
+            Assert.assertEquals("wrong antecessor URI", sp2Antecessor, getResourceURI("ro1-sp1/"));
+        } finally {
+            sms.close();
+        }
     }
 
 
@@ -1200,12 +1213,15 @@ public class SemanticMetadataServiceImplTest {
     public final void testGetIndividual()
             throws URISyntaxException, ClassNotFoundException, IOException, NamingException, SQLException {
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
-        OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-        model.read(getResourceURI("ro1/").resolve(".ro/manifest.ttl").toString(), "TTL");
-        Individual source = model.getIndividual(getResourceURI("ro1/").toString());
-        Individual source2 = sms.getIndividual(getResourceURI("ro1/"), ".ro/manifest.ttl", "TTL");
-        Assert.assertEquals("wrong individual returned", source, source2);
-        sms.close();
+        try {
+            OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+            model.read(getResourceURI("ro1/").resolve(".ro/manifest.ttl").toString(), "TTL");
+            Individual source = model.getIndividual(getResourceURI("ro1/").toString());
+            Individual source2 = sms.getIndividual(getResourceURI("ro1/"), ".ro/manifest.ttl", "TTL");
+            Assert.assertEquals("wrong individual returned", source, source2);
+        } finally {
+            sms.close();
+        }
     }
 
 
@@ -1213,14 +1229,17 @@ public class SemanticMetadataServiceImplTest {
     public final void testGetLiveROfromSnapshotOrArchive()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
-        URI liveFromRO = sms.getLiveURIFromSnapshotOrArchive(getResourceURI("ro1/"), ".ro/manifest.ttl", "TTL");
-        URI liveFromSP = sms.getLiveURIFromSnapshotOrArchive(getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL");
-        URI liveFromARCH = sms.getLiveURIFromSnapshotOrArchive(getResourceURI("ro1-arch1/"), ".ro/manifest.ttl", "TTL");
-        sms.close();
-        Assert.assertNull("live RO does not have a parent RO", liveFromRO);
-        Assert.assertEquals("wrong parent URI", liveFromSP, getResourceURI("ro1/"));
-        Assert.assertEquals("wrong parent URI", liveFromARCH, getResourceURI("ro1/"));
-
+        try {
+            URI liveFromRO = sms.getLiveURIFromSnapshotOrArchive(getResourceURI("ro1/"), ".ro/manifest.ttl", "TTL");
+            URI liveFromSP = sms.getLiveURIFromSnapshotOrArchive(getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL");
+            URI liveFromARCH = sms.getLiveURIFromSnapshotOrArchive(getResourceURI("ro1-arch1/"), ".ro/manifest.ttl",
+                "TTL");
+            Assert.assertNull("live RO does not have a parent RO", liveFromRO);
+            Assert.assertEquals("wrong parent URI", liveFromSP, getResourceURI("ro1/"));
+            Assert.assertEquals("wrong parent URI", liveFromARCH, getResourceURI("ro1/"));
+        } finally {
+            sms.close();
+        }
     }
 
 
@@ -1228,29 +1247,31 @@ public class SemanticMetadataServiceImplTest {
     public final void testStoreROhistory()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
-        InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
-        sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
-        sms.storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"), ".ro/manifest.ttl",
-            "TTL");
+        try {
+            InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
+            sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
+            String a = sms.storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"), ".ro/manifest.ttl",
+                "TTL");
 
-        OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-        model.read(sms.getManifest(getResourceURI("ro1-sp2/.ro/evo_inf.rdf"), RDFFormat.RDFXML), null);
-        Individual evoInfoSource = model.getIndividual(getResourceURI("ro1-sp2/.ro/evo_inf.rdf").toString());
-        List<RDFNode> changesList = evoInfoSource.listPropertyValues(
-            model.createProperty("http://purl.org/wf4ever/roevo#hasChange")).toList();
-        sms.close();
-
-        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann3").toString(),
-            ROEVO.ModificationClass.toString(), model, changesList));
-        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/res1").toString(),
-            ROEVO.AdditionClass.getURI(), model, changesList));
-        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/afinalfolder").toString(),
-            ROEVO.AdditionClass.getURI(), model, changesList));
-        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann2").toString(),
-            ROEVO.ModificationClass.getURI(), model, changesList));
-        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp1/afolder").toString(),
-            ROEVO.RemovalClass.getURI(), model, changesList));
-
+            OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+            model.read(sms.getManifest(getResourceURI("ro1-sp2/.ro/evo_inf.rdf"), RDFFormat.RDFXML), null);
+            Individual evoInfoSource = model.getIndividual(getResourceURI("ro1-sp2/.ro/evo_inf.rdf").toString());
+            List<RDFNode> changesList = evoInfoSource.listPropertyValues(
+                model.createProperty("http://purl.org/wf4ever/roevo#hasChange")).toList();
+      
+            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann3").toString(),
+                ROEVO.AdditionClass.toString(), model, changesList));
+            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/res3").toString(),
+                ROEVO.AdditionClass.getURI(), model, changesList));
+            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/afinalfolder").toString(),
+                ROEVO.AdditionClass.getURI(), model, changesList));
+            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann2").toString(),
+                ROEVO.ModificationClass.getURI(), model, changesList));
+            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp1/afolder").toString(),
+                ROEVO.RemovalClass.getURI(), model, changesList));
+        } finally {
+            sms.close();
+        }
     }
 
 
@@ -1258,10 +1279,13 @@ public class SemanticMetadataServiceImplTest {
     public final void testStoreROhistoryWithWrongParametrs()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
-        InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
-        sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
-        sms.storeAggregatedDifferences(null, getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL");
-        sms.close();
+        try {
+            InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
+            sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
+            sms.storeAggregatedDifferences(null, getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL");
+        } finally {
+            sms.close();
+        }
     }
 
 
@@ -1269,11 +1293,14 @@ public class SemanticMetadataServiceImplTest {
     public final void testStoreROhistoryWithNoAccenestor()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
-        InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp1/.ro/manifest.ttl");
-        sms.addNamedGraph(getResourceURI("ro1-sp1/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
-        String result = sms.storeAggregatedDifferences(getResourceURI("ro1-sp1/"), null);
-        Assert.assertEquals("", result);
-        sms.close();
+        try {
+            InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp1/.ro/manifest.ttl");
+            sms.addNamedGraph(getResourceURI("ro1-sp1/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
+            String result = sms.storeAggregatedDifferences(getResourceURI("ro1-sp1/"), null);
+            Assert.assertEquals("", result);
+        } finally {
+            sms.close();
+        }
         //@TODO read created model and look for the possible written changes
     }
 
@@ -1292,6 +1319,54 @@ public class SemanticMetadataServiceImplTest {
             int cnt = sms.changeURIInManifestAndAnnotationBodies(researchObjectURI, workflowURI, resourceFakeURI);
             // 1 aggregates, 1 ann target, 1 type, 2 dcterms, 3 in ann body
             Assert.assertEquals("6 URIs should be changed", 9, cnt);
+        } finally {
+            sms.close();
+        }
+    }
+
+
+    @Test
+    public final void testSMSConstructor()
+            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
+        URI fakeURI = new URI("http://www.example.com");
+        File file = new File(PROJECT_PATH + "/src/test/resources/manifest.rdf");
+        FileInputStream is = new FileInputStream(file);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, fakeURI, is, RDFFormat.RDFXML);
+        try {
+            String manifest = IOUtils.toString(sms.getManifest(new URI("http://www.example.com"), RDFFormat.RDFXML));
+            Assert.assertTrue(manifest.contains("http://www.example.com"));
+            Assert.assertTrue(manifest.contains("Marco Roos"));
+            Assert.assertTrue(manifest.contains("t2flow workflow annotation extractor"));
+        } finally {
+            sms.close();
+        }
+    }
+
+
+    @Test
+    public final void getAggregatedResources() throws URISyntaxException, FileNotFoundException, ManifestTraversingException {
+        URI fakeURI = new URI("http://www.example.com/");
+        File file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1/.ro/manifest.ttl");
+        String a = PROJECT_PATH + "/src/test/resources/rdfStructure/ro1/.ro/manifest.ttl";
+        FileInputStream is = new FileInputStream(file);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, fakeURI, is, RDFFormat.TURTLE); //fill up data
+        List<URI> list = sms.getAggregatedResources(fakeURI);
+        Assert.assertTrue(list.contains(fakeURI.resolve("ann1")));
+        Assert.assertTrue(list.contains(fakeURI.resolve("afinalfolder")));
+        try {
+        } finally {
+            sms.close();
+        }
+    }
+
+
+    @Test
+    public final void getAnnotationTargets() throws FileNotFoundException, URISyntaxException {
+        URI fakeURI = new URI("http://www.example.com");
+        File file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1/.ro/manifest.ttl");
+        FileInputStream is = new FileInputStream(file);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, fakeURI, is, RDFFormat.TURTLE);
+        try {
         } finally {
             sms.close();
         }
@@ -1322,4 +1397,5 @@ public class SemanticMetadataServiceImplTest {
                 + "rdfStructure" + FILE_SEPARATOR + resourceName;
         return new URI("file://" + result);
     }
+
 }
