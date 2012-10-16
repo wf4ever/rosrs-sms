@@ -1,4 +1,4 @@
-package pl.psnc.dl.wf4ever.model;
+package pl.psnc.dl.wf4ever.model.RO;
 
 import java.net.URI;
 

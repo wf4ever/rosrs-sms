@@ -37,6 +37,8 @@ import org.openrdf.rio.RDFFormat;
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
+import pl.psnc.dl.wf4ever.model.AO.Annotation;
+import pl.psnc.dl.wf4ever.model.ORE.AggregatedResource;
 import pl.psnc.dl.wf4ever.vocabulary.AO;
 import pl.psnc.dl.wf4ever.vocabulary.FOAF;
 import pl.psnc.dl.wf4ever.vocabulary.ORE;
@@ -985,9 +987,6 @@ public class SemanticMetadataServiceImplTest {
                 "RDF/XML");
 
             ResIterator x = model.listSubjects();
-            while (x.hasNext()) {
-                System.out.println(x.next().getURI());
-            }
 
             //FIXME this does not work correctly, for some reason ".." is stripped when reading the model
             verifyTriple(model, /* "../a_workflow.t2flow" */"a%20workflow.t2flow",
@@ -1250,15 +1249,15 @@ public class SemanticMetadataServiceImplTest {
         try {
             InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
             sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
-            String a = sms.storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"), ".ro/manifest.ttl",
-                "TTL");
+            String a = sms.storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"),
+                ".ro/manifest.ttl", "TTL");
 
             OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
             model.read(sms.getManifest(getResourceURI("ro1-sp2/.ro/evo_inf.rdf"), RDFFormat.RDFXML), null);
             Individual evoInfoSource = model.getIndividual(getResourceURI("ro1-sp2/.ro/evo_inf.rdf").toString());
             List<RDFNode> changesList = evoInfoSource.listPropertyValues(
                 model.createProperty("http://purl.org/wf4ever/roevo#hasChange")).toList();
-      
+
             Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann3").toString(),
                 ROEVO.AdditionClass.toString(), model, changesList));
             Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/res3").toString(),
@@ -1344,16 +1343,20 @@ public class SemanticMetadataServiceImplTest {
 
 
     @Test
-    public final void getAggregatedResources() throws URISyntaxException, FileNotFoundException, ManifestTraversingException {
+    public final void getAggregatedResources()
+            throws URISyntaxException, FileNotFoundException, ManifestTraversingException {
         URI fakeURI = new URI("http://www.example.com/");
         File file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1/.ro/manifest.ttl");
-        String a = PROJECT_PATH + "/src/test/resources/rdfStructure/ro1/.ro/manifest.ttl";
         FileInputStream is = new FileInputStream(file);
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, fakeURI, is, RDFFormat.TURTLE); //fill up data
-        List<URI> list = sms.getAggregatedResources(fakeURI);
-        Assert.assertTrue(list.contains(fakeURI.resolve("ann1")));
-        Assert.assertTrue(list.contains(fakeURI.resolve("afinalfolder")));
+        
         try {
+            List<AggregatedResource> list = sms.getAggregatedResources(fakeURI);
+            Assert.assertTrue(list.contains(new AggregatedResource(fakeURI.resolve("res1"))));
+            Assert.assertTrue(list.contains(new AggregatedResource(fakeURI.resolve("res2"))));
+            Assert.assertTrue(list.contains(new AggregatedResource(fakeURI.resolve("afinalfolder"))));
+            Assert.assertFalse(list.contains(new AggregatedResource(fakeURI.resolve("ann1"))));
+
         } finally {
             sms.close();
         }
@@ -1361,11 +1364,15 @@ public class SemanticMetadataServiceImplTest {
 
 
     @Test
-    public final void getAnnotationTargets() throws FileNotFoundException, URISyntaxException {
-        URI fakeURI = new URI("http://www.example.com");
+    public final void getAnnotations()
+            throws FileNotFoundException, URISyntaxException, ManifestTraversingException {
+        URI fakeURI = new URI("http://www.example.com/");
         File file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1/.ro/manifest.ttl");
         FileInputStream is = new FileInputStream(file);
         SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, fakeURI, is, RDFFormat.TURTLE);
+        List<Annotation> list = sms.getAnnotations(fakeURI);
+        list.get(0).getUri().equals(fakeURI.resolve("ann1"));
+        //@TODO check if body and related resources are these same
         try {
         } finally {
             sms.close();

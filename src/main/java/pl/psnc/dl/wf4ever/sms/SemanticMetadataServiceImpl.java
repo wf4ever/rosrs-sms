@@ -22,6 +22,7 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.openrdf.rio.RDFFormat;
@@ -29,6 +30,8 @@ import org.openrdf.rio.RDFFormat;
 import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
 import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
+import pl.psnc.dl.wf4ever.model.AO.Annotation;
+import pl.psnc.dl.wf4ever.model.ORE.AggregatedResource;
 import pl.psnc.dl.wf4ever.vocabulary.AO;
 import pl.psnc.dl.wf4ever.vocabulary.FOAF;
 import pl.psnc.dl.wf4ever.vocabulary.ORE;
@@ -117,7 +120,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         createUserProfile(user);
 
         createResearchObject(researchObject);
-        updateManifest(researchObject, manifest, rdfFormat);
+        updateManifest(getManifestURI(researchObject), manifest, rdfFormat);
     }
 
 
@@ -1523,20 +1526,19 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 
     @Override
-    public List<URI> getAggregatedResources(URI researchObject)
+    public List<AggregatedResource> getAggregatedResources(URI researchObject)
             throws ManifestTraversingException {
-        OntModel model = createOntModelForNamedGraph(researchObject);
-        StmtIterator list = model.listStatements();
+        OntModel model = createOntModelForNamedGraph(getManifestURI(researchObject));
         Individual source = model.getIndividual(researchObject.toString());
         if (source == null) {
             throw new ManifestTraversingException();
         }
         List<RDFNode> aggregatesList = source.listPropertyValues(ORE.aggregates).toList();
-        List<URI> aggregated = new ArrayList<URI>();
+        List<AggregatedResource> aggregated = new ArrayList<AggregatedResource>();
         for (RDFNode node : aggregatesList) {
             try {
                 if (!isAnnotation(researchObject, new URI(node.asResource().getURI()))) {
-                    aggregated.add(new URI(node.asResource().getURI()));
+                    aggregated.add(new AggregatedResource(new URI(node.asResource().getURI())));
                 }
             } catch (URISyntaxException e) {
                 continue;
@@ -1547,7 +1549,26 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 
     @Override
-    public List<URI> getAnnotationTargets(URI researchObject, URI annotationURI) {
-        return null;
+    public List<Annotation> getAnnotations(URI researchObject)
+            throws ManifestTraversingException {
+        OntModel model = createOntModelForNamedGraph(getManifestURI(researchObject));
+        Individual source = model.getIndividual(researchObject.toString());
+        if (source == null) {
+            throw new ManifestTraversingException();
+        }
+        List<RDFNode> aggregatesList = source.listPropertyValues(ORE.aggregates).toList();
+        List<Annotation> annotations = new ArrayList<Annotation>();
+        for (RDFNode node : aggregatesList) {
+            try {
+                if (isAnnotation(researchObject, new URI(node.asResource().getURI()))) {
+                    Annotation annotation = new Annotation(new URI(node.asResource().getURI()));
+                    annotation.fillUp(model);
+                    annotations.add(annotation);
+                }
+            } catch (URISyntaxException e) {
+                continue;
+            }
+        }
+        return annotations;
     }
 }
