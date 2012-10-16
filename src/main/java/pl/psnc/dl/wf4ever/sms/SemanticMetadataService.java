@@ -12,11 +12,12 @@ import javax.naming.NamingException;
 
 import org.openrdf.rio.RDFFormat;
 
-import pl.psnc.dl.wf4ever.dlibra.ResourceInfo;
-import pl.psnc.dl.wf4ever.dlibra.UserProfile;
 import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
 import pl.psnc.dl.wf4ever.model.AO.Annotation;
 import pl.psnc.dl.wf4ever.model.ORE.AggregatedResource;
+import pl.psnc.dl.wf4ever.common.ResearchObject;
+import pl.psnc.dl.wf4ever.common.ResourceInfo;
+import pl.psnc.dl.wf4ever.common.UserProfile;
 
 import com.google.common.collect.Multimap;
 import com.hp.hpl.jena.ontology.Individual;
@@ -48,7 +49,7 @@ public interface SemanticMetadataService {
      * @param researchObjectURI
      *            RO URI, absolute
      */
-    void createResearchObject(URI researchObjectURI);
+    void createResearchObject(ResearchObject researchObject);
 
 
     /**
@@ -60,7 +61,7 @@ public interface SemanticMetadataService {
      * @param source
      *            URI of a source of the research object, may be null
      */
-    void createLiveResearchObject(URI researchObjectURI, URI source);
+    void createLiveResearchObject(ResearchObject researchObject, ResearchObject source);
 
 
     /**
@@ -71,7 +72,7 @@ public interface SemanticMetadataService {
      * @param liveRO
      *            URI of a live research object, may be null
      */
-    void createSnapshotResearchObject(URI researchObjectURI, URI liveRO);
+    void createSnapshotResearchObject(ResearchObject researchObject, ResearchObject liveRO);
 
 
     /**
@@ -82,20 +83,20 @@ public interface SemanticMetadataService {
      * @param liveRO
      *            URI of a live research object, may be null
      */
-    void createArchivedResearchObject(URI researchObjectURI, URI liveRO);
+    void createArchivedResearchObject(ResearchObject researchObject, ResearchObject liveRO);
 
 
     /**
      * Update the manifest of a research object.
      * 
-     * @param manifestURI
-     *            manifest URI, absolute
+     * @param researchObject
+     *            research object
      * @param inputStream
      *            the manifest
      * @param rdfFormat
      *            manifest RDF format
      */
-    void updateManifest(URI manifestURI, InputStream inputStream, RDFFormat rdfFormat);
+    void updateManifest(ResearchObject researchObject, InputStream inputStream, RDFFormat rdfFormat);
 
 
     /**
@@ -105,7 +106,7 @@ public interface SemanticMetadataService {
      * @param researchObjectURI
      *            RO URI, absolute
      */
-    void removeResearchObject(URI researchObjectURI);
+    void removeResearchObject(ResearchObject researchObject);
 
 
     /**
@@ -117,7 +118,7 @@ public interface SemanticMetadataService {
      *            returned manifest format
      * @return manifest with the research object URI as base URI
      */
-    InputStream getManifest(URI manifestURI, RDFFormat rdfFormat);
+    InputStream getManifest(ResearchObject researchObject, RDFFormat rdfFormat);
 
 
     /**
@@ -131,7 +132,7 @@ public interface SemanticMetadataService {
      *            resource metadata
      * @return true if a new resource is added, false if it existed
      */
-    boolean addResource(URI researchObjectURI, URI resourceURI, ResourceInfo resourceInfo);
+    boolean addResource(ResearchObject researchObject, URI resourceURI, ResourceInfo resourceInfo);
 
 
     /**
@@ -142,7 +143,7 @@ public interface SemanticMetadataService {
      * @param resourceURI
      *            resource URI, absolute or relative to RO URI
      */
-    void removeResource(URI researchObjectURI, URI resourceURI);
+    void removeResource(ResearchObject researchObject, URI resourceURI);
 
 
     /**
@@ -156,7 +157,7 @@ public interface SemanticMetadataService {
      *            resource metadata format
      * @return resource description or null if no data found
      */
-    InputStream getResource(URI researchObjectURI, URI resourceURI, RDFFormat rdfFormat);
+    InputStream getResource(ResearchObject researchObject, URI resourceURI, RDFFormat rdfFormat);
 
 
     /**
@@ -166,7 +167,7 @@ public interface SemanticMetadataService {
      *            resource URI
      * @return true if the resource exists and belongs to class ro:Folder, false otherwise
      */
-    boolean isRoFolder(URI researchObjectURI, URI resourceURI);
+    boolean isRoFolder(ResearchObject researchObject, URI resourceURI);
 
 
     /**
@@ -203,7 +204,7 @@ public interface SemanticMetadataService {
      *            resource which should be pointed
      * @return true if it's a manifest or annotation body, false otherwise
      */
-    boolean isROMetadataNamedGraph(URI researchObjectURI, URI graphURI);
+    boolean isROMetadataNamedGraph(ResearchObject researchObject, URI graphURI);
 
 
     /**
@@ -229,7 +230,7 @@ public interface SemanticMetadataService {
      * @param fileExtension
      * @return
      */
-    InputStream getNamedGraphWithRelativeURIs(URI graphURI, URI researchObjectURI, RDFFormat rdfFormat);
+    InputStream getNamedGraphWithRelativeURIs(URI graphURI, ResearchObject researchObject, RDFFormat rdfFormat);
 
 
     /**
@@ -240,7 +241,7 @@ public interface SemanticMetadataService {
      * @param graphURI
      *            graph URI
      */
-    void removeNamedGraph(URI researchObjectURI, URI graphURI);
+    void removeNamedGraph(ResearchObject researchObject, URI graphURI);
 
 
     /**
@@ -343,7 +344,7 @@ public interface SemanticMetadataService {
      *            the resource URI
      * @return true if the research object aggregates the resource, false otherwise
      */
-    boolean isAggregatedResource(URI researchObject, URI resource);
+    boolean isAggregatedResource(ResearchObject researchObject, URI resource);
 
 
     /**
@@ -355,7 +356,7 @@ public interface SemanticMetadataService {
      *            resource for which the proxy will be
      * @return proxy URI
      */
-    URI addProxy(URI researchObject, URI resource);
+    URI addProxy(ResearchObject researchObject, URI resource);
 
 
     /**
@@ -367,7 +368,7 @@ public interface SemanticMetadataService {
      *            resource that may be a proxy
      * @return true if the resource is a proxy, false otherwise
      */
-    boolean isProxy(URI researchObject, URI resource);
+    boolean isProxy(ResearchObject researchObject, URI resource);
 
 
     /**
@@ -379,7 +380,7 @@ public interface SemanticMetadataService {
      *            resource which should be pointed
      * @return true if a proxy was found, false otherwise
      */
-    boolean existsProxyForResource(URI researchObject, URI resource);
+    boolean existsProxyForResource(ResearchObject researchObject, URI resource);
 
 
     /**
@@ -391,7 +392,7 @@ public interface SemanticMetadataService {
      *            resource that the proxy must be for
      * @return proxy URI or null
      */
-    URI getProxyForResource(URI researchObject, URI resource);
+    URI getProxyForResource(ResearchObject researchObject, URI resource);
 
 
     /**
@@ -403,7 +404,7 @@ public interface SemanticMetadataService {
      *            the proxy URI
      * @return the proxyFor object URI or null if not defined
      */
-    URI getProxyFor(URI researchObject, URI proxy);
+    URI getProxyFor(ResearchObject researchObject, URI proxy);
 
 
     /**
@@ -414,7 +415,7 @@ public interface SemanticMetadataService {
      * @param proxy
      *            the proxy URI
      */
-    void deleteProxy(URI researchObject, URI proxy);
+    void deleteProxy(ResearchObject researchObject, URI proxy);
 
 
     /**
@@ -428,7 +429,7 @@ public interface SemanticMetadataService {
      *            the annotation body
      * @return URI of the annotation
      */
-    URI addAnnotation(URI researchObject, List<URI> annotationTargets, URI annotationBody);
+    URI addAnnotation(ResearchObject researchObject, List<URI> annotationTargets, URI annotationBody);
 
 
     /**
@@ -443,7 +444,7 @@ public interface SemanticMetadataService {
      * @param annotationBody
      *            the annotation body
      */
-    void updateAnnotation(URI researchObject, URI annotation, List<URI> annotationTargets, URI annotationBody);
+    void updateAnnotation(ResearchObject researchObject, URI annotation, List<URI> annotationTargets, URI annotationBody);
 
 
     /**
@@ -455,7 +456,7 @@ public interface SemanticMetadataService {
      *            resource that may be an annotation
      * @return true if this resource is an annotation in the research object, false otherwise
      */
-    boolean isAnnotation(URI researchObject, URI resource);
+    boolean isAnnotation(ResearchObject researchObject, URI resource);
 
 
     /**
@@ -467,7 +468,7 @@ public interface SemanticMetadataService {
      *            the annotation URI
      * @return the ao:body object URI or null if not defined
      */
-    URI getAnnotationBody(URI researchObject, URI annotation);
+    URI getAnnotationBody(ResearchObject researchObject, URI annotation);
 
 
     /**
@@ -478,7 +479,7 @@ public interface SemanticMetadataService {
      * @param annotation
      *            the annotation URI
      */
-    void deleteAnnotation(URI researchObject, URI annotation);
+    void deleteAnnotation(ResearchObject researchObject, URI annotation);
 
 
     /**
@@ -698,7 +699,7 @@ public interface SemanticMetadataService {
      *            New URI
      * @return number of changed triples
      */
-    int changeURIInManifestAndAnnotationBodies(URI researchObject, URI oldURI, URI newURI);
+    int changeURIInManifestAndAnnotationBodies(ResearchObject researchObject, URI oldURI, URI newURI);
 
 
     /**
@@ -720,27 +721,27 @@ public interface SemanticMetadataService {
      *            the URI of research object
      * @return Input Stream with the evolution information
      */
-    InputStream getEvoInfo(URI researchObjectURI);
+    InputStream getEvoInfo(ResearchObject researchObject);
 
     /**
      * Get the list of aggregated resources.
      * 
      * @param researchObject
-     *              the research object URI
+     *              the research object
      * @return the list of aggregated resources.
      * @throws ManifestTraversingException 
      */
-    List<AggregatedResource> getAggregatedResources(URI researchObject) throws ManifestTraversingException;
+    List<AggregatedResource> getAggregatedResources(ResearchObject researchObject) throws ManifestTraversingException;
 
     /**
      * Get the list of RO annotations.
      * 
      * @param researchObject
-     *              the research object URI
+     *              the research object
      * @param annotation URI
      *              the annotation URI          
      * @return the list of annotations.
      * @throws ManifestTraversingException 
      */
-    List<Annotation> getAnnotations(URI researchObject) throws ManifestTraversingException;
+    List<Annotation> getAnnotations(ResearchObject researchObject) throws ManifestTraversingException;
 }
