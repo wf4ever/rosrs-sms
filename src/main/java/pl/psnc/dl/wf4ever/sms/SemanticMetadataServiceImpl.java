@@ -599,17 +599,21 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             NodeIterator it = manifestModel.listObjectsOfProperty(AO.body);
             while (it.hasNext()) {
                 RDFNode annotationBodyRef = it.next();
-                URI graphURI2 = URI.create(annotationBodyRef.asResource().getURI());
-                // TODO make sure that this named graph is internal
-                if (graphset.containsGraph(graphURI2.toString()) && !graphsToDelete.contains(graphURI2)) {
-                    graphsToDelete.add(graphURI2);
+                if (annotationBodyRef.isURIResource()) {
+                    URI graphURI2 = URI.create(annotationBodyRef.asResource().getURI());
+                    // TODO make sure that this named graph is internal
+                    if (graphset.containsGraph(graphURI2.toString()) && !graphsToDelete.contains(graphURI2)) {
+                        graphsToDelete.add(graphURI2);
+                    }
                 }
             }
             List<RDFNode> evos = manifestModel.listObjectsOfProperty(ROEVO.wasChangedBy).toList();
             for (RDFNode evo : evos) {
-                URI graphURI2 = URI.create(evo.asResource().getURI());
-                if (graphset.containsGraph(graphURI2.toString()) && !graphsToDelete.contains(graphURI2)) {
-                    graphsToDelete.add(graphURI2);
+                if (evo.isURIResource()) {
+                    URI graphURI2 = URI.create(evo.asResource().getURI());
+                    if (graphset.containsGraph(graphURI2.toString()) && !graphsToDelete.contains(graphURI2)) {
+                        graphsToDelete.add(graphURI2);
+                    }
                 }
             }
             i++;
