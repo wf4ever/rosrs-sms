@@ -22,17 +22,16 @@ import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.sql.DataSource;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.openrdf.rio.RDFFormat;
 
-import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
-import pl.psnc.dl.wf4ever.model.AO.Annotation;
-import pl.psnc.dl.wf4ever.model.ORE.AggregatedResource;
 import pl.psnc.dl.wf4ever.common.ResearchObject;
 import pl.psnc.dl.wf4ever.common.ResourceInfo;
 import pl.psnc.dl.wf4ever.common.UserProfile;
+import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
+import pl.psnc.dl.wf4ever.model.AO.Annotation;
+import pl.psnc.dl.wf4ever.model.ORE.AggregatedResource;
 import pl.psnc.dl.wf4ever.vocabulary.AO;
 import pl.psnc.dl.wf4ever.vocabulary.FOAF;
 import pl.psnc.dl.wf4ever.vocabulary.ORE;
@@ -73,10 +72,6 @@ import de.fuberlin.wiwiss.ng4j.db.NamedGraphSetDB;
 import de.fuberlin.wiwiss.ng4j.impl.NamedGraphSetImpl;
 import de.fuberlin.wiwiss.ng4j.sparql.NamedGraphDataset;
 
-/**
- * @author piotrhol
- * 
- */
 public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     private static final Logger log = Logger.getLogger(SemanticMetadataServiceImpl.class);
@@ -1486,7 +1481,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         return s1.size() + s2.size();
     }
 
-public InputStream getEvoInfo(ResearchObject researchObject) {
+
+    public InputStream getEvoInfo(ResearchObject researchObject) {
         return getNamedGraph(resolveURI(researchObject.getUri(), ".ro/evo_inf.rdf"), RDFFormat.TURTLE);
     }
 

@@ -1,5 +1,6 @@
 <rdf:RDF
     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns="http://www.example.com/ROs/"
     xmlns:ro="http://purl.org/wf4ever/ro#"
     xmlns:roevo="http://purl.org/wf4ever/roevo#"
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
@@ -9,79 +10,79 @@
     xmlns:ore="http://www.openarchives.org/ore/terms/"
     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
     xmlns:rdfg="http://www.w3.org/2004/03/trix/rdfg-1/"
-    xmlns="http://www.example.com/"
     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#" > 
-  <rdf:Description rdf:about="http://www.example.com/ann1">
+  <rdf:Description rdf:about="http://www.example.com/ROs/res1">
     <dct:creator rdf:nodeID="A0"/>
-    <dct:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2011-12-02T15:02:13Z</dct:created>
-    <ao:body rdf:resource="http://www.example.com/.ro/ann1-body.ttl"/>
-    <ro:annotatesAggregatedResource rdf:resource="http://www.example.com/agregated-resource-file"/>
-    <rdf:type rdf:resource="http://purl.org/wf4ever/ro#AggregatedAnnotation"/>
-  </rdf:Description>
-  <rdf:Description rdf:nodeID="A1">
-    <foaf:name>Stian Soiland-Reyes</foaf:name>
-    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Person"/>
-  </rdf:Description>
-  <rdf:Description rdf:nodeID="A2">
-    <foaf:name>Filip</foaf:name>
-    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Person"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.example.com/">
-    <ore:aggregates rdf:resource="http://www.example.com/res2"/>
-    <ore:aggregates rdf:resource="http://www.example.com/ann1"/>
-    <rdf:type rdf:resource="http://purl.org/wf4ever/ro#ResearchObject"/>
-    <ore:aggregates rdf:resource="http://www.example.com/afinalfolder"/>
-    <ore:aggregates rdf:resource="http://www.example.com/res1"/>
-    <roevo:hasArchive rdf:resource="http://www.example.com/ro1-arch1/"/>
-    <rdf:type rdf:resource="http://www.openarchives.org/ore/terms/Aggregation"/>
-    <roevo:hasSnapshot rdf:resource="http://www.example.com/ro1-sp1/"/>
-    <roevo:hasSnapshot rdf:resource="http://www.example.com/ro1-sp2/"/>
-    <ore:aggregates rdf:resource="http://www.example.com/final-agregated-resource-file"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.example.com/final-agregated-resource-file">
-    <dct:creator rdf:nodeID="A3"/>
     <dct:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2011-12-02T15:02:10Z</dct:created>
     <rdf:type rdf:resource="http://purl.org/wf4ever/ro#Resource"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.example.com/.ro/ann1-body.ttl">
-    <dct:creator rdf:nodeID="A4"/>
-    <dct:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2010-05-14T12:02:12Z</dct:created>
-    <rdf:type rdf:resource="http://www.w3.org/2004/03/trix/rdfg-1/Graph"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.example.com/.ro/manifest.ttl">
-    <dct:creator rdf:nodeID="A5"/>
-    <dct:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2011-12-02T16:01:10Z</dct:created>
-    <ore:describes rdf:resource="http://www.example.com/"/>
-    <rdf:type rdf:resource="http://purl.org/wf4ever/ro#Manifest"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.example.com/afinalfolder">
-    <ore:isDescribedBy rdf:resource="http://www.example.com/afolder.ttl"/>
-    <rdf:type rdf:resource="http://purl.org/wf4ever/ro#Folder"/>
-  </rdf:Description>
-  <rdf:Description rdf:nodeID="A4">
-    <foaf:name>Marco Roos</foaf:name>
-    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Person"/>
   </rdf:Description>
   <rdf:Description rdf:nodeID="A0">
-    <foaf:name>t2flow workflow annotation extractor</foaf:name>
-    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Agent"/>
-  </rdf:Description>
-  <rdf:Description rdf:nodeID="A5">
-    <foaf:name>RO manager</foaf:name>
-    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Agent"/>
-  </rdf:Description>
-  <rdf:Description rdf:about="http://www.example.com/res2">
-    <dct:creator rdf:nodeID="A2"/>
-    <dct:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2011-12-02T15:02:10Z</dct:created>
-    <rdf:type rdf:resource="http://purl.org/wf4ever/ro#Resource"/>
-  </rdf:Description>
-  <rdf:Description rdf:nodeID="A3">
     <foaf:name>Stian Soiland-Reyes</foaf:name>
     <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Person"/>
   </rdf:Description>
-  <rdf:Description rdf:about="http://www.example.com/res1">
+  <rdf:Description rdf:about="http://www.example.com/ROs/res2">
     <dct:creator rdf:nodeID="A1"/>
     <dct:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2011-12-02T15:02:10Z</dct:created>
     <rdf:type rdf:resource="http://purl.org/wf4ever/ro#Resource"/>
+  </rdf:Description>
+  <rdf:Description rdf:nodeID="A2">
+    <foaf:name>RO manager</foaf:name>
+    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Agent"/>
+  </rdf:Description>
+  <rdf:Description rdf:nodeID="A3">
+    <foaf:name>t2flow workflow annotation extractor</foaf:name>
+    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Agent"/>
+  </rdf:Description>
+  <rdf:Description rdf:nodeID="A4">
+    <foaf:name>Stian Soiland-Reyes</foaf:name>
+    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:nodeID="A5">
+    <foaf:name>Marco Roos</foaf:name>
+    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:nodeID="A1">
+    <foaf:name>Filip</foaf:name>
+    <rdf:type rdf:resource="http://xmlns.com/foaf/0.1/Person"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com/ROs/afinalfolder">
+    <ore:isDescribedBy rdf:resource="http://www.example.com/ROs/afolder.ttl"/>
+    <rdf:type rdf:resource="http://purl.org/wf4ever/ro#Folder"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com/ROs/.ro/ann1-body.ttl">
+    <dct:creator rdf:nodeID="A5"/>
+    <dct:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2010-05-14T12:02:12Z</dct:created>
+    <rdf:type rdf:resource="http://www.w3.org/2004/03/trix/rdfg-1/Graph"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com/ROs/final-agregated-resource-file">
+    <dct:creator rdf:nodeID="A4"/>
+    <dct:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2011-12-02T15:02:10Z</dct:created>
+    <rdf:type rdf:resource="http://purl.org/wf4ever/ro#Resource"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com/ROs/">
+    <ore:aggregates rdf:resource="http://www.example.com/ROs/ann1"/>
+    <ore:aggregates rdf:resource="http://www.example.com/ROs/final-agregated-resource-file"/>
+    <ore:aggregates rdf:resource="http://www.example.com/ROs/res2"/>
+    <ore:aggregates rdf:resource="http://www.example.com/ROs/afinalfolder"/>
+    <roevo:hasSnapshot rdf:resource="http://www.example.com/ro1-sp2/"/>
+    <ore:aggregates rdf:resource="http://www.example.com/ROs/res1"/>
+    <roevo:hasArchive rdf:resource="http://www.example.com/ro1-arch1/"/>
+    <roevo:hasSnapshot rdf:resource="http://www.example.com/ro1-sp1/"/>
+    <rdf:type rdf:resource="http://purl.org/wf4ever/ro#ResearchObject"/>
+    <rdf:type rdf:resource="http://www.openarchives.org/ore/terms/Aggregation"/>
+    <ore:aggregates rdf:resource="http://www.example.com/ROs/.ro/ann1-body.ttl"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com/ROs/ann1">
+    <dct:creator rdf:nodeID="A3"/>
+    <dct:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2011-12-02T15:02:13Z</dct:created>
+    <ao:body rdf:resource="http://www.example.com/ROs/.ro/ann1-body.ttl"/>
+    <ro:annotatesAggregatedResource rdf:resource="http://www.example.com/ROs/agregated-resource-file"/>
+    <rdf:type rdf:resource="http://purl.org/wf4ever/ro#AggregatedAnnotation"/>
+  </rdf:Description>
+  <rdf:Description rdf:about="http://www.example.com/ROs/.ro/manifest.ttl">
+    <dct:creator rdf:nodeID="A2"/>
+    <dct:created rdf:datatype="http://www.w3.org/2001/XMLSchema#dateTime">2011-12-02T16:01:10Z</dct:created>
+    <ore:describes rdf:resource="http://www.example.com/ROs/"/>
+    <rdf:type rdf:resource="http://purl.org/wf4ever/ro#Manifest"/>
   </rdf:Description>
 </rdf:RDF>

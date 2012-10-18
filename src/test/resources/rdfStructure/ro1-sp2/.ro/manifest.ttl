@@ -18,7 +18,7 @@
 <.> a roevo:SnapshotRO ;
 	roevo:isSnapshotOf <../ro1/> ;
 	roevo:snapshottedAtTime "2012-03-02T16:01:10Z"^^xsd:dateTime ;
-	ore:aggregates :ann1, :ann2, :ann3, :res1, :res2, :res3, <afinalfolder>, <agregated-resource-file> .
+	ore:aggregates :ann1, :ann2, :ann3, :res1, :res2, :res3, <afinalfolder>, <agregated-resource-file>, <.ro/ann1-body.ttl>, <.ro/ann2-body.ttl>, <.ro/ann3-body.ttl> .
 	
 :ann1 a ro:AggregatedAnnotation ;
     ro:annotatesAggregatedResource <agregated-resource-file> ;

@@ -20,6 +20,7 @@
 	ore:aggregates :ann1 ;
 	ore:aggregates :res1 ;
 	ore:aggregates :res2 ;
+	ore:aggregates <.ro/ann1-body> ;
 	ore:aggregates <afinalfolder> ;
 	ore:aggregates <final-agregated-resource-file> .
 	
