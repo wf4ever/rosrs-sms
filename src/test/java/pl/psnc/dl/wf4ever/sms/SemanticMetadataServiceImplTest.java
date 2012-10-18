@@ -81,19 +81,20 @@ public class SemanticMetadataServiceImplTest {
 
     private static final Logger log = Logger.getLogger(SemanticMetadataServiceImplTest.class);
 
-    private final static ResearchObject researchObject = new ResearchObject(URI.create("http://example.org/ROs/ro1/"));
+    private final static ResearchObject researchObject = ResearchObject.create(URI
+            .create("http://example.org/ROs/ro1/"));
 
-    private final static ResearchObject researchObject2URI = new ResearchObject(
-            URI.create("http://example.org/ROs/ro2/"));
+    private final static ResearchObject researchObject2URI = ResearchObject.create(URI
+            .create("http://example.org/ROs/ro2/"));
 
-    private final static ResearchObject snapshotResearchObjectURI = new ResearchObject(
-            URI.create("http://example.org/ROs/sp1/"));
+    private final static ResearchObject snapshotResearchObjectURI = ResearchObject.create(URI
+            .create("http://example.org/ROs/sp1/"));
 
-    private final static ResearchObject archiveResearchObjectURI = new ResearchObject(
-            URI.create("http://example.org/ROs/arch1/"));
+    private final static ResearchObject archiveResearchObjectURI = ResearchObject.create(URI
+            .create("http://example.org/ROs/arch1/"));
 
-    private final static ResearchObject wrongResearchObjectURI = new ResearchObject(
-            URI.create("http://wrong.example.org/ROs/wrongRo/"));
+    private final static ResearchObject wrongResearchObjectURI = ResearchObject.create(URI
+            .create("http://wrong.example.org/ROs/wrongRo/"));
 
     private final static UserProfile userProfile = new UserProfile("jank", "Jan Kowalski", Role.AUTHENTICATED);
 
@@ -1336,11 +1337,11 @@ public class SemanticMetadataServiceImplTest {
         URI fakeURI = new URI("http://www.example.com/ROs/");
         File file = new File(PROJECT_PATH + "/src/test/resources/manifest.rdf");
         FileInputStream is = new FileInputStream(file);
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, new ResearchObject(fakeURI), is,
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, ResearchObject.create(fakeURI), is,
                 RDFFormat.RDFXML);
         try {
-            String manifest = IOUtils.toString(sms.getManifest(new ResearchObject(
-                    new URI("http://www.example.com/ROs/")), RDFFormat.RDFXML));
+            String manifest = IOUtils.toString(sms.getManifest(
+                ResearchObject.create(new URI("http://www.example.com/ROs/")), RDFFormat.RDFXML));
             Assert.assertTrue(manifest.contains("http://www.example.com/ROs/"));
             Assert.assertTrue(manifest.contains("Marco Roos"));
             Assert.assertTrue(manifest.contains("t2flow workflow annotation extractor"));
@@ -1356,11 +1357,11 @@ public class SemanticMetadataServiceImplTest {
         URI fakeURI = new URI("http://www.example.com/ROs/");
         File file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1/.ro/manifest.ttl");
         FileInputStream is = new FileInputStream(file);
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, new ResearchObject(fakeURI), is,
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, ResearchObject.create(fakeURI), is,
                 RDFFormat.TURTLE); //fill up data
 
         try {
-            List<AggregatedResource> list = sms.getAggregatedResources(new ResearchObject(fakeURI));
+            List<AggregatedResource> list = sms.getAggregatedResources(ResearchObject.create(fakeURI));
             Assert.assertTrue(list.contains(new AggregatedResource(fakeURI.resolve("res1"))));
             Assert.assertTrue(list.contains(new AggregatedResource(fakeURI.resolve("res2"))));
             Assert.assertTrue(list.contains(new AggregatedResource(fakeURI.resolve("afinalfolder"))));
@@ -1378,9 +1379,9 @@ public class SemanticMetadataServiceImplTest {
         URI fakeURI = new URI("http://www.example.com/ROs/");
         File file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1/.ro/manifest.ttl");
         FileInputStream is = new FileInputStream(file);
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, new ResearchObject(fakeURI), is,
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, ResearchObject.create(fakeURI), is,
                 RDFFormat.TURTLE);
-        List<Annotation> list = sms.getAnnotations(new ResearchObject(fakeURI));
+        List<Annotation> list = sms.getAnnotations(ResearchObject.create(fakeURI));
         list.get(0).getUri().equals(fakeURI.resolve("ann1"));
         //@TODO check if body and related resources are these same
         try {
@@ -1397,10 +1398,10 @@ public class SemanticMetadataServiceImplTest {
         URI fakeURI = new URI("http://www.example.com/ROs/");
         File file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1/.ro/manifest.ttl");
         FileInputStream is = new FileInputStream(file);
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, new ResearchObject(fakeURI), is,
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, ResearchObject.create(fakeURI), is,
                 RDFFormat.TURTLE);
         try {
-            ResearchObject researchObject = new ResearchObject(fakeURI);
+            ResearchObject researchObject = ResearchObject.create(fakeURI);
             System.out.println(IOUtils.toString(sms.getManifest(researchObject, RDFFormat.RDFXML)));
         } finally {
             sms.close();
