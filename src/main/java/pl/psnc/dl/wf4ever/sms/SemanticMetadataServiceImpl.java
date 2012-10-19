@@ -33,6 +33,7 @@ import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
 import pl.psnc.dl.wf4ever.model.AO.Annotation;
 import pl.psnc.dl.wf4ever.model.ORE.AggregatedResource;
 import pl.psnc.dl.wf4ever.model.RO.Folder;
+import pl.psnc.dl.wf4ever.model.RO.FolderEntry;
 import pl.psnc.dl.wf4ever.vocabulary.AO;
 import pl.psnc.dl.wf4ever.vocabulary.FOAF;
 import pl.psnc.dl.wf4ever.vocabulary.ORE;
@@ -595,10 +596,9 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
         int i = 0;
         while (i < graphsToDelete.size()) {
-            OntModel manifestModel = createOntModelForNamedGraph(graphsToDelete.get(i));
-            NodeIterator it = manifestModel.listObjectsOfProperty(AO.body);
-            while (it.hasNext()) {
-                RDFNode annotationBodyRef = it.next();
+            OntModel model = createOntModelForNamedGraph(graphsToDelete.get(i));
+            List<RDFNode> annotationBodies = model.listObjectsOfProperty(AO.body).toList();
+            for (RDFNode annotationBodyRef : annotationBodies) {
                 if (annotationBodyRef.isURIResource()) {
                     URI graphURI2 = URI.create(annotationBodyRef.asResource().getURI());
                     // TODO make sure that this named graph is internal
@@ -607,12 +607,23 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
                     }
                 }
             }
-            List<RDFNode> evos = manifestModel.listObjectsOfProperty(ROEVO.wasChangedBy).toList();
+            List<RDFNode> evos = model.listObjectsOfProperty(ROEVO.wasChangedBy).toList();
             for (RDFNode evo : evos) {
                 if (evo.isURIResource()) {
                     URI graphURI2 = URI.create(evo.asResource().getURI());
                     if (graphset.containsGraph(graphURI2.toString()) && !graphsToDelete.contains(graphURI2)) {
                         graphsToDelete.add(graphURI2);
+                    }
+                }
+            }
+            List<Individual> folders = model.listIndividuals(RO.Folder).toList();
+            for (Individual folder : folders) {
+                if (folder.isURIResource()) {
+                    Folder f = new Folder();
+                    f.setUri(URI.create(folder.asResource().getURI()));
+                    if (graphset.containsGraph(f.getResourceMapUri().toString())
+                            && !graphsToDelete.contains(f.getResourceMapUri())) {
+                        graphsToDelete.add(f.getResourceMapUri());
                     }
                 }
             }
@@ -1538,7 +1549,39 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     @Override
     public Folder addFolder(ResearchObject researchObject, Folder folder) {
-        // TODO Auto-generated method stub
-        return null;
+        OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
+        Individual ro = manifestModel.getIndividual(researchObject.getUri().toString());
+        if (ro == null) {
+            throw new IllegalArgumentException("URI not found: " + researchObject.getUri());
+        }
+        Individual resource = manifestModel.createIndividual(folder.getUri().toString(), RO.Folder);
+        resource.addRDFType(RO.Resource);
+        manifestModel.add(ro, ORE.aggregates, resource);
+
+        OntModel folderModel = createOntModelForNamedGraph(folder.getResourceMapUri());
+        Resource manifestRes = folderModel.createResource(researchObject.getManifestUri().toString());
+        Individual roInd = folderModel.createIndividual(researchObject.getUri().toString(), RO.ResearchObject);
+        folderModel.add(roInd, ORE.isDescribedBy, manifestRes);
+
+        Resource folderRMRes = folderModel.createResource(folder.getResourceMapUri().toString());
+        Individual folderInd = folderModel.createIndividual(folder.getUri().toString(), RO.Folder);
+        folderInd.addRDFType(ORE.Aggregation);
+        folderModel.add(folderInd, ORE.isAggregatedBy, roInd);
+        folderModel.add(folderInd, ORE.isDescribedBy, folderRMRes);
+
+        for (FolderEntry entry : folder.getFolderEntries()) {
+            entry.setUri(folder.getUri().resolve("entries/" + UUID.randomUUID()));
+            Individual entryInd = folderModel.createIndividual(entry.getUri().toString(), RO.FolderEntry);
+            entryInd.addRDFType(ORE.Proxy);
+            //FIXME we should check if the resource is really aggregated and what classes it has
+            Individual resInd = folderModel.createIndividual(entry.getProxyFor().toString(), RO.Resource);
+            folderModel.add(folderInd, ORE.aggregates, resInd);
+            folderModel.add(resInd, ORE.isAggregatedBy, folderInd);
+            folderModel.add(entryInd, ORE.proxyFor, resInd);
+            folderModel.add(entryInd, ORE.proxyIn, folderInd);
+            Literal name = folderModel.createLiteral(entry.getEntryName());
+            folderModel.add(entryInd, RO.entryName, name);
+        }
+        return folder;
     }
 }

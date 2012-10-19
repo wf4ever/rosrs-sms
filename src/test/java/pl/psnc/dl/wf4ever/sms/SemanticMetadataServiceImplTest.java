@@ -116,7 +116,7 @@ public class SemanticMetadataServiceImplTest {
     private final ResourceInfo resourceFakeInfo = new ResourceInfo("xyz", "A0987654321EDCB", 6L, "MD5", null,
             "text/plain");
 
-    private final static URI FOLDER_URI = URI.create("http://example.org/ROs/ro1/afolder");
+    private final static URI FOLDER_URI = URI.create("http://example.org/ROs/ro1/afolder/");
 
     private final URI annotationBody1URI = URI.create("http://example.org/ROs/ro1/.ro/ann1");
 

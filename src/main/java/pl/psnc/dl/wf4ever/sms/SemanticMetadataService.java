@@ -752,7 +752,8 @@ public interface SemanticMetadataService {
 
 
     /**
-     * Add a named graph describing the folder.
+     * Add a named graph describing the folder. The folder must have its URI set. The folder entries must have their
+     * proxyFor and RO name set. The folder entry URI will be generated automatically, overriding any existing value.
      * 
      * @param researchObject
      *            research object
