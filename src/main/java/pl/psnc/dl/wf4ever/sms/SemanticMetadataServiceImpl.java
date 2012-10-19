@@ -32,6 +32,7 @@ import pl.psnc.dl.wf4ever.common.UserProfile;
 import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
 import pl.psnc.dl.wf4ever.model.AO.Annotation;
 import pl.psnc.dl.wf4ever.model.ORE.AggregatedResource;
+import pl.psnc.dl.wf4ever.model.RO.Folder;
 import pl.psnc.dl.wf4ever.vocabulary.AO;
 import pl.psnc.dl.wf4ever.vocabulary.FOAF;
 import pl.psnc.dl.wf4ever.vocabulary.ORE;
@@ -1532,5 +1533,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             }
         }
         return annotations;
+    }
+
+
+    @Override
+    public Folder addFolder(ResearchObject researchObject, Folder folder) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }

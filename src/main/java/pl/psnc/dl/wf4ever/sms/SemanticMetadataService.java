@@ -12,12 +12,13 @@ import javax.naming.NamingException;
 
 import org.openrdf.rio.RDFFormat;
 
-import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
-import pl.psnc.dl.wf4ever.model.AO.Annotation;
-import pl.psnc.dl.wf4ever.model.ORE.AggregatedResource;
 import pl.psnc.dl.wf4ever.common.ResearchObject;
 import pl.psnc.dl.wf4ever.common.ResourceInfo;
 import pl.psnc.dl.wf4ever.common.UserProfile;
+import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
+import pl.psnc.dl.wf4ever.model.AO.Annotation;
+import pl.psnc.dl.wf4ever.model.ORE.AggregatedResource;
+import pl.psnc.dl.wf4ever.model.RO.Folder;
 
 import com.google.common.collect.Multimap;
 import com.hp.hpl.jena.ontology.Individual;
@@ -723,25 +724,41 @@ public interface SemanticMetadataService {
      */
     InputStream getEvoInfo(ResearchObject researchObject);
 
+
     /**
      * Get the list of aggregated resources.
      * 
      * @param researchObject
-     *              the research object
+     *            the research object
      * @return the list of aggregated resources.
-     * @throws ManifestTraversingException 
+     * @throws ManifestTraversingException
      */
-    List<AggregatedResource> getAggregatedResources(ResearchObject researchObject) throws ManifestTraversingException;
+    List<AggregatedResource> getAggregatedResources(ResearchObject researchObject)
+            throws ManifestTraversingException;
+
 
     /**
      * Get the list of RO annotations.
      * 
      * @param researchObject
-     *              the research object
-     * @param annotation URI
-     *              the annotation URI          
+     *            the research object
+     * @param annotation
+     *            URI the annotation URI
      * @return the list of annotations.
-     * @throws ManifestTraversingException 
+     * @throws ManifestTraversingException
      */
-    List<Annotation> getAnnotations(ResearchObject researchObject) throws ManifestTraversingException;
+    List<Annotation> getAnnotations(ResearchObject researchObject)
+            throws ManifestTraversingException;
+
+
+    /**
+     * Add a named graph describing the folder.
+     * 
+     * @param researchObject
+     *            research object
+     * @param folder
+     *            folder
+     * @return an updated folder
+     */
+    Folder addFolder(ResearchObject researchObject, Folder folder);
 }

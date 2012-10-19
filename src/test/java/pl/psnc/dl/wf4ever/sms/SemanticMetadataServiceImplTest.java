@@ -41,6 +41,8 @@ import pl.psnc.dl.wf4ever.common.UserProfile.Role;
 import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
 import pl.psnc.dl.wf4ever.model.AO.Annotation;
 import pl.psnc.dl.wf4ever.model.ORE.AggregatedResource;
+import pl.psnc.dl.wf4ever.model.RO.Folder;
+import pl.psnc.dl.wf4ever.model.RO.FolderEntry;
 import pl.psnc.dl.wf4ever.vocabulary.AO;
 import pl.psnc.dl.wf4ever.vocabulary.FOAF;
 import pl.psnc.dl.wf4ever.vocabulary.ORE;
@@ -64,7 +66,6 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.vocabulary.DCTerms;
 
@@ -79,6 +80,7 @@ import de.fuberlin.wiwiss.ng4j.impl.NamedGraphSetImpl;
  */
 public class SemanticMetadataServiceImplTest {
 
+    @SuppressWarnings("unused")
     private static final Logger log = Logger.getLogger(SemanticMetadataServiceImplTest.class);
 
     private final static ResearchObject researchObject = ResearchObject.create(URI
@@ -118,7 +120,7 @@ public class SemanticMetadataServiceImplTest {
     private final ResourceInfo resourceFakeInfo = new ResourceInfo("xyz", "A0987654321EDCB", 6L, "MD5", null,
             "text/plain");
 
-    private final static URI folderURI = URI.create("http://example.org/ROs/ro1/afolder");
+    private final static URI FOLDER_URI = URI.create("http://example.org/ROs/ro1/afolder");
 
     private final URI annotationBody1URI = URI.create("http://example.org/ROs/ro1/.ro/ann1");
 
@@ -772,11 +774,11 @@ public class SemanticMetadataServiceImplTest {
             OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
             model.read(sms.getManifest(researchObject, RDFFormat.RDFXML), null);
 
-            Assert.assertTrue("<afolder> is an ro:Folder", sms.isRoFolder(researchObject, folderURI));
+            Assert.assertTrue("<afolder> is an ro:Folder", sms.isRoFolder(researchObject, FOLDER_URI));
             Assert.assertTrue("<ann1> is not an ro:Folder", !sms.isRoFolder(researchObject, ann1URI));
             Assert.assertTrue("Fake resource is not an ro:Folder", !sms.isRoFolder(researchObject, resourceFakeURI));
             Assert.assertTrue("<afolder> is not an ro:Folder according to other RO",
-                !sms.isRoFolder(researchObject2URI, folderURI));
+                !sms.isRoFolder(researchObject2URI, FOLDER_URI));
         } finally {
             sms.close();
         }
@@ -995,8 +997,6 @@ public class SemanticMetadataServiceImplTest {
             OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
             model.read(sms2.getNamedGraphWithRelativeURIs(annotationBody1URI, researchObject, RDFFormat.RDFXML), "",
                 "RDF/XML");
-
-            ResIterator x = model.listSubjects();
 
             //FIXME this does not work correctly, for some reason ".." is stripped when reading the model
             verifyTriple(model, /* "../a_workflow.t2flow" */"a%20workflow.t2flow",
@@ -1406,7 +1406,67 @@ public class SemanticMetadataServiceImplTest {
         } finally {
             sms.close();
         }
+    }
 
+
+    @Test
+    public void testAddFolder()
+            throws ClassNotFoundException, IOException, NamingException, SQLException {
+        Folder folder = new Folder();
+        folder.setUri(FOLDER_URI);
+
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        try {
+            sms.createResearchObject(researchObject);
+            sms.addResource(researchObject, workflowURI, workflowInfo);
+            sms.addResource(researchObject, workflow2URI, workflowInfo);
+            sms.addResource(researchObject, resourceFakeURI, resourceFakeInfo);
+
+            folder.getFolderEntries().add(new FolderEntry(workflowURI, "workflow1"));
+            folder.getFolderEntries().add(new FolderEntry(resourceFakeURI, "a resource"));
+
+            Folder folder2 = sms.addFolder(researchObject, folder);
+            Assert.assertEquals(folder.getUri(), folder2.getUri());
+
+            OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+            model.read(sms.getNamedGraph(folder2.getResourceMapUri(), RDFFormat.RDFXML), null);
+
+            Resource manifestRes = model.getResource(researchObject.getManifestUri().toString());
+            Assert.assertNotNull(manifestRes);
+
+            Individual roInd = model.getIndividual(researchObject.getUri().toString());
+            Assert.assertNotNull(roInd);
+            Assert.assertTrue(roInd.hasRDFType(RO.ResearchObject));
+            Assert.assertTrue(model.contains(roInd, ORE.isDescribedBy, manifestRes));
+
+            Resource folderRMRes = model.getResource(folder2.getResourceMapUri().toString());
+            Assert.assertNotNull(folderRMRes);
+
+            Individual folderInd = model.getIndividual(folder2.getUri().toString());
+            Assert.assertNotNull(folderInd);
+            Assert.assertTrue(folderInd.hasRDFType(RO.Folder));
+            Assert.assertTrue(folderInd.hasRDFType(ORE.Aggregation));
+            Assert.assertTrue(model.contains(folderInd, ORE.isAggregatedBy, roInd));
+            Assert.assertTrue(model.contains(folderInd, ORE.isDescribedBy, folderRMRes));
+
+            for (FolderEntry entry : folder2.getFolderEntries()) {
+                Assert.assertTrue(folder.getFolderEntries().contains(entry));
+                Assert.assertNotNull(entry.getUri());
+                Individual entryInd = model.getIndividual(entry.getUri().toString());
+                Assert.assertNotNull(entryInd);
+                Individual resInd = model.getIndividual(entry.getProxyFor().toString());
+                Assert.assertNotNull(resInd);
+                Literal name = model.createLiteral(entry.getEntryName());
+
+                Assert.assertTrue(resInd.hasRDFType(RO.Resource));
+                Assert.assertTrue(model.contains(folderInd, ORE.aggregates, resInd));
+                Assert.assertTrue(model.contains(entryInd, ORE.proxyFor, resInd));
+                Assert.assertTrue(model.contains(entryInd, ORE.proxyIn, folderInd));
+                Assert.assertTrue(model.contains(entryInd, RO.entryName, name));
+            }
+        } finally {
+            sms.close();
+        }
     }
 
 
