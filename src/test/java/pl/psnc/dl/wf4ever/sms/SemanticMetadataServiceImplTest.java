@@ -34,6 +34,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openrdf.rio.RDFFormat;
 
+import pl.psnc.dl.wf4ever.common.HibernateUtil;
 import pl.psnc.dl.wf4ever.common.ResearchObject;
 import pl.psnc.dl.wf4ever.common.ResourceInfo;
 import pl.psnc.dl.wf4ever.common.UserProfile;
@@ -81,20 +82,15 @@ public class SemanticMetadataServiceImplTest {
 
     private static final Logger log = Logger.getLogger(SemanticMetadataServiceImplTest.class);
 
-    private final static ResearchObject researchObject = ResearchObject.create(URI
-            .create("http://example.org/ROs/ro1/"));
+    private static ResearchObject researchObject;
 
-    private final static ResearchObject researchObject2URI = ResearchObject.create(URI
-            .create("http://example.org/ROs/ro2/"));
+    private static ResearchObject researchObject2URI;
 
-    private final static ResearchObject snapshotResearchObjectURI = ResearchObject.create(URI
-            .create("http://example.org/ROs/sp1/"));
+    private static ResearchObject snapshotResearchObjectURI;
 
-    private final static ResearchObject archiveResearchObjectURI = ResearchObject.create(URI
-            .create("http://example.org/ROs/arch1/"));
+    private static ResearchObject archiveResearchObjectURI;
 
-    private final static ResearchObject wrongResearchObjectURI = ResearchObject.create(URI
-            .create("http://wrong.example.org/ROs/wrongRo/"));
+    private static ResearchObject wrongResearchObjectURI;
 
     private final static UserProfile userProfile = new UserProfile("jank", "Jan Kowalski", Role.AUTHENTICATED);
 
@@ -133,6 +129,12 @@ public class SemanticMetadataServiceImplTest {
     @BeforeClass
     public static void setUpBeforeClass()
             throws Exception {
+        HibernateUtil.getSessionFactory().getCurrentSession().beginTransaction();
+        researchObject = ResearchObject.create(URI.create("http://example.org/ROs/ro1/"));
+        researchObject2URI = ResearchObject.create(URI.create("http://example.org/ROs/ro2/"));
+        snapshotResearchObjectURI = ResearchObject.create(URI.create("http://example.org/ROs/sp1/"));
+        archiveResearchObjectURI = ResearchObject.create(URI.create("http://example.org/ROs/arch1/"));
+        wrongResearchObjectURI = ResearchObject.create(URI.create("http://wrong.example.org/ROs/wrongRo/"));
     }
 
 
@@ -143,6 +145,7 @@ public class SemanticMetadataServiceImplTest {
     public static void tearDownAfterClass()
             throws Exception {
         cleanData();
+        HibernateUtil.getSessionFactory().getCurrentSession().getTransaction().commit();
     }
 
 
@@ -1402,7 +1405,8 @@ public class SemanticMetadataServiceImplTest {
                 RDFFormat.TURTLE);
         try {
             ResearchObject researchObject = ResearchObject.create(fakeURI);
-            System.out.println(IOUtils.toString(sms.getManifest(researchObject, RDFFormat.RDFXML)));
+            System.out.println(IOUtils.toString(sms.getNamedGraphWithRelativeURIs(researchObject.getManifestUri(),
+                researchObject, RDFFormat.RDFXML)));
         } finally {
             sms.close();
         }
