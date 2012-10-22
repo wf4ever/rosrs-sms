@@ -588,7 +588,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         //@TODO Remove evo_inf file
         graphURI = graphURI.normalize();
         if (!graphset.containsGraph(graphURI.toString())) {
-            throw new IllegalArgumentException("URI not found: " + graphURI);
+            return;
         }
 
         List<URI> graphsToDelete = new ArrayList<>();

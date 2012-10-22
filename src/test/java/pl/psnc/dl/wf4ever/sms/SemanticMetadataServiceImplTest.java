@@ -371,12 +371,9 @@ public class SemanticMetadataServiceImplTest {
             sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
 
             sms.removeResearchObject(researchObject);
-            try {
-                sms.removeResearchObject(researchObject);
-                fail("Should throw an exception");
-            } catch (IllegalArgumentException e) {
-                // good
-            }
+
+            //Should not throw an exception
+            sms.removeResearchObject(researchObject);
 
             Assert.assertNotNull("Get other named graph must not return null",
                 sms.getNamedGraph(annotationBody1URI, RDFFormat.RDFXML));
