@@ -94,7 +94,7 @@ public class SemanticMetadataServiceImplTest {
 
     private static ResearchObject wrongResearchObjectURI;
 
-    private final static UserProfile userProfile = new UserProfile("jank", "Jan Kowalski", Role.AUTHENTICATED);
+    private static UserProfile userProfile;
 
     private final static URI workflowURI = URI.create("http://example.org/ROs/ro1/a%20workflow.t2flow");
 
@@ -103,18 +103,15 @@ public class SemanticMetadataServiceImplTest {
 
     private final static URI workflow2URI = URI.create("http://example.org/ROs/ro2/runme.t2flow");
 
-    private final ResourceInfo workflowInfo = new ResourceInfo("a%20workflow.t2flow", "ABC123455666344E", 646365L,
-            "SHA1", null, "application/vnd.taverna.t2flow+xml");
+    private static ResourceInfo workflowInfo;
 
     private final static URI ann1URI = URI.create("http://example.org/ROs/ro1/ann1");
 
-    private final ResourceInfo ann1Info = new ResourceInfo("ann1", "A0987654321EDCB", 6L, "MD5", null,
-            "application/rdf+xml");
+    private static ResourceInfo ann1Info;
 
     private final static URI resourceFakeURI = URI.create("http://example.org/ROs/ro1/xyz");
 
-    private final ResourceInfo resourceFakeInfo = new ResourceInfo("xyz", "A0987654321EDCB", 6L, "MD5", null,
-            "text/plain");
+    private static ResourceInfo resourceFakeInfo;
 
     private final static URI FOLDER_URI = URI.create("http://example.org/ROs/ro1/afolder/");
 
@@ -137,6 +134,11 @@ public class SemanticMetadataServiceImplTest {
         snapshotResearchObjectURI = ResearchObject.create(URI.create("http://example.org/ROs/sp1/"));
         archiveResearchObjectURI = ResearchObject.create(URI.create("http://example.org/ROs/arch1/"));
         wrongResearchObjectURI = ResearchObject.create(URI.create("http://wrong.example.org/ROs/wrongRo/"));
+        userProfile = UserProfile.create("jank", "Jan Kowalski", Role.AUTHENTICATED);
+        workflowInfo = ResourceInfo.create("a%20workflow.t2flow", "a%20workflow.t2flow", "ABC123455666344E", 646365L,
+            "SHA1", null, "application/vnd.taverna.t2flow+xml");
+        ann1Info = ResourceInfo.create("ann1", "ann1", "A0987654321EDCB", 6L, "MD5", null, "application/rdf+xml");
+        resourceFakeInfo = ResourceInfo.create("xyz", "xyz", "A0987654321EDCB", 6L, "MD5", null, "text/plain");
     }
 
 
@@ -502,8 +504,6 @@ public class SemanticMetadataServiceImplTest {
             Assert.assertTrue(sms.addResource(researchObject, workflowURI, workflowInfo));
             Assert.assertTrue(sms.addResource(researchObject, ann1URI, ann1Info));
             Assert.assertFalse(sms.addResource(researchObject, workflowURI, null));
-            Assert.assertFalse(sms.addResource(researchObject, workflowURI, new ResourceInfo(null, null, 0, null, null,
-                    "")));
         } finally {
             sms.close();
         }
