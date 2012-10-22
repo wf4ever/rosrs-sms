@@ -1428,6 +1428,7 @@ public class SemanticMetadataServiceImplTest {
 
             Folder folder2 = sms.addFolder(researchObject, folder);
             Assert.assertEquals(folder.getUri(), folder2.getUri());
+            Assert.assertNotNull(folder2.getProxyUri());
 
             OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
             model.read(sms.getNamedGraph(folder2.getResourceMapUri(), RDFFormat.RDFXML), null);

@@ -1557,6 +1557,11 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         Individual resource = manifestModel.createIndividual(folder.getUri().toString(), RO.Folder);
         resource.addRDFType(RO.Resource);
         manifestModel.add(ro, ORE.aggregates, resource);
+        URI proxyURI = generateProxyURI(researchObject);
+        Individual proxy = manifestModel.createIndividual(proxyURI.toString(), ORE.Proxy);
+        manifestModel.add(proxy, ORE.proxyIn, ro);
+        manifestModel.add(proxy, ORE.proxyFor, resource);
+        folder.setProxyUri(proxyURI);
 
         OntModel folderModel = createOntModelForNamedGraph(folder.getResourceMapUri());
         Resource manifestRes = folderModel.createResource(researchObject.getManifestUri().toString());
