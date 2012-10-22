@@ -231,7 +231,7 @@ public interface SemanticMetadataService {
 
 
     /**
-     * Delete a named graph from the quadstore.
+     * Delete a named graph from the quadstore if exists.
      * 
      * @param roURI
      *            the RO URI, used for distinguishing internal resources from external
