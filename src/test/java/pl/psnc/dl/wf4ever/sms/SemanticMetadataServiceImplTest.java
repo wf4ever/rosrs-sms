@@ -65,7 +65,6 @@ import com.hp.hpl.jena.rdf.model.Model;
 import com.hp.hpl.jena.rdf.model.ModelFactory;
 import com.hp.hpl.jena.rdf.model.Property;
 import com.hp.hpl.jena.rdf.model.RDFNode;
-import com.hp.hpl.jena.rdf.model.ResIterator;
 import com.hp.hpl.jena.rdf.model.Resource;
 import com.hp.hpl.jena.vocabulary.DCTerms;
 
@@ -999,8 +998,6 @@ public class SemanticMetadataServiceImplTest {
             model.read(sms2.getNamedGraphWithRelativeURIs(annotationBody1URI, researchObject, RDFFormat.RDFXML), "",
                 "RDF/XML");
 
-            ResIterator x = model.listSubjects();
-
             //FIXME this does not work correctly, for some reason ".." is stripped when reading the model
             verifyTriple(model, /* "../a_workflow.t2flow" */"a%20workflow.t2flow",
                 URI.create("http://purl.org/dc/terms/title"), "A test");
@@ -1259,8 +1256,6 @@ public class SemanticMetadataServiceImplTest {
         try {
             InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
             sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
-            String a = sms.storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"),
-                ".ro/manifest.ttl", "TTL");
 
             OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
             model.read(sms.getNamedGraph(getResourceURI("ro1-sp2/.ro/evo_inf.rdf"), RDFFormat.RDFXML), null);
