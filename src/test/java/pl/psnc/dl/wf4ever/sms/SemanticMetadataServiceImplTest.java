@@ -1387,8 +1387,7 @@ public class SemanticMetadataServiceImplTest {
     }
 
 
-    //fast helper used for converting ttl to rdf
-    //@Test
+    @Test
     public final void generateRDF()
             throws URISyntaxException, IOException {
         URI fakeURI = new URI("http://www.example.com/ROs/");

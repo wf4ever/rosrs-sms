@@ -1519,7 +1519,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
                         aggregated.add(new AggregatedResource(new URI(node.asResource().getURI())));
                     }
                 } else if (node.isResource()) {
-                    URI nodeUri = changeBlankNodeToUriResources(model, node);
+                    URI nodeUri = changeBlankNodeToUriResources(researchObject, model, node);
                     if (!isAnnotation(researchObject, nodeUri)) {
                         aggregated.add(new AggregatedResource(nodeUri));
                     }
@@ -1532,12 +1532,18 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     }
 
 
-    private URI changeBlankNodeToUriResources(OntModel model, RDFNode node)
+    private URI changeBlankNodeToUriResources(ResearchObject researchObject, OntModel model, RDFNode node)
             throws URISyntaxException {
-        Resource r = model.createResource(UUID.randomUUID().toString());
+        Resource r = model.createResource(researchObject.getUri().resolve(UUID.randomUUID().toString()).toString());
         List<Statement> statements = new ArrayList<Statement>();
         for (Statement s : model.listStatements(node.asResource(), null, (RDFNode) null).toList()) {
             Statement s2 = model.createStatement(r, s.getPredicate(), s.getObject());
+            statements.add(s);
+            model.add(s2);
+        }
+
+        for (Statement s : model.listStatements(null, null, node).toList()) {
+            Statement s2 = model.createStatement(s.getSubject(), s.getPredicate(), r);
             model.add(s2);
             statements.add(s);
         }
@@ -1563,7 +1569,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
                         annotations.add(new Annotation(new URI(node.asResource().getURI()), model));
                     }
                 } else if (node.isResource()) {
-                    URI nodeUri = changeBlankNodeToUriResources(model, node);
+                    URI nodeUri = changeBlankNodeToUriResources(researchObject, model, node);
                     if (isAnnotation(researchObject, nodeUri)) {
                         annotations.add(new Annotation(nodeUri, model));
                     }
