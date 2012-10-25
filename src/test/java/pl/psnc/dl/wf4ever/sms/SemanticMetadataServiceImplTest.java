@@ -1387,7 +1387,8 @@ public class SemanticMetadataServiceImplTest {
     }
 
 
-    @Test
+    //not a real test.
+    //@Test
     public final void generateRDF()
             throws URISyntaxException, IOException {
         URI fakeURI = new URI("http://www.example.com/ROs/");
