@@ -39,6 +39,6 @@
     dct:created "2010-05-14T12:02:12Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Person ; foaf:name "Marco Roos" ] .
         
-<afolder> a ro:Folder ;
+<afolder/> a ro:Folder ;
     ore:isDescribedBy <afolder.ttl> .
     

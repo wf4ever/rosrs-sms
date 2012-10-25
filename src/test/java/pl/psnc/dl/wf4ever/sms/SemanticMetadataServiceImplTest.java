@@ -42,11 +42,12 @@ import pl.psnc.dl.wf4ever.common.UserProfile.Role;
 import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
 import pl.psnc.dl.wf4ever.model.AO.Annotation;
 import pl.psnc.dl.wf4ever.model.ORE.AggregatedResource;
+import pl.psnc.dl.wf4ever.model.RO.Folder;
+import pl.psnc.dl.wf4ever.model.RO.FolderEntry;
 import pl.psnc.dl.wf4ever.vocabulary.AO;
 import pl.psnc.dl.wf4ever.vocabulary.FOAF;
 import pl.psnc.dl.wf4ever.vocabulary.ORE;
 import pl.psnc.dl.wf4ever.vocabulary.RO;
-import pl.psnc.dl.wf4ever.vocabulary.ROEVO;
 
 import com.google.common.collect.Multimap;
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
@@ -79,6 +80,7 @@ import de.fuberlin.wiwiss.ng4j.impl.NamedGraphSetImpl;
  */
 public class SemanticMetadataServiceImplTest {
 
+    @SuppressWarnings("unused")
     private static final Logger log = Logger.getLogger(SemanticMetadataServiceImplTest.class);
 
     private static ResearchObject researchObject;
@@ -91,7 +93,7 @@ public class SemanticMetadataServiceImplTest {
 
     private static ResearchObject wrongResearchObjectURI;
 
-    private final static UserProfile userProfile = new UserProfile("jank", "Jan Kowalski", Role.AUTHENTICATED);
+    private static UserProfile userProfile;
 
     private final static URI workflowURI = URI.create("http://example.org/ROs/ro1/a%20workflow.t2flow");
 
@@ -100,20 +102,17 @@ public class SemanticMetadataServiceImplTest {
 
     private final static URI workflow2URI = URI.create("http://example.org/ROs/ro2/runme.t2flow");
 
-    private final ResourceInfo workflowInfo = new ResourceInfo("a%20workflow.t2flow", "ABC123455666344E", 646365L,
-            "SHA1", null, "application/vnd.taverna.t2flow+xml");
+    private static ResourceInfo workflowInfo;
 
     private final static URI ann1URI = URI.create("http://example.org/ROs/ro1/ann1");
 
-    private final ResourceInfo ann1Info = new ResourceInfo("ann1", "A0987654321EDCB", 6L, "MD5", null,
-            "application/rdf+xml");
+    private static ResourceInfo ann1Info;
 
     private final static URI resourceFakeURI = URI.create("http://example.org/ROs/ro1/xyz");
 
-    private final ResourceInfo resourceFakeInfo = new ResourceInfo("xyz", "A0987654321EDCB", 6L, "MD5", null,
-            "text/plain");
+    private static ResourceInfo resourceFakeInfo;
 
-    private final static URI folderURI = URI.create("http://example.org/ROs/ro1/afolder");
+    private final static URI FOLDER_URI = URI.create("http://example.org/ROs/ro1/afolder/");
 
     private final URI annotationBody1URI = URI.create("http://example.org/ROs/ro1/.ro/ann1");
 
@@ -134,6 +133,11 @@ public class SemanticMetadataServiceImplTest {
         snapshotResearchObjectURI = ResearchObject.create(URI.create("http://example.org/ROs/sp1/"));
         archiveResearchObjectURI = ResearchObject.create(URI.create("http://example.org/ROs/arch1/"));
         wrongResearchObjectURI = ResearchObject.create(URI.create("http://wrong.example.org/ROs/wrongRo/"));
+        userProfile = UserProfile.create("jank", "Jan Kowalski", Role.AUTHENTICATED);
+        workflowInfo = ResourceInfo.create("a%20workflow.t2flow", "a%20workflow.t2flow", "ABC123455666344E", 646365L,
+            "SHA1", null, "application/vnd.taverna.t2flow+xml");
+        ann1Info = ResourceInfo.create("ann1", "ann1", "A0987654321EDCB", 6L, "MD5", null, "application/rdf+xml");
+        resourceFakeInfo = ResourceInfo.create("xyz", "xyz", "A0987654321EDCB", 6L, "MD5", null, "text/plain");
     }
 
 
@@ -368,12 +372,9 @@ public class SemanticMetadataServiceImplTest {
             sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
 
             sms.removeResearchObject(researchObject);
-            try {
-                sms.removeResearchObject(researchObject);
-                fail("Should throw an exception");
-            } catch (IllegalArgumentException e) {
-                // good
-            }
+
+            //Should not throw an exception
+            sms.removeResearchObject(researchObject);
 
             Assert.assertNotNull("Get other named graph must not return null",
                 sms.getNamedGraph(annotationBody1URI, RDFFormat.RDFXML));
@@ -502,8 +503,6 @@ public class SemanticMetadataServiceImplTest {
             Assert.assertTrue(sms.addResource(researchObject, workflowURI, workflowInfo));
             Assert.assertTrue(sms.addResource(researchObject, ann1URI, ann1Info));
             Assert.assertFalse(sms.addResource(researchObject, workflowURI, null));
-            Assert.assertFalse(sms.addResource(researchObject, workflowURI, new ResourceInfo(null, null, 0, null, null,
-                    "")));
         } finally {
             sms.close();
         }
@@ -774,11 +773,11 @@ public class SemanticMetadataServiceImplTest {
             OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
             model.read(sms.getManifest(researchObject, RDFFormat.RDFXML), null);
 
-            Assert.assertTrue("<afolder> is an ro:Folder", sms.isRoFolder(researchObject, folderURI));
+            Assert.assertTrue("<afolder> is an ro:Folder", sms.isRoFolder(researchObject, FOLDER_URI));
             Assert.assertTrue("<ann1> is not an ro:Folder", !sms.isRoFolder(researchObject, ann1URI));
             Assert.assertTrue("Fake resource is not an ro:Folder", !sms.isRoFolder(researchObject, resourceFakeURI));
             Assert.assertTrue("<afolder> is not an ro:Folder according to other RO",
-                !sms.isRoFolder(researchObject2URI, folderURI));
+                !sms.isRoFolder(researchObject2URI, FOLDER_URI));
         } finally {
             sms.close();
         }
@@ -1248,36 +1247,35 @@ public class SemanticMetadataServiceImplTest {
     }
 
 
-    @Test
-    public final void testStoreROhistory()
-            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
-
-        try {
-            InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
-            sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
-
-            OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-            model.read(sms.getNamedGraph(getResourceURI("ro1-sp2/.ro/evo_inf.rdf"), RDFFormat.RDFXML), null);
-            Individual evoInfoSource = model.getIndividual(getResourceURI("ro1-sp2/.ro/evo_inf.rdf").toString());
-            List<RDFNode> changesList = evoInfoSource.listPropertyValues(
-                model.createProperty("http://purl.org/wf4ever/roevo#hasChange")).toList();
-
-            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann3").toString(),
-                ROEVO.AdditionClass.toString(), model, changesList));
-            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/res3").toString(),
-                ROEVO.AdditionClass.getURI(), model, changesList));
-            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/afinalfolder").toString(),
-                ROEVO.AdditionClass.getURI(), model, changesList));
-            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann2").toString(),
-                ROEVO.ModificationClass.getURI(), model, changesList));
-            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp1/afolder").toString(),
-                ROEVO.RemovalClass.getURI(), model, changesList));
-        } finally {
-            sms.close();
-        }
-    }
-
+    //    @Test
+    //    public final void testStoreROhistory()
+    //            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
+    //        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+    //
+    //        try {
+    //            InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
+    //            sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
+    //
+    //            OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+    //            model.read(sms.getNamedGraph(getResourceURI("ro1-sp2/.ro/evo_inf.rdf"), RDFFormat.RDFXML), null);
+    //            Individual evoInfoSource = model.getIndividual(getResourceURI("ro1-sp2/.ro/evo_inf.rdf").toString());
+    //            List<RDFNode> changesList = evoInfoSource.listPropertyValues(
+    //                model.createProperty("http://purl.org/wf4ever/roevo#hasChange")).toList();
+    //
+    //            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann3").toString(),
+    //                ROEVO.AdditionClass.toString(), model, changesList));
+    //            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/res3").toString(),
+    //                ROEVO.AdditionClass.getURI(), model, changesList));
+    //            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/afinalfolder").toString(),
+    //                ROEVO.AdditionClass.getURI(), model, changesList));
+    //            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann2").toString(),
+    //                ROEVO.ModificationClass.getURI(), model, changesList));
+    //            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp1/afolder").toString(),
+    //                ROEVO.RemovalClass.getURI(), model, changesList));
+    //        } finally {
+    //            sms.close();
+    //        }
+    //    }
 
     @Test(expected = NullPointerException.class)
     public final void testStoreROhistoryWithWrongParametrs()
@@ -1405,7 +1403,68 @@ public class SemanticMetadataServiceImplTest {
         } finally {
             sms.close();
         }
+    }
 
+
+    @Test
+    public void testAddFolder()
+            throws ClassNotFoundException, IOException, NamingException, SQLException {
+        Folder folder = new Folder();
+        folder.setUri(FOLDER_URI);
+
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        try {
+            sms.createResearchObject(researchObject);
+            sms.addResource(researchObject, workflowURI, workflowInfo);
+            sms.addResource(researchObject, workflow2URI, workflowInfo);
+            sms.addResource(researchObject, resourceFakeURI, resourceFakeInfo);
+
+            folder.getFolderEntries().add(new FolderEntry(workflowURI, "workflow1"));
+            folder.getFolderEntries().add(new FolderEntry(resourceFakeURI, "a resource"));
+
+            Folder folder2 = sms.addFolder(researchObject, folder);
+            Assert.assertEquals(folder.getUri(), folder2.getUri());
+            Assert.assertNotNull(folder2.getProxyUri());
+
+            OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+            model.read(sms.getNamedGraph(folder2.getResourceMapUri(), RDFFormat.RDFXML), null);
+
+            Resource manifestRes = model.getResource(researchObject.getManifestUri().toString());
+            Assert.assertNotNull(manifestRes);
+
+            Individual roInd = model.getIndividual(researchObject.getUri().toString());
+            Assert.assertNotNull(roInd);
+            Assert.assertTrue(roInd.hasRDFType(RO.ResearchObject));
+            Assert.assertTrue(model.contains(roInd, ORE.isDescribedBy, manifestRes));
+
+            Resource folderRMRes = model.getResource(folder2.getResourceMapUri().toString());
+            Assert.assertNotNull(folderRMRes);
+
+            Individual folderInd = model.getIndividual(folder2.getUri().toString());
+            Assert.assertNotNull(folderInd);
+            Assert.assertTrue(folderInd.hasRDFType(RO.Folder));
+            Assert.assertTrue(folderInd.hasRDFType(ORE.Aggregation));
+            Assert.assertTrue(model.contains(folderInd, ORE.isAggregatedBy, roInd));
+            Assert.assertTrue(model.contains(folderInd, ORE.isDescribedBy, folderRMRes));
+
+            for (FolderEntry entry : folder2.getFolderEntries()) {
+                Assert.assertTrue(folder.getFolderEntries().contains(entry));
+                Assert.assertNotNull(entry.getUri());
+                Individual entryInd = model.getIndividual(entry.getUri().toString());
+                Assert.assertNotNull(entryInd);
+                Individual resInd = model.getIndividual(entry.getProxyFor().toString());
+                Assert.assertNotNull(resInd);
+                Literal name = model.createLiteral(entry.getEntryName());
+
+                Assert.assertTrue(resInd.hasRDFType(RO.Resource));
+                Assert.assertTrue(model.contains(folderInd, ORE.aggregates, resInd));
+                Assert.assertTrue(model.contains(entryInd, ORE.proxyFor, resInd));
+                Assert.assertTrue(model.contains(entryInd, ORE.proxyIn, folderInd));
+                Assert.assertTrue(model.contains(entryInd, RO.entryName, name));
+            }
+        } finally {
+            sms.close();
+        }
     }
 
 
