@@ -351,7 +351,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         if (ro == null) {
             throw new IllegalArgumentException("URI not found: " + researchObject.getUri());
         }
-        Individual resource = manifestModel.getIndividual(resourceURI.toString());
+        Resource resource = manifestModel.getResource(resourceURI.toString());
         if (resource == null) {
             throw new IllegalArgumentException("URI not found: " + resourceURI);
         }
@@ -1623,5 +1623,35 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             folderModel.add(entryInd, RO.entryName, name);
         }
         return folder;
+    }
+
+
+    @Override
+    public boolean addAnnotationBody(ResearchObject researchObject, URI graphURI, InputStream inputStream,
+            RDFFormat rdfFormat) {
+        OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
+        Individual ro = manifestModel.getIndividual(researchObject.getUri().toString());
+        if (ro == null) {
+            throw new IllegalArgumentException("URI not found: " + researchObject.getUri());
+        }
+        Resource resource = manifestModel.createResource(graphURI.toString());
+        manifestModel.add(ro, ORE.aggregates, resource);
+        return addNamedGraph(graphURI, inputStream, rdfFormat);
+    }
+
+
+    @Override
+    public void removeAnnotationBody(ResearchObject researchObject, URI graphURI) {
+        graphURI = graphURI.normalize();
+        OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
+        Individual ro = manifestModel.getIndividual(researchObject.getUri().toString());
+        if (ro == null) {
+            throw new IllegalArgumentException("URI not found: " + researchObject.getUri());
+        }
+        Resource resource = manifestModel.getResource(graphURI.toString());
+        if (resource == null) {
+            throw new IllegalArgumentException("URI not found: " + graphURI);
+        }
+        manifestModel.remove(ro, ORE.aggregates, resource);
     }
 }
