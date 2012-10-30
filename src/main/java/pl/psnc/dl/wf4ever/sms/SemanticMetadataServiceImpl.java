@@ -352,15 +352,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             throw new IllegalArgumentException("URI not found: " + researchObject.getUri());
         }
         Resource resource = manifestModel.getResource(resourceURI.toString());
-        if (resource == null) {
-            throw new IllegalArgumentException("URI not found: " + resourceURI);
-        }
         manifestModel.remove(ro, ORE.aggregates, resource);
-
-        StmtIterator it = manifestModel.listStatements(null, ORE.aggregates, resource);
-        if (!it.hasNext()) {
-            manifestModel.removeAll(resource, null, null);
-        }
+        manifestModel.removeAll(resource, null, null);
 
         ResIterator it2 = manifestModel.listSubjectsWithProperty(RO.annotatesAggregatedResource, resource);
         while (it2.hasNext()) {
@@ -378,6 +371,13 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
                 manifestModel.removeAll(null, null, ann);
             }
         }
+
+        URI proxy = getProxyForResource(researchObject, resourceURI);
+        if (proxy != null) {
+            deleteProxy(researchObject, proxy);
+        }
+
+        manifestModel.removeAll(null, null, resource);
     }
 
 

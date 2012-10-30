@@ -527,19 +527,9 @@ public class SemanticMetadataServiceImplTest {
             sms.addResource(researchObject, workflowURI, workflowInfo);
             sms.addResource(researchObject, ann1URI, ann1Info);
             sms.removeResource(researchObject, workflowURI);
-            try {
-                sms.removeResource(researchObject, workflowURI);
-                fail("Should throw an exception");
-            } catch (IllegalArgumentException e) {
-                // good
-            }
+            // no longer throws exceptions
+            sms.removeResource(researchObject, workflowURI);
             sms.removeResource(researchObject, ann1URI);
-            try {
-                sms.removeResource(researchObject, ann1URI);
-                fail("Should throw an exception");
-            } catch (IllegalArgumentException e) {
-                // good
-            }
 
             InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
             sms.updateManifest(researchObject, is, RDFFormat.TURTLE);
