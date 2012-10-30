@@ -1,0 +1,18 @@
+@base <../> .
+@prefix : <.> .
+@prefix ro: <http://purl.org/wf4ever/ro#> .
+@prefix ao: <http://purl.org/ao/> .
+@prefix ore: <http://www.openarchives.org/ore/terms/> .
+@prefix dct: <http://purl.org/dc/terms/> .
+@prefix roevo: <http://purl.org/wf4ever/roevo#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix foaf: <http://xmlns.com/foaf/0.1/> .
+@prefix rdfg: <http://www.w3.org/2004/03/trix/rdfg-1/> .
+
+<.ro/evo_info.ttl> a ore:AggregatedResources;
+    dct:created "2011-12-02T16:01:10Z"^^xsd:dateTime ;
+    dct:creator [ a foaf:Agent; foaf:name "RO manager" ] .
+    
+<.> a roevo:ArchivedRO;
+	roevo:isArchiveOf <../ro1/> ;
+	roevo:archivedAtTime "2012-06-02T16:01:10Z"^^xsd:dateTime ;
