@@ -1653,5 +1653,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             throw new IllegalArgumentException("URI not found: " + graphURI);
         }
         manifestModel.remove(ro, ORE.aggregates, resource);
+
+        URI proxy = getProxyForResource(researchObject, graphURI);
+        if (proxy != null) {
+            deleteProxy(researchObject, proxy);
+        }
+
+        manifestModel.removeAll(null, null, resource);
     }
 }
