@@ -15,4 +15,4 @@
     
 <.> a roevo:ArchivedRO;
 	roevo:isArchiveOf <../ro1/> ;
-	roevo:archivedAtTime "2012-06-02T16:01:10Z"^^xsd:dateTime ;
+	roevo:archivedAtTime "2012-06-02T16:01:10Z"^^xsd:dateTime .

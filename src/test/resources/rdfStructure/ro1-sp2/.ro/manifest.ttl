@@ -16,9 +16,9 @@
     dct:creator [ a foaf:Agent; foaf:name "RO manager" ] .
 
 <.> a ro:ResearchObject, ore:Aggregation ;
-	ore:aggregates :ann1, :ann2, :ann3, :res1, :res2, :res3, <afinalfolder>, <agregated-resource-file>, <.ro/ann1-body.ttl>, <.ro/ann2-body.ttl>, <.ro/ann3-body.ttl> .
+	ore:aggregates :ann1, :ann2, :ann3, :res1, :res2, :res3, <afinalfolder>, <agregated-resource-file>, <.ro/ann1-body.ttl>, <.ro/ann2-body.ttl>, <.ro/ann3-body.ttl> ;
 	ore:aggregates <.ro/evo_info.ttl> ;
-	ore:aggregates :evo_info ;
+	ore:aggregates :evo_info .
 		
 :ann1 a ro:AggregatedAnnotation ;
     ro:annotatesAggregatedResource <agregated-resource-file> ;

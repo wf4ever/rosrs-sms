@@ -1048,44 +1048,29 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 
     @Override
-    public boolean isSnapshotURI(URI resource) {
-        return isSnapshotURI(resource, W4E.DEFAULT_MANIFEST_PATH, "RDF/XML");
+    public boolean isSnapshot(ResearchObject ro) {
+        OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+        model.read(ro.getFixedEvolutioAnnotationBodyPath().toString(), ro.getManifestFormat().toString());
+        return model.getIndividual(ro.getUriString()).hasRDFType(ROEVO.SnapshotROClass);
     }
 
 
     @Override
-    public boolean isSnapshotURI(URI resource, String modelPath, String format) {
-        return getIndividual(resource, modelPath, format).hasRDFType(ROEVO.SnapshotROClass);
+    public boolean isArchive(ResearchObject ro) {
+        OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+        model.read(ro.getFixedEvolutioAnnotationBodyPath().toString(), ro.getManifestFormat().toString());
+        return model.getIndividual(ro.getUriString()).hasRDFType(ROEVO.ArchivedROClass);
     }
 
 
     @Override
-    public boolean isArchiveURI(URI resource) {
-        return isArchiveURI(resource, W4E.DEFAULT_MANIFEST_PATH, "RDF/XML");
-    }
-
-
-    @Override
-    public boolean isArchiveURI(URI resource, String modelPath, String format) {
-        return getIndividual(resource, modelPath, format).hasRDFType(ROEVO.ArchivedROClass);
-    }
-
-
-    @Override
-    public URI getLiveURIFromSnapshotOrArchive(URI resource)
+    public URI getLiveURIFromSnapshotOrArchive(ResearchObject snaphotOrArchive)
             throws URISyntaxException {
-        return getLiveURIFromSnapshotOrArchive(resource, W4E.DEFAULT_MANIFEST_PATH, "RDF/XML");
-    }
-
-
-    @Override
-    public URI getLiveURIFromSnapshotOrArchive(URI resource, String modelPath, String format)
-            throws URISyntaxException {
-        Individual source = getIndividual(resource, modelPath, format);
-        if (isSnapshotURI(resource, modelPath, format)) {
+        Individual source = getIndividualFromResearchObjectManifestAndRoevo(snaphotOrArchive);
+        if (isSnapshot(snaphotOrArchive)) {
             RDFNode roNode = source.getProperty(ROEVO.isSnapshotOf).getObject();
             return new URI(roNode.toString());
-        } else if (isArchiveURI(resource, modelPath, format)) {
+        } else if (isArchive(snaphotOrArchive)) {
             RDFNode roNode = source.getProperty(ROEVO.isArchiveOf).getObject();
             return new URI(roNode.toString());
         }
@@ -1094,28 +1079,19 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 
     @Override
-    public URI getPreviousSnaphotOrArchive(URI liveRO, URI freshSnapshotOrARchive)
+    public URI getPreviousSnaphotOrArchive(ResearchObject liveRO, ResearchObject freshSnapshotOrArchive)
             throws URISyntaxException {
-        return getPreviousSnaphotOrArchive(liveRO, freshSnapshotOrARchive, W4E.DEFAULT_MANIFEST_PATH, "RDF/XML");
-    }
-
-
-    @Override
-    public URI getPreviousSnaphotOrArchive(URI liveRO, URI freshSnapshotOrArchive, String modelPath, String format)
-            throws URISyntaxException {
-
-        Individual liveSource = getIndividual(liveRO, modelPath, format);
-
+        Individual liveSource = getIndividualFromResearchObjectManifestAndRoevo(liveRO);
         StmtIterator snaphotsIterator;
         snaphotsIterator = liveSource.listProperties(ROEVO.hasSnapshot);
         StmtIterator archiveItertator;
         archiveItertator = liveSource.listProperties(ROEVO.hasArchive);
 
-        Individual freshSource = getIndividual(freshSnapshotOrArchive, modelPath, format);
+        Individual freshSource = getIndividualFromResearchObjectManifestAndRoevo(freshSnapshotOrArchive);
         RDFNode dateNode;
-        if (isSnapshotURI(freshSnapshotOrArchive, modelPath, format)) {
+        if (isSnapshot(freshSnapshotOrArchive)) {
             dateNode = freshSource.getProperty(ROEVO.snapshottedAtTime).getObject();
-        } else if (isArchiveURI(freshSnapshotOrArchive, modelPath, format)) {
+        } else if (isArchive(freshSnapshotOrArchive)) {
             dateNode = freshSource.getProperty(ROEVO.archivedAtTime).getObject();
         } else {
             return null;
@@ -1127,7 +1103,10 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
         while (snaphotsIterator.hasNext()) {
             URI tmpURI = new URI(snaphotsIterator.next().getObject().toString());
-            RDFNode node = getIndividual(tmpURI, modelPath, format).getProperty(ROEVO.snapshottedAtTime).getObject();
+            if (tmpURI == freshSnapshotOrArchive.getUri())
+                continue;
+            RDFNode node = getIndividualFromResearchObjectManifestAndRoevo(ResearchObject.create(tmpURI)).getProperty(
+                ROEVO.snapshottedAtTime).getObject();
             DateTime tmpTime = new DateTime(node.asLiteral().getValue().toString());
             if ((tmpTime.compareTo(freshTime) == -1)
                     && ((predecessorTime == null) || (tmpTime.compareTo(predecessorTime) == 1))) {
@@ -1137,7 +1116,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         }
         while (archiveItertator.hasNext()) {
             URI tmpURI = new URI(archiveItertator.next().getObject().toString());
-            RDFNode node = getIndividual(tmpURI, modelPath, format).getProperty(ROEVO.archivedAtTime).getObject();
+            RDFNode node = getIndividualFromResearchObjectManifestAndRoevo(ResearchObject.create(tmpURI)).getProperty(
+                ROEVO.archivedAtTime).getObject();
             DateTime tmpTime = new DateTime(node.asLiteral().getValue().toString());
             if ((tmpTime.compareTo(freshTime) == -1)
                     && ((predecessorTime == null) || (tmpTime.compareTo(predecessorTime) == 1))) {
@@ -1173,8 +1153,10 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             return "";
         }
 
-        Individual freshObjectSource = getIndividual(freshObjectURI, modelPath, format);
-        Individual antecessorObjectSource = getIndividual(antecessorObjectURI, modelPath, format);
+        Individual freshObjectSource = getIndividualFromResearchObjectManifestAndRoevo(ResearchObject
+                .create(freshObjectURI));
+        Individual antecessorObjectSource = getIndividualFromResearchObjectManifestAndRoevo(ResearchObject
+                .create(antecessorObjectURI));
         List<RDFNode> freshAggregatesList = freshObjectSource.listPropertyValues(ORE.aggregates).toList();
         List<RDFNode> antecessorAggregatesList = antecessorObjectSource.listPropertyValues(ORE.aggregates).toList();
         OntModel freshROModel = createOntModelForNamedGraph(resolveURI(freshObjectURI, ".ro/manifest.rdf"));
@@ -1435,16 +1417,16 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 
     @Override
-    public Individual getIndividual(URI resource) {
-        return getIndividual(resource, W4E.DEFAULT_MANIFEST_PATH, "RDF/XML");
-    }
-
-
-    @Override
-    public Individual getIndividual(URI resource, String modelPath, String format) {
+    public Individual getIndividualFromResearchObjectManifestAndRoevo(ResearchObject ro) {
         OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-        model.read(resource.resolve(modelPath).toString(), format);
-        Individual source = model.getIndividual(resource.toString());
+        try {
+            model.read(ro.getManifestUri().toString(), "RDF/XML");
+        } catch (Exception e) {
+            model.read(
+                ro.getManifestUri().toString().substring(0, ro.getManifestUri().toString().length() - 3) + "ttl", "TTL");
+        }
+        model.read(ro.getFixedEvolutioAnnotationBodyPath().toString(), "TTL");
+        Individual source = model.getIndividual(ro.getUriString());
         return source;
     }
 
