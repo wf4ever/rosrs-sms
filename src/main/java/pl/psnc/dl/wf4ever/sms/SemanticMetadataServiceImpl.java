@@ -376,8 +376,6 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         if (proxy != null) {
             deleteProxy(researchObject, proxy);
         }
-
-        manifestModel.removeAll(null, null, resource);
     }
 
 
@@ -1659,6 +1657,5 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             deleteProxy(researchObject, proxy);
         }
 
-        manifestModel.removeAll(null, null, resource);
     }
 }
