@@ -174,7 +174,7 @@ public class SemanticMetadataServiceImplTest {
     private static void cleanData() {
         SemanticMetadataService sms = null;
         try {
-            sms = new SemanticMetadataServiceImpl(userProfile);
+            sms = new SemanticMetadataServiceImpl(userProfile, false);
             try {
                 sms.removeResearchObject(researchObject);
             } catch (IllegalArgumentException e) {
@@ -217,7 +217,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testSemanticMetadataServiceImpl()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, true);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);
@@ -226,7 +226,7 @@ public class SemanticMetadataServiceImplTest {
             sms.close();
         }
 
-        SemanticMetadataService sms2 = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms2 = new SemanticMetadataServiceImpl(userProfile, true);
         try {
             OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
 
@@ -260,7 +260,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testCreateResearchObject()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             try {
@@ -288,7 +288,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testUpdateManifest()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);
@@ -363,7 +363,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testRemoveManifest()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);
@@ -397,7 +397,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testGetManifest()
             throws IOException, ClassNotFoundException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             Assert.assertNull("Returns null when manifest does not exist",
                 sms.getManifest(researchObject, RDFFormat.RDFXML));
@@ -457,7 +457,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testGetManifestWithAnnotationBodies()
             throws IOException, ClassNotFoundException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             Assert.assertNull("Returns null when manifest does not exist",
                 sms.getManifest(researchObject, RDFFormat.TRIG));
@@ -497,7 +497,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testAddResource()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             Assert.assertTrue(sms.addResource(researchObject, workflowURI, workflowInfo));
@@ -521,7 +521,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testRemoveResource()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);
@@ -561,7 +561,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testGetResource()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             Assert.assertNull("Returns null when resource does not exist",
                 sms.getResource(researchObject, workflowURI, RDFFormat.RDFXML));
@@ -651,20 +651,16 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testGetNamedGraph()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);
             sms.addResource(researchObject, ann1URI, ann1Info);
             InputStream is = getClass().getClassLoader().getResourceAsStream("annotationBody.ttl");
             sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
-        } finally {
-            sms.close();
-        }
-        SemanticMetadataService sms2 = new SemanticMetadataServiceImpl(userProfile);
-        try {
+
             OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-            model.read(sms2.getNamedGraph(annotationBody1URI, RDFFormat.TURTLE), null, "TTL");
+            model.read(sms.getNamedGraph(annotationBody1URI, RDFFormat.TURTLE), null, "TTL");
 
             verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/title"), "A test");
             verifyTriple(model, workflowURI, URI.create("http://purl.org/dc/terms/license"), "GPL");
@@ -713,7 +709,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testFindManifests()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.createResearchObject(researchObject2URI);
@@ -753,7 +749,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testIsRoFolder()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
 
@@ -787,7 +783,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testAddNamedGraph()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);
@@ -811,7 +807,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testIsROMetadataNamedGraph()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
             sms.updateManifest(researchObject, is, RDFFormat.TURTLE);
@@ -852,7 +848,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testRemoveNamedGraph()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);
@@ -872,7 +868,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testExecuteSparql()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
             sms.updateManifest(researchObject, is, RDFFormat.TURTLE);
@@ -940,7 +936,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testGetAllAttributes()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
             sms.updateManifest(researchObject, is, RDFFormat.TURTLE);
@@ -971,20 +967,16 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public void testGetNamedGraphWithRelativeURIs()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);
             sms.addResource(researchObject, ann1URI, ann1Info);
             InputStream is = getClass().getClassLoader().getResourceAsStream("annotationBody2.ttl");
             sms.addNamedGraph(annotationBody1URI, is, RDFFormat.TURTLE);
-        } finally {
-            sms.close();
-        }
-        SemanticMetadataService sms2 = new SemanticMetadataServiceImpl(userProfile);
-        try {
+
             OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-            model.read(sms2.getNamedGraphWithRelativeURIs(annotationBody1URI, researchObject, RDFFormat.RDFXML), "",
+            model.read(sms.getNamedGraphWithRelativeURIs(annotationBody1URI, researchObject, RDFFormat.RDFXML), "",
                 "RDF/XML");
 
             //FIXME this does not work correctly, for some reason ".." is stripped when reading the model
@@ -1007,7 +999,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testGetRemoveUser()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             OntModel userModel = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
             userModel.read(sms.getUser(userProfile.getUri(), RDFFormat.RDFXML).getInputStream(), "", "RDF/XML");
@@ -1031,7 +1023,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testIsAggregatedResource()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);
@@ -1046,7 +1038,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testIsAnnotation()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);
@@ -1063,7 +1055,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testAddAnnotation()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);
@@ -1091,7 +1083,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testUpdateAnnotation()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);
@@ -1121,7 +1113,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testGetAnnotationBody()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);
@@ -1137,7 +1129,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testDeleteAnnotation()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);
@@ -1159,7 +1151,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testIsSnapshot()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             Assert.assertTrue("snapshot does not recognized",
                 sms.isSnapshotURI(getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL"));
@@ -1174,7 +1166,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testIsArchive()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             Assert.assertTrue("snapshot does not recognized",
                 sms.isArchiveURI(getResourceURI("ro1-arch1/"), ".ro/manifest.ttl", "TTL"));
@@ -1189,7 +1181,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testGetPreviousSnaphotOrArchive()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             URI sp1Antecessor = sms.getPreviousSnaphotOrArchive(getResourceURI("ro1/"), getResourceURI("ro1-sp1/"),
                 ".ro/manifest.ttl", "TTL");
@@ -1206,7 +1198,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testGetIndividual()
             throws URISyntaxException, ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
             model.read(getResourceURI("ro1/").resolve(".ro/manifest.ttl").toString(), "TTL");
@@ -1222,7 +1214,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testGetLiveROfromSnapshotOrArchive()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             URI liveFromRO = sms.getLiveURIFromSnapshotOrArchive(getResourceURI("ro1/"), ".ro/manifest.ttl", "TTL");
             URI liveFromSP = sms.getLiveURIFromSnapshotOrArchive(getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL");
@@ -1240,7 +1232,7 @@ public class SemanticMetadataServiceImplTest {
     //    @Test
     //    public final void testStoreROhistory()
     //            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-    //        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+    //        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
     //
     //        try {
     //            InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
@@ -1270,7 +1262,7 @@ public class SemanticMetadataServiceImplTest {
     @Test(expected = NullPointerException.class)
     public final void testStoreROhistoryWithWrongParametrs()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
             sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
@@ -1284,7 +1276,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testStoreROhistoryWithNoAccenestor()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp1/.ro/manifest.ttl");
             sms.addNamedGraph(getResourceURI("ro1-sp1/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
@@ -1300,7 +1292,7 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testChangeURIInManifestAndAnnotationBodies()
             throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             InputStream is = getClass().getClassLoader().getResourceAsStream("manifest.ttl");
             sms.updateManifest(researchObject, is, RDFFormat.TURTLE);
@@ -1402,7 +1394,7 @@ public class SemanticMetadataServiceImplTest {
         Folder folder = new Folder();
         folder.setUri(FOLDER_URI);
 
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
         try {
             sms.createResearchObject(researchObject);
             sms.addResource(researchObject, workflowURI, workflowInfo);

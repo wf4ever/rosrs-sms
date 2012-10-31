@@ -98,13 +98,24 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     public SemanticMetadataServiceImpl(UserProfile user)
             throws IOException, NamingException, SQLException, ClassNotFoundException {
-        this.user = user;
-        connection = getConnection("connection.properties");
-        if (connection == null) {
-            throw new RuntimeException("Connection could not be created");
-        }
+        this(user, true);
+    }
 
-        graphset = new NamedGraphSetDB(connection, "sms");
+
+    public SemanticMetadataServiceImpl(UserProfile user, boolean useDb)
+            throws IOException, NamingException, SQLException, ClassNotFoundException {
+        this.user = user;
+
+        if (useDb) {
+            connection = getConnection("connection.properties");
+            if (connection == null) {
+                throw new RuntimeException("Connection could not be created");
+            }
+            graphset = new NamedGraphSetDB(connection, "sms");
+        } else {
+            this.connection = null;
+            graphset = new NamedGraphSetImpl();
+        }
         W4E.defaultModel.setNsPrefixes(W4E.standardNamespaces);
         createUserProfile(user);
     }
