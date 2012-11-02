@@ -10,9 +10,9 @@
 @prefix rdfg: <http://www.w3.org/2004/03/trix/rdfg-1/> .
 
 <.ro/evo_info.ttl> a ore:AggregatedResources;
-    dct:created "2011-12-02T16:01:10Z"^^xsd:dateTime ;
+    dct:created "2006-02-01T16:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Agent; foaf:name "RO manager" ] .
     
 <.> a roevo:ArchivedRO;
 	roevo:isArchiveOf <../ro1/> ;
-	roevo:archivedAtTime "2012-06-02T16:01:10Z"^^xsd:dateTime .
+	roevo:archivedAtTime "2006-01-01T16:01:10Z"^^xsd:dateTime .

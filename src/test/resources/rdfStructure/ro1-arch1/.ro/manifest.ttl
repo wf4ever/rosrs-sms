@@ -11,7 +11,7 @@
 
 <.ro/manifest.rdf> a ro:Manifest ;
     ore:describes <ro1-arch1/> ;
-    dct:created "2011-12-02T16:01:10Z"^^xsd:dateTime ;
+    dct:created "2000-01-01T16:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Agent; foaf:name "RO manager" ] .
 
 <.> a ro:ResearchObject, ore:Aggregation ;
@@ -25,30 +25,32 @@
 	ore:aggregates :evo_info .
 
 :evo_info a ro:AggregatedAnnotation ;
+    dct:created "2006-02-01T16:01:10Z"^^xsd:dateTime ;
 	ao:body <.ro/evo_info.ttl> ;
 	ore:annotatesAggregatedResource <.> . 
 
 :ann1 a ro:AggregatedAnnotation ;
     ro:annotatesAggregatedResource <agregated-resource-file> ;
     ao:body <ro1-arch1/.ro/ann1-body> ;
-    dct:created "2011-12-02T15:02:13Z"^^xsd:dateTime ;
+    dct:created "2001-01-01T16:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Agent ; foaf:name "t2flow workflow annotation extractor" ] .
     
 <.ro/ann1-body> a rdfg:Graph, ore:AggregatedResources ;
-	dct:created "2010-05-14T12:02:12Z"^^xsd:dateTime ;
+	dct:created "2001-01-01T16:01:10Z"^^xsd:dateTime ;
 	dct:creator [ a foaf:Person ; foaf:name "Marco Roos" ] .
 	
 <final-agregated-resource-file> a ro:Resource, ore:AggregatedResources ;
-    dct:created "2011-12-02T15:02:10Z"^^xsd:dateTime ;
+    dct:created "2005-01-01T16:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Person; foaf:name "Stian Soiland-Reyes" ] .
 	
 :res1 a ro:Resource, ore:AggregatedResources;
-    dct:created "2011-12-02T15:02:10Z"^^xsd:dateTime ;
+	dct:created "2001-01-01T16:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Person; foaf:name "Stian Soiland-Reyes" ] .
 
 :res2 a ro:Resource, ore:AggregatedResources;
-    dct:created "2011-12-02T15:02:10Z"^^xsd:dateTime ;
+	dct:created "2001-01-01T16:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Person; foaf:name "Filip" ] .
     
 <afinalfolder> a ro:Folder ;
+    dct:created "2003-01-01T16:01:10Z"^^xsd:dateTime ;
     ore:isDescribedBy <afolder.ttl> .
