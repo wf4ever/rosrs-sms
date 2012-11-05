@@ -1050,7 +1050,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     @Override
     public boolean isSnapshot(ResearchObject ro) {
         OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-        model.read(ro.getFixedEvolutioAnnotationBodyPath().toString(), ro.getManifestFormat().toString());
+        model.read(ro.getFixedEvolutionAnnotationBodyPath().toString(), ro.getManifestFormat().toString());
         return model.getIndividual(ro.getUriString()).hasRDFType(ROEVO.SnapshotROClass);
     }
 
@@ -1058,7 +1058,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     @Override
     public boolean isArchive(ResearchObject ro) {
         OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-        model.read(ro.getFixedEvolutioAnnotationBodyPath().toString(), ro.getManifestFormat().toString());
+        model.read(ro.getFixedEvolutionAnnotationBodyPath().toString(), ro.getManifestFormat().toString());
         return model.getIndividual(ro.getUriString()).hasRDFType(ROEVO.ArchivedROClass);
     }
 
@@ -1136,13 +1136,6 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 
     @Override
-    public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI)
-            throws URISyntaxException {
-        return storeAggregatedDifferences(freshObjectURI, antecessorObjectURI, W4E.DEFAULT_MANIFEST_PATH, "RDF/XML");
-    }
-
-
-    @Override
     public String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath,
             String format)
             throws URISyntaxException {
@@ -1158,7 +1151,9 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         Individual antecessorObjectSource = getIndividualFromResearchObjectManifestAndRoevo(ResearchObject
                 .create(antecessorObjectURI));
         List<RDFNode> freshAggregatesList = freshObjectSource.listPropertyValues(ORE.aggregates).toList();
+
         List<RDFNode> antecessorAggregatesList = antecessorObjectSource.listPropertyValues(ORE.aggregates).toList();
+
         OntModel freshROModel = createOntModelForNamedGraph(resolveURI(freshObjectURI, ".ro/manifest.rdf"));
         //@TODO check if evo_inf exists remove it ??
         if (graphset.containsGraph(resolveURI(freshObjectURI, ".ro/evo_inf.rdf").toString())) {
@@ -1177,6 +1172,12 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             antecessorAggregatesList, freshROEvoInfoModel, changeSpecificationIndividual, Direction.NEW);
         result += lookForAggregatedDifferents(freshObjectURI, antecessorObjectURI, antecessorAggregatesList,
             freshAggregatesList, freshROEvoInfoModel, changeSpecificationIndividual, Direction.DELETED);
+        return result;
+    }
+
+
+    private List<RDFNode> removeChangesAnnotations(List<RDFNode> list, OntModel model, Individual individual) {
+        List<RDFNode> result = new ArrayList<RDFNode>();
         return result;
     }
 
@@ -1425,7 +1426,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             model.read(
                 ro.getManifestUri().toString().substring(0, ro.getManifestUri().toString().length() - 3) + "ttl", "TTL");
         }
-        model.read(ro.getFixedEvolutioAnnotationBodyPath().toString(), "TTL");
+        model.read(ro.getFixedEvolutionAnnotationBodyPath().toString(), "TTL");
         Individual source = model.getIndividual(ro.getUriString());
         return source;
     }

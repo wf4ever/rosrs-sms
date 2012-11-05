@@ -22,7 +22,7 @@
 
 :evo_info a ro:AggregatedAnnotation ;
 	ao:body <.ro/evo_info.ttl> ;
-	ore:annotatesAggregatedResource <.> . 
+	ore:annotatesAggregatedResource <.> ;
 	dct:created "2004-03-01T16:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Agent ; foaf:name "t2flow workflow annotation extractor" ] .
 
