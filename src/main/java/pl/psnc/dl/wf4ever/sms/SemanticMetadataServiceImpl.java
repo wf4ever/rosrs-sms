@@ -1171,7 +1171,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         Individual changeSpecificationIndividual = evoInfoModel.createIndividual(
             generateRandomUriRelatedToResource(freshRO, "change_specification"), ROEVO.ChangeSpecificationClass);
 
-        freshROIndividual.addProperty(ROEVO.wasChangedBy, changeSpecificationIndividual);
+        evoInfoModel.getIndividual(freshRO.getUriString()).addProperty(ROEVO.wasChangedBy,
+            changeSpecificationIndividual);
 
         String result = lookForAggregatedDifferents(freshRO, oldRO, freshAggreagted, oldAggreagted, evoInfoModel,
             changeSpecificationIndividual, Direction.NEW);
@@ -1213,7 +1214,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 
     private String generateRandomUriRelatedToResource(ResearchObject ro, String description) {
-        return ro.getUri().resolve(description) + "\\" + UUID.randomUUID().toString();
+        return ro.getUri().resolve(description) + "/" + UUID.randomUUID().toString();
     }
 
 
@@ -1259,7 +1260,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
                 changeSpecificatinIndividual.addProperty(ROEVO.hasChange, changeIndividual);
                 result += freshRO + " " + node.toString() + " " + direction + "\n";
             } else {
-                Individual changeIndividual = freshRoModel.createIndividual(generateRandomUriRelatedToResource(freshRO, "change"),ROEVO.ChangeClass);
+                Individual changeIndividual = freshRoModel.createIndividual(
+                    generateRandomUriRelatedToResource(freshRO, "change"), ROEVO.ChangeClass);
                 changeIndividual.addRDFType(ROEVO.RemovalClass);
                 changeIndividual.addProperty(ROEVO.relatedResource, node);
                 changeSpecificatinIndividual.addProperty(ROEVO.hasChange, changeIndividual);

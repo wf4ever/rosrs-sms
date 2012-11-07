@@ -1372,6 +1372,21 @@ public class SemanticMetadataServiceImplTest {
         System.out.println("==========================================");
         System.out.println(IOUtils.toString(testStructure.sms.getNamedGraph(
             testStructure.sp2.getFixedEvolutionAnnotationBodyPath(), RDFFormat.TURTLE)));
+
+        Individual evoInfoSource = testStructure.sms.getIndividual(testStructure.sp2);
+        
+        /*
+        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann3").toString(),
+            ROEVO.AdditionClass.toString(), model, changesList));
+        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/res3").toString(),
+            ROEVO.AdditionClass.getURI(), model, changesList));
+        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/afinalfolder").toString(),
+            ROEVO.AdditionClass.getURI(), model, changesList));
+        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann2").toString(),
+            ROEVO.ModificationClass.getURI(), model, changesList));
+        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp1/afolder").toString(),
+            ROEVO.RemovalClass.getURI(), model, changesList));
+            */
     }
 
 
