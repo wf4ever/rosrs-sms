@@ -1,5 +1,6 @@
 package pl.psnc.dl.wf4ever.sms;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -566,9 +567,10 @@ public interface SemanticMetadataService {
      *            Previous snapshot/archive
      * @return list of changes
      * @throws URISyntaxException
+     * @throws IOException
      */
-    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI, String modelPath, String format)
-            throws URISyntaxException;
+    String storeAggregatedDifferences(ResearchObject freshRO, ResearchObject oldRO)
+            throws URISyntaxException, IOException;
 
 
     /**
@@ -584,9 +586,9 @@ public interface SemanticMetadataService {
      * 
      * @param ro
      *            ResearchObject
-     * @return the individual of the resource object
+     * @return the individual of the resource object joined from manifest and evolution information file
      */
-    Individual getIndividualFromResearchObjectManifestAndRoevo(ResearchObject ro);
+    Individual getIndividual(ResearchObject ro);
 
 
     /**
