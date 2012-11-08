@@ -1153,8 +1153,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         Individual freshROIndividual = getIndividual(freshRO);
         Individual oldROIndividual = getIndividual(oldRO);
 
-        List<RDFNode> freshAggreagted = getAggregatedWithNoEvo(freshRO);
-        List<RDFNode> oldAggreagted = getAggregatedWithNoEvo(oldRO);
+        List<RDFNode> freshAggreagted = getAggregatedWithNoEvoAndBody(freshRO);
+        List<RDFNode> oldAggreagted = getAggregatedWithNoEvoAndBody(oldRO);
 
         OntModel evoInfoModel = createOntModelForNamedGraph(freshRO.getFixedEvolutionAnnotationBodyPath());
         addAnnotation(freshRO, Arrays.asList(freshRO.getUri()), freshRO.getFixedEvolutionAnnotationBodyPath());
@@ -1174,7 +1174,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     }
 
 
-    private List<RDFNode> getAggregatedWithNoEvo(ResearchObject researchObject) {
+    private List<RDFNode> getAggregatedWithNoEvoAndBody(ResearchObject researchObject) {
         Individual roIndividual = getIndividual(researchObject);
         DateTime date = null;
         if (isSnapshot(researchObject)) {
@@ -1197,6 +1197,16 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
                     }
                 }
             } catch (NullPointerException e) {
+                continue;
+            }
+        }
+        for (RDFNode a : aggreageted) {
+            try {
+                if (a.as(Individual.class).hasRDFType(RO.AggregatedAnnotation)) {
+                    RDFNode node = a.as(Individual.class).getPropertyValue(AO.body);
+                    aggreagetedWithNoEvo.remove(node);
+                }
+            } catch (Exception e) {
                 continue;
             }
         }
@@ -1261,7 +1271,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         }
         //False means there are some changes (Changes exists in two directions so they will be stored onlu once)
         else if (loopResult == false && direction == Direction.NEW) {
-            Individual changeIndividual = freshRoModel.createIndividual(ROEVO.ChangeClass);
+            Individual changeIndividual = freshRoModel.createIndividual(
+                generateRandomUriRelatedToResource(freshRO, "change"), ROEVO.ChangeClass);
             changeIndividual.addRDFType(ROEVO.ModificationClass);
             changeIndividual.addProperty(ROEVO.relatedResource, node);
             changeSpecificatinIndividual.addProperty(ROEVO.hasChange, changeIndividual);

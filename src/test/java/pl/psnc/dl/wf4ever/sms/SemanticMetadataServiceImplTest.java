@@ -48,6 +48,7 @@ import pl.psnc.dl.wf4ever.vocabulary.AO;
 import pl.psnc.dl.wf4ever.vocabulary.FOAF;
 import pl.psnc.dl.wf4ever.vocabulary.ORE;
 import pl.psnc.dl.wf4ever.vocabulary.RO;
+import pl.psnc.dl.wf4ever.vocabulary.ROEVO;
 
 import com.google.common.collect.Multimap;
 import com.hp.hpl.jena.datatypes.xsd.XSDDatatype;
@@ -1324,27 +1325,32 @@ public class SemanticMetadataServiceImplTest {
     public final void testROevo()
             throws URISyntaxException, IOException {
 
-        String a = testStructure.sms.storeAggregatedDifferences(testStructure.sp2, testStructure.sp1);
-        System.out.println(IOUtils.toString(testStructure.sms.getNamedGraph(testStructure.sp2.getManifestUri(),
-            RDFFormat.TURTLE)));
-        System.out.println("==========================================");
-        System.out.println(IOUtils.toString(testStructure.sms.getNamedGraph(
-            testStructure.sp2.getFixedEvolutionAnnotationBodyPath(), RDFFormat.TURTLE)));
+        System.out.println(testStructure.sms.storeAggregatedDifferences(testStructure.sp2, testStructure.sp1));
 
         Individual evoInfoSource = testStructure.sms.getIndividual(testStructure.sp2);
-        
-        /*
+        List<RDFNode> nodes = evoInfoSource.getPropertyValue(ROEVO.wasChangedBy).as(Individual.class)
+                .listPropertyValues(ROEVO.hasChange).toList();
+
+        OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+        model.read(testStructure.sms.getNamedGraph(testStructure.sp2.getManifestUri(), RDFFormat.RDFXML), null);
+        model.read(
+            testStructure.sms.getNamedGraph(testStructure.sp2.getFixedEvolutionAnnotationBodyPath(), RDFFormat.RDFXML),
+            null);
+
         Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann3").toString(),
-            ROEVO.AdditionClass.toString(), model, changesList));
-        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/res3").toString(),
-            ROEVO.AdditionClass.getURI(), model, changesList));
+            ROEVO.AdditionClass.toString(), model, nodes));
         Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/afinalfolder").toString(),
-            ROEVO.AdditionClass.getURI(), model, changesList));
+            ROEVO.AdditionClass.getURI(), model, nodes));
         Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann2").toString(),
-            ROEVO.ModificationClass.getURI(), model, changesList));
+            ROEVO.ModificationClass.getURI(), model, nodes));
+        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/res3").toString(),
+            ROEVO.AdditionClass.getURI(), model, nodes));
         Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp1/afolder").toString(),
-            ROEVO.RemovalClass.getURI(), model, changesList));
-            */
+            ROEVO.RemovalClass.getURI(), model, nodes));
+        //should not consider any resources added to the research object after the snaphot is done
+        Assert.assertFalse(isChangeInTheChangesList(getResourceURI("ro1-sp1/change_annotation").toString(),
+            ROEVO.AdditionClass.getURI(), model, nodes));
+
     }
 
 

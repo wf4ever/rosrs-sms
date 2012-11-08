@@ -72,8 +72,8 @@
     dct:created "2001-01-01T16:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Person; foaf:name "Filip" ] . 
     
-:res3s a ro:Resource, ore:AggregatedResources ;
-    dct:created "2003-01-01T16:01:10Z"^^xsd:dateTime ;
+:res3 a ro:Resource, ore:AggregatedResources ;
+    dct:created "2001-01-01T16:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Person; foaf:name "Filip" ] .
 
     
