@@ -57,6 +57,11 @@
 <.ro/ann1-body.ttl> a rdfg:Graph, ore:AggregatedResources ;
 	dct:created "2001-01-01T16:01:10Z"^^xsd:dateTime ;
 	dct:creator [ a foaf:Person ; foaf:name "Marco Roos" ] .
+
+<.ro/ann2-body.ttl> a rdfg:Graph, ore:AggregatedResources ;
+	dct:created "2001-01-01T16:01:10Z"^^xsd:dateTime ;
+	dct:creator [ a foaf:Person ; foaf:name "Marco Roos" ] .
+	
 	
 <agregated-resource-file> a ro:Resource ;
 	dct:created "2001-01-01T16:01:10Z"^^xsd:dateTime ;

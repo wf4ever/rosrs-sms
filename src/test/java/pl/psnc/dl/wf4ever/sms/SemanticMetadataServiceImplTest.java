@@ -23,7 +23,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import javax.naming.NamingException;
-import javax.persistence.Transient;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
@@ -121,33 +120,7 @@ public class SemanticMetadataServiceImplTest {
 
     private static final String FILE_SEPARATOR = System.getProperty("file.separator");
 
-
-    static class TTLResearchObject extends ResearchObject {
-
-        private TTLResearchObject(URI uri) {
-            super(uri);
-        }
-
-
-        @Override
-        @Transient
-        public URI getManifestUri() {
-            return getUri().resolve(".ro/manifest.ttl");
-        }
-
-
-        @Override
-        public String getManifestFormat() {
-            return "TTL";
-        }
-
-
-        public static ResearchObject create(URI uri) {
-            //don't look in db because TTLscenario
-            return new TTLResearchObject(uri);
-        }
-
-    }
+    private TestStructure testStructure;
 
 
     /**
@@ -188,6 +161,7 @@ public class SemanticMetadataServiceImplTest {
     public void setUp()
             throws Exception {
         cleanData();
+        testStructure = new TestStructure();
     }
 
 
@@ -1180,84 +1154,52 @@ public class SemanticMetadataServiceImplTest {
     @Test
     public final void testIsSnapshot()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
-        try {
-            Assert.assertTrue("snapshot does not recognized",
-                sms.isSnapshot(TTLResearchObject.create(getResourceURI("ro1-sp1/"))));
-            Assert.assertFalse("snapshot wrongly recognized",
-                sms.isSnapshot(TTLResearchObject.create(getResourceURI("ro1/"))));
-        } finally {
-            sms.close();
-        }
+        Assert.assertTrue("snapshot does not recognized", testStructure.sms.isSnapshot(testStructure.sp1));
+        Assert.assertFalse("snapshot wrongly recognized", testStructure.sms.isSnapshot(testStructure.ro1));
+        Assert.assertFalse("snapshot wrongly recognized", testStructure.sms.isSnapshot(testStructure.arch1));
     }
 
 
     @Test
     public final void testIsArchive()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
-        try {
-            Assert.assertTrue("archive does not recognized",
-                sms.isArchive(TTLResearchObject.create(getResourceURI("ro1-arch1/"))));
-            Assert.assertFalse("archive wrongly recognized",
-                sms.isArchive(TTLResearchObject.create(getResourceURI("ro1/"))));
-
-        } finally {
-            sms.close();
-        }
+        Assert.assertTrue("archive does not recognized", testStructure.sms.isArchive(testStructure.arch1));
+        Assert.assertFalse("archive does not recognized", testStructure.sms.isArchive(testStructure.ro1));
+        Assert.assertFalse("archive does not recognized", testStructure.sms.isArchive(testStructure.sp1));
     }
 
 
     @Test
     public final void testGetPreviousSnaphotOrArchive()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
-        try {
-            URI sp1Antecessor = sms.getPreviousSnaphotOrArchive(ResearchObject.create(getResourceURI("ro1/")),
-                TTLResearchObject.create(getResourceURI("ro1-sp1/")));
-            URI sp2Antecessor = sms.getPreviousSnaphotOrArchive(ResearchObject.create(getResourceURI("ro1/")),
-                TTLResearchObject.create(getResourceURI("ro1-sp2/")));
-            Assert.assertNull("wrong antecessor URI", sp1Antecessor);
-            Assert.assertEquals("wrong antecessor URI", sp2Antecessor, getResourceURI("ro1-sp1/"));
-        } finally {
-            sms.close();
-        }
+        URI sp1Antecessor = testStructure.sms.getPreviousSnaphotOrArchive(testStructure.ro1, testStructure.sp1);
+        URI sp2Antecessor = testStructure.sms.getPreviousSnaphotOrArchive(testStructure.ro1, testStructure.sp2);
+        Assert.assertNull("wrong antecessor URI", sp1Antecessor);
+        Assert.assertEquals("wrong antecessor URI", sp2Antecessor, testStructure.sp1.getUri());
     }
 
 
     @Test
     public final void testGetIndividual()
             throws URISyntaxException, ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
-        try {
-            OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-            model.read(getResourceURI("ro1/").resolve(".ro/manifest.ttl").toString(), "TTL");
-            model.read(getResourceURI("ro1/").resolve(".ro/evo_info.ttl").toString(), "TTL");
-            Individual source = model.getIndividual(getResourceURI("ro1/").toString());
-            Individual source2 = sms.getIndividualFromResearchObjectManifestAndRoevo(TTLResearchObject
-                    .create(getResourceURI("ro1/")));
-            Assert.assertEquals("wrong individual returned", source, source2);
-        } finally {
-            sms.close();
-        }
+        OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+        model.read(getResourceURI("ro1/").resolve(".ro/manifest.ttl").toString(), "TTL");
+        model.read(getResourceURI("ro1/").resolve(".ro/evo_info.ttl").toString(), "TTL");
+        Individual source = model.getIndividual(getResourceURI("ro1/").toString());
+        Individual source2 = testStructure.sms.getIndividual(testStructure.ro1);
+        Assert.assertEquals("wrong individual returned", source, source2);
     }
 
 
     @Test
     public final void testGetLiveROfromSnapshotOrArchive()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
-        try {
-            URI liveFromRO = sms.getLiveURIFromSnapshotOrArchive(TTLResearchObject.create(getResourceURI("ro1/")));
-            URI liveFromSP = sms.getLiveURIFromSnapshotOrArchive(TTLResearchObject.create(getResourceURI("ro1-sp1/")));
-            URI liveFromARCH = sms.getLiveURIFromSnapshotOrArchive(TTLResearchObject
-                    .create(getResourceURI("ro1-arch1/")));
-            Assert.assertNull("live RO does not have a parent RO", liveFromRO);
-            Assert.assertEquals("wrong parent URI", liveFromSP, getResourceURI("ro1/"));
-            Assert.assertEquals("wrong parent URI", liveFromARCH, getResourceURI("ro1/"));
-        } finally {
-            sms.close();
-        }
+        URI liveFromRO = testStructure.sms.getLiveURIFromSnapshotOrArchive(testStructure.ro1);
+        URI liveFromSP = testStructure.sms.getLiveURIFromSnapshotOrArchive(testStructure.sp1);
+        URI liveFromARCH = testStructure.sms.getLiveURIFromSnapshotOrArchive(testStructure.arch1);
+        Assert.assertNull("live RO does not have a parent RO", liveFromRO);
+        Assert.assertEquals("wrong parent URI", liveFromSP, testStructure.ro1.getUri());
+        Assert.assertEquals("wrong parent URI", liveFromARCH, testStructure.ro1.getUri());
     }
 
 
@@ -1424,33 +1366,16 @@ public class SemanticMetadataServiceImplTest {
     public final void testROevo()
             throws URISyntaxException, IOException {
 
-        ResearchObject ro1 = ResearchObject.create(getResourceURI("ro1"));
-        ResearchObject sp1 = ResearchObject.create(getResourceURI("ro1-sp1"));
-        ResearchObject sp2 = ResearchObject.create(getResourceURI("ro1-sp2"));
-        ResearchObject arch1 = ResearchObject.create(getResourceURI("ro1-arch1"));
-
-        File file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1/.ro/manifest.ttl");
-        FileInputStream is = new FileInputStream(file);
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, ro1, is, RDFFormat.TURTLE);
-
-        file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1-sp1/.ro/manifest.ttl");
-        is = new FileInputStream(file);
-        sms.createResearchObject(sp1);
-        sms.updateManifest(sp1, is, RDFFormat.TURTLE);
-
-        file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1-sp2/.ro/manifest.ttl");
-        is = new FileInputStream(file);
-        sms.createResearchObject(sp2);
-        sms.updateManifest(sp2, is, RDFFormat.TURTLE);
-
-        file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1-arch1/.ro/manifest.ttl");
-        is = new FileInputStream(file);
-        sms.createResearchObject(arch1);
-        sms.updateManifest(arch1, is, RDFFormat.TURTLE);
-
+        String a = testStructure.sms.storeAggregatedDifferences(testStructure.sp2, testStructure.sp1);
+        System.out.println(IOUtils.toString(testStructure.sms.getNamedGraph(testStructure.sp2.getManifestUri(),
+            RDFFormat.TURTLE)));
+        System.out.println("==========================================");
+        System.out.println(IOUtils.toString(testStructure.sms.getNamedGraph(
+            testStructure.sp2.getFixedEvolutionAnnotationBodyPath(), RDFFormat.TURTLE)));
     }
 
 
+    /*
     /*
     //@Test
     public final void testStoreROhistory()
@@ -1601,6 +1526,55 @@ public class SemanticMetadataServiceImplTest {
         result += FILE_SEPARATOR + "src" + FILE_SEPARATOR + "test" + FILE_SEPARATOR + "resources" + FILE_SEPARATOR
                 + "rdfStructure" + FILE_SEPARATOR + resourceName;
         return new URI("file://" + result);
+    }
+
+
+    class TestStructure {
+
+        public ResearchObject ro1;
+        public ResearchObject sp1;
+        public ResearchObject sp2;
+        public ResearchObject arch1;
+        public SemanticMetadataService sms;
+
+
+        public TestStructure()
+                throws URISyntaxException, FileNotFoundException {
+            ro1 = ResearchObject.create(getResourceURI("ro1/"));
+            sp1 = ResearchObject.create(getResourceURI("ro1-sp1/"));
+            sp2 = ResearchObject.create(getResourceURI("ro1-sp2/"));
+            arch1 = ResearchObject.create(getResourceURI("ro1-arch1/"));
+            File file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1/.ro/manifest.ttl");
+            FileInputStream is = new FileInputStream(file);
+            sms = new SemanticMetadataServiceImpl(userProfile, ro1, is, RDFFormat.TURTLE);
+            file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1/.ro/evo_info.ttl");
+            is = new FileInputStream(file);
+            sms.addNamedGraph(ro1.getFixedEvolutionAnnotationBodyPath(), is, RDFFormat.TURTLE);
+
+            file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1-sp1/.ro/manifest.ttl");
+            is = new FileInputStream(file);
+            sms.createResearchObject(sp1);
+            sms.updateManifest(sp1, is, RDFFormat.TURTLE);
+            file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1-sp1/.ro/evo_info.ttl");
+            is = new FileInputStream(file);
+            sms.addNamedGraph(sp1.getFixedEvolutionAnnotationBodyPath(), is, RDFFormat.TURTLE);
+
+            file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1-sp2/.ro/manifest.ttl");
+            is = new FileInputStream(file);
+            sms.createResearchObject(sp2);
+            sms.updateManifest(sp2, is, RDFFormat.TURTLE);
+            file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1-sp2/.ro/evo_info.ttl");
+            is = new FileInputStream(file);
+            sms.addNamedGraph(sp2.getFixedEvolutionAnnotationBodyPath(), is, RDFFormat.TURTLE);
+
+            file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1-arch1/.ro/manifest.ttl");
+            is = new FileInputStream(file);
+            sms.createResearchObject(arch1);
+            sms.updateManifest(arch1, is, RDFFormat.TURTLE);
+            file = new File(PROJECT_PATH + "/src/test/resources/rdfStructure/ro1-arch1/.ro/evo_info.ttl");
+            is = new FileInputStream(file);
+            sms.addNamedGraph(arch1.getFixedEvolutionAnnotationBodyPath(), is, RDFFormat.TURTLE);
+        }
     }
 
 }
