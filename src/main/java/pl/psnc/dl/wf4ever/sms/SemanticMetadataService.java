@@ -589,31 +589,12 @@ public interface SemanticMetadataService {
 
 
     /**
-     * Store information about differences between current and previous snapshot/archive (default relevant path to the
-     * manifest file is .ro/manifest.rdf).
-     * 
-     * @param freshObjectURI
-     *            URI of the freshest snapshot/archive
-     * @param antecessorObjectURI
-     *            URI of the previous snapshot/archive
-     * @return list of changes
-     * @throws URISyntaxException
-     */
-    String storeAggregatedDifferences(URI freshObjectURI, URI antecessorObjectURI)
-            throws URISyntaxException;
-
-
-    /**
      * Store information about differences between current and previous snapshot/archive.
      * 
-     * @param freshObjectURI
-     *            URI of the freshest snapshot/archive
-     * @param antecessorObjectURI
-     *            URI of the previous snapshot/archive
-     * @param modelPath
-     *            relevant path to the RO manifest
-     * @param format
-     *            file format ("XML/RDF", "TTL" ...)
+     * @param freshRO
+     *            The freshest snapshot/archive
+     * @param oldRO
+     *            Previous snapshot/archive
      * @return list of changes
      * @throws URISyntaxException
      */
