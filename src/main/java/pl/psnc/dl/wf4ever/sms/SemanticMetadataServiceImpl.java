@@ -31,7 +31,6 @@ import pl.psnc.dl.wf4ever.common.EvoType;
 import pl.psnc.dl.wf4ever.common.ResearchObject;
 import pl.psnc.dl.wf4ever.common.ResourceInfo;
 import pl.psnc.dl.wf4ever.common.UserProfile;
-import pl.psnc.dl.wf4ever.common.util.SafeURI;
 import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
 import pl.psnc.dl.wf4ever.model.AO.Annotation;
 import pl.psnc.dl.wf4ever.model.ORE.AggregatedResource;
@@ -100,13 +99,24 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     public SemanticMetadataServiceImpl(UserProfile user)
             throws IOException, NamingException, SQLException, ClassNotFoundException {
-        this.user = user;
-        connection = getConnection("connection.properties");
-        if (connection == null) {
-            throw new RuntimeException("Connection could not be created");
-        }
+        this(user, true);
+    }
 
-        graphset = new NamedGraphSetDB(connection, "sms");
+
+    public SemanticMetadataServiceImpl(UserProfile user, boolean useDb)
+            throws IOException, NamingException, SQLException, ClassNotFoundException {
+        this.user = user;
+
+        if (useDb) {
+            connection = getConnection("connection.properties");
+            if (connection == null) {
+                throw new RuntimeException("Connection could not be created");
+            }
+            graphset = new NamedGraphSetDB(connection, "sms");
+        } else {
+            this.connection = null;
+            graphset = new NamedGraphSetImpl();
+        }
         W4E.defaultModel.setNsPrefixes(W4E.standardNamespaces);
         createUserProfile(user);
     }
@@ -344,16 +354,9 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         if (ro == null) {
             throw new IllegalArgumentException("URI not found: " + researchObject.getUri());
         }
-        Individual resource = manifestModel.getIndividual(SafeURI.URItoString(resourceURI.toString()));
-        if (resource == null) {
-            throw new IllegalArgumentException("URI not found: " + SafeURI.URItoString(resourceURI.toString()));
-        }
+        Resource resource = manifestModel.getResource(resourceURI.toString());
         manifestModel.remove(ro, ORE.aggregates, resource);
-
-        StmtIterator it = manifestModel.listStatements(null, ORE.aggregates, resource);
-        if (!it.hasNext()) {
-            manifestModel.removeAll(resource, null, null);
-        }
+        manifestModel.removeAll(resource, null, null);
 
         ResIterator it2 = manifestModel.listSubjectsWithProperty(RO.annotatesAggregatedResource, resource);
         while (it2.hasNext()) {
@@ -370,6 +373,11 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
                 manifestModel.removeAll(ann, null, null);
                 manifestModel.removeAll(null, null, ann);
             }
+        }
+
+        URI proxy = getProxyForResource(researchObject, resourceURI);
+        if (proxy != null) {
+            deleteProxy(researchObject, proxy);
         }
     }
 
@@ -1763,5 +1771,40 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             return null;
         }
         return new Annotation(URI.create(it.next().getSubject().getURI()));
+    }
+
+
+    public boolean addAnnotationBody(ResearchObject researchObject, URI graphURI, InputStream inputStream,
+            RDFFormat rdfFormat) {
+        OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
+        Individual ro = manifestModel.getIndividual(researchObject.getUri().toString());
+        if (ro == null) {
+            throw new IllegalArgumentException("URI not found: " + researchObject.getUri());
+        }
+        Resource resource = manifestModel.createResource(graphURI.toString());
+        manifestModel.add(ro, ORE.aggregates, resource);
+        return addNamedGraph(graphURI, inputStream, rdfFormat);
+    }
+
+
+    @Override
+    public void removeAnnotationBody(ResearchObject researchObject, URI graphURI) {
+        graphURI = graphURI.normalize();
+        OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
+        Individual ro = manifestModel.getIndividual(researchObject.getUri().toString());
+        if (ro == null) {
+            throw new IllegalArgumentException("URI not found: " + researchObject.getUri());
+        }
+        Resource resource = manifestModel.getResource(graphURI.toString());
+        if (resource == null) {
+            throw new IllegalArgumentException("URI not found: " + graphURI);
+        }
+        manifestModel.remove(ro, ORE.aggregates, resource);
+
+        URI proxy = getProxyForResource(researchObject, graphURI);
+        if (proxy != null) {
+            deleteProxy(researchObject, proxy);
+        }
+
     }
 }

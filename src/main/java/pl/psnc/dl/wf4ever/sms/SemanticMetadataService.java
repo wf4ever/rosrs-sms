@@ -174,7 +174,35 @@ public interface SemanticMetadataService {
 
 
     /**
-     * Add a named graph to the quadstore
+     * Add an annotation body.
+     * 
+     * @param researchObject
+     *            RO that contains the annotation
+     * @param graphURI
+     *            named graph URI
+     * @param inputStream
+     *            named graph content
+     * @param rdfFormat
+     *            graph content format
+     * @return true if a new named graph is added, false if it existed
+     */
+    boolean addAnnotationBody(ResearchObject researchObject, URI graphURI, InputStream inputStream, RDFFormat rdfFormat);
+
+
+    /**
+     * Remove an annotation body.
+     * 
+     * @param researchObject
+     *            RO that contains the annotation
+     * @param graphURI
+     *            named graph URI
+     */
+    void removeAnnotationBody(ResearchObject researchObject, URI graphURI);
+
+
+    /**
+     * Add a named graph to the quadstore. This is a generic method and will be made private in future releases. Use
+     * specific methods to add annotations, manifest or folder resource maps.
      * 
      * @param graphURI
      *            named graph URI
@@ -184,6 +212,7 @@ public interface SemanticMetadataService {
      *            graph content format
      * @return true if a new named graph is added, false if it existed
      */
+    @Deprecated
     boolean addNamedGraph(URI graphURI, InputStream inputStream, RDFFormat rdfFormat);
 
 
@@ -237,13 +266,15 @@ public interface SemanticMetadataService {
 
 
     /**
-     * Delete a named graph from the quadstore if exists.
+     * Delete a named graph from the quadstore if exists. This is a generic method and will be made private in future
+     * releases. Use specific methods to remove annotations, manifest or folder resource maps.
      * 
      * @param roURI
      *            the RO URI, used for distinguishing internal resources from external
      * @param graphURI
      *            graph URI
      */
+    @Deprecated
     void removeNamedGraph(ResearchObject researchObject, URI graphURI);
 
 
