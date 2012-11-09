@@ -26,13 +26,13 @@
 	ore:aggregates <.ro/ann1-body.ttl> ;
 	ore:aggregates <.ro/ann-blank.ttl> ;
 	ore:aggregates <afinalfolder> ;
-	ore:aggregates <final-agregated-resource-file> .
+	ore:aggregates <final-agregated-resource-file> ;
 	ore:aggregates :evo_info ;
-	ore:aggregates <.ro/evo_info.ttl> ;
+	ore:aggregates <.ro/evo_info.ttl> .
 
 :evo_info a ro:AggregatedAnnotation ;
 	ao:body <.ro/evo_info.ttl> ;
-	ore:annotatesAggregatedResource <.> ;
+	ore:annotatesAggregatedResource <.> .
 	
 _:blank a ro:AggregatedAnnotation ;
     ro:annotatesAggregatedResource <agregated-resource-file> ;

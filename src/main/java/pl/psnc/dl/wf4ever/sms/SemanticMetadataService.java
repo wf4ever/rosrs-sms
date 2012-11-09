@@ -542,115 +542,49 @@ public interface SemanticMetadataService {
 
 
     /**
-     * Check if the object is a snapshot of certain RO.
+     * Get a URL of live RO basing on snapshot or archive URI.
      * 
-     * @param resource
-     *            resource uri
-     * @param modelPath
-     *            relevant path to the RO manifest
-     * @param format
-     *            file format ("XML/RDF", "TTL" ...)
-     * @return true in case object is a snapshot, false if it is not
-     */
-    boolean isSnapshotURI(URI resource, String modelPath, String format);
-
-
-    /**
-     * Check if the object is an archive of certain RO.
-     * 
-     * @param resource
-     *            resource uri
-     * @param modelPath
-     *            * @return the URI of the current snapshot or archive predecessor relevant path to the RO manifest
-     * @param format
-     *            file format ("XML/RDF", "TTL" ...)
-     * @return true in case object is an archive, false if it is not
-     */
-    boolean isArchiveURI(URI resource, String modelPath, String format);
-
-
-    /**
-     * Get a URL of live RO basing on snapshot or archive URI
-     * 
-     * @param resource
-     *            resource uriCheck
+     * @param snapshotOrArchive
+     *            snapshotOrArchive
      * @return the URI to the live RO
-     * @throws URISyntaxException
-     * @see #getLiveURIFromSnapshotOrArchive(URI resource, String modelPath)
+     * @throws URISyntaxException .
      */
-    URI getLiveURIFromSnapshotOrArchive(URI resource)
-            throws URISyntaxException;
-
-
-    /**
-     * Get a URL of live RO basing on snapshot or archive URI
-     * 
-     * @param resource
-     *            resource uriCheck
-     * @param modelPath
-     *            relevant path to the RO manifest
-     * @param format
-     *            file format ("XML/RDF", "TTL" ...)
-     * @return the URI to the live RO
-     * @throws URISyntaxException
-     */
-    URI getLiveURIFromSnapshotOrArchive(URI resource, String modelPath, String format)
+    URI getLiveURIFromSnapshotOrArchive(ResearchObject snapshotOrArchive)
             throws URISyntaxException;
 
 
     /**
      * Check if the object is a snapshot of certain RO (default relevant path to the manifest file is .ro/manifest.rdf).
      * 
-     * @param resource
-     *            resource uri
+     * @param ro
+     *            ResearchObject
      * @return true in case object is a snapshot, false if it is not
-     * @see #isSnapshotURI(URI resource, String modelPath)
      */
-    boolean isSnapshotURI(URI resource);
+    boolean isSnapshot(ResearchObject ro);
 
 
     /**
      * Check if the object is an archive of certain RO (default relevant path to the manifest file is .ro/manifest.rdf).
      * 
-     * @param resource
-     *            resource uri
+     * @param ro
+     *            ResearchObject
      * @return true in case object is an archive, false if it is not
-     * @see #isArchiveURI(URI resource, String modelPath)
      */
-    boolean isArchiveURI(URI resource);
+    boolean isArchive(ResearchObject ro);
 
 
     /**
      * Get the predecessor of the currently processed snapshot or archive (default relevant path to the manifest file is
      * .ro/manifest.rdf).
      * 
-     * @param liveRO
+     * @param ResearchObject
      *            live RO (source of the snapshot or archive) uri
-     * @param freshSnapshotOrARchive
+     * @param freshSnaphotOrArchive
      *            currently processed snapshot or archive
      * @return the URI of the current snapshot or archive predecessor
-     * @throws URISyntaxException
-     * @see #getPreviousSnaphotOrArchive(URI liveRO, URI freshSnapshotOrARchive, String modelPath)
+     * @throws URISyntaxException .
      */
-    URI getPreviousSnaphotOrArchive(URI liveRO, URI freshSnapshotOrARchive)
-            throws URISyntaxException;
-
-
-    /**
-     * Get the predecessor of the currently processed snapshot or archive.
-     * 
-     * @param liveRO
-     *            live RO (source of the snapshot or archive) uri
-     * @param freshSnapshotOrARchive
-     *            currently processed snapshot or archive
-     * @param modelPath
-     *            relevant path to the RO manifest
-     * @param format
-     *            file format ("XML/RDF", "TTL" ...)
-     * @return the URI of the current snapshot or archive predecessor
-     * @throws URISyntaxException
-     */
-    URI getPreviousSnaphotOrArchive(URI liveRO, URI freshSnapshotOrARchive, String modelPath, String format)
+    URI getPreviousSnaphotOrArchive(ResearchObject liveRo, ResearchObject freshSnaphotOrArchive)
             throws URISyntaxException;
 
 
@@ -698,25 +632,11 @@ public interface SemanticMetadataService {
     /**
      * Get individual of the resource object.
      * 
-     * @param resource
-     *            resource object URI
+     * @param ro
+     *            ResearchObject
      * @return the individual of the resource object
      */
-    Individual getIndividual(URI resource);
-
-
-    /**
-     * Get individual of the resource object.
-     * 
-     * @param resource
-     *            resource object URI
-     * @param modelPath
-     *            relevant path to the RO manifest
-     * @param format
-     *            file format ("XML/RDF", "TTL" ...)
-     * @return the individual of the resource object
-     */
-    Individual getIndividual(URI resource, String modelPath, String format);
+    Individual getIndividualFromResearchObjectManifestAndRoevo(ResearchObject ro);
 
 
     /**
