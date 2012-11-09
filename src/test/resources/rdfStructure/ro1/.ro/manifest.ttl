@@ -30,6 +30,10 @@
 	ore:aggregates :evo_info ;
 	ore:aggregates <.ro/evo_info.ttl> .
 
+<.ro/evo_info.ttl> a ore:AggregatedResources;
+	dct:created "2000-02-01T16:01:10Z"^^xsd:dateTime ;
+    dct:creator [ a foaf:Agent; foaf:name "RO manager" ] .
+
 :evo_info a ro:AggregatedAnnotation ;
 	dct:created "2000-02-01T16:01:10Z"^^xsd:dateTime ;
 	ao:body <.ro/evo_info.ttl> ;

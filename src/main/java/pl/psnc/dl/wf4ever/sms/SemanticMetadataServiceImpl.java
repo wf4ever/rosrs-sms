@@ -27,9 +27,11 @@ import org.apache.log4j.Logger;
 import org.joda.time.DateTime;
 import org.openrdf.rio.RDFFormat;
 
+import pl.psnc.dl.wf4ever.common.EvoType;
 import pl.psnc.dl.wf4ever.common.ResearchObject;
 import pl.psnc.dl.wf4ever.common.ResourceInfo;
 import pl.psnc.dl.wf4ever.common.UserProfile;
+import pl.psnc.dl.wf4ever.common.util.SafeURI;
 import pl.psnc.dl.wf4ever.exceptions.ManifestTraversingException;
 import pl.psnc.dl.wf4ever.model.AO.Annotation;
 import pl.psnc.dl.wf4ever.model.ORE.AggregatedResource;
@@ -179,23 +181,24 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
     public void createLiveResearchObject(ResearchObject researchObject, ResearchObject source) {
         OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
         Individual manifest = manifestModel.getIndividual(researchObject.getManifestUri().toString());
+
         if (manifest != null) {
             throw new IllegalArgumentException("URI already exists: " + researchObject.getManifestUri());
         }
+
         manifest = manifestModel.createIndividual(researchObject.getManifestUri().toString(), RO.Manifest);
         Individual ro = manifestModel.createIndividual(researchObject.getUri().toString(), RO.ResearchObject);
-        ro.addRDFType(ROEVO.LiveROClass);
 
         manifestModel.add(ro, ORE.isDescribedBy, manifest);
         manifestModel.add(ro, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
         manifestModel.add(ro, DCTerms.creator, manifestModel.createResource(user.getUri().toString()));
-
         manifestModel.add(manifest, ORE.describes, ro);
         manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
 
         if (source != null) {
             manifestModel.add(ro, PROV.hadOriginalSource, manifestModel.createResource(source.getUri().toString()));
         }
+
     }
 
 
@@ -208,11 +211,11 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         }
 
         OntModel liveManifestModel = createOntModelForNamedGraph(liveResearchObject.getManifestUri());
+
         Individual liveManifest = liveManifestModel.getIndividual(liveResearchObject.getManifestUri().toString());
 
         manifest = manifestModel.createIndividual(researchObject.getManifestUri().toString(), RO.Manifest);
         Individual ro = manifestModel.createIndividual(researchObject.getUri().toString(), RO.ResearchObject);
-        ro.addRDFType(ROEVO.SnapshotROClass);
 
         RDFNode creator, created;
         Resource liveRO;
@@ -228,7 +231,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             }
             creator = liveRO.getPropertyResourceValue(DCTerms.creator);
             created = liveRO.as(Individual.class).getPropertyValue(DCTerms.created);
-            liveManifestModel.add(liveRO, ROEVO.hasSnapshot, ro);
+
         }
 
         manifestModel.add(ro, ORE.isDescribedBy, manifest);
@@ -237,10 +240,6 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
         manifestModel.add(manifest, ORE.describes, ro);
         manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
-
-        manifestModel.add(ro, ROEVO.isSnapshotOf, liveRO);
-        manifestModel.add(ro, ROEVO.snapshottedAtTime, manifestModel.createTypedLiteral(Calendar.getInstance()));
-        manifestModel.add(ro, ROEVO.snapshottedBy, manifestModel.createResource(user.getUri().toString()));
 
         //TODO add wasRevisionOf
     }
@@ -259,7 +258,6 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
         manifest = manifestModel.createIndividual(researchObject.getManifestUri().toString(), RO.Manifest);
         Individual ro = manifestModel.createIndividual(researchObject.getUri().toString(), RO.ResearchObject);
-        ro.addRDFType(ROEVO.ArchivedROClass);
 
         RDFNode creator, created;
         Resource liveRO;
@@ -275,7 +273,6 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             }
             creator = liveRO.getPropertyResourceValue(DCTerms.creator);
             created = liveRO.as(Individual.class).getPropertyValue(DCTerms.created);
-            liveManifestModel.add(liveRO, ROEVO.hasArchive, ro);
         }
 
         manifestModel.add(ro, ORE.isDescribedBy, manifest);
@@ -284,10 +281,6 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
         manifestModel.add(manifest, ORE.describes, ro);
         manifestModel.add(manifest, DCTerms.created, manifestModel.createTypedLiteral(Calendar.getInstance()));
-
-        manifestModel.add(ro, ROEVO.isArchiveOf, liveRO);
-        manifestModel.add(ro, ROEVO.archivedAtTime, manifestModel.createTypedLiteral(Calendar.getInstance()));
-        manifestModel.add(ro, ROEVO.archivedBy, manifestModel.createResource(user.getUri().toString()));
 
         //TODO add wasRevisionOf
     }
@@ -351,9 +344,9 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         if (ro == null) {
             throw new IllegalArgumentException("URI not found: " + researchObject.getUri());
         }
-        Individual resource = manifestModel.getIndividual(resourceURI.toString());
+        Individual resource = manifestModel.getIndividual(SafeURI.URItoString(resourceURI.toString()));
         if (resource == null) {
-            throw new IllegalArgumentException("URI not found: " + resourceURI);
+            throw new IllegalArgumentException("URI not found: " + SafeURI.URItoString(resourceURI.toString()));
         }
         manifestModel.remove(ro, ORE.aggregates, resource);
 
@@ -1058,14 +1051,14 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
     @Override
     public boolean isSnapshot(ResearchObject ro) {
-        return getIndividual(ro).hasRDFType(ROEVO.SnapshotROClass);
+        return getIndividual(ro).hasRDFType(ROEVO.SnapshotRO);
 
     }
 
 
     @Override
     public boolean isArchive(ResearchObject ro) {
-        return getIndividual(ro).hasRDFType(ROEVO.ArchivedROClass);
+        return getIndividual(ro).hasRDFType(ROEVO.ArchivedRO);
     }
 
 
@@ -1160,7 +1153,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         addAnnotation(freshRO, Arrays.asList(freshRO.getUri()), freshRO.getFixedEvolutionAnnotationBodyPath());
 
         Individual changeSpecificationIndividual = evoInfoModel.createIndividual(
-            generateRandomUriRelatedToResource(freshRO, "change_specification"), ROEVO.ChangeSpecificationClass);
+            generateRandomUriRelatedToResource(freshRO, "change_specification"), ROEVO.ChangeSpecification);
 
         evoInfoModel.getIndividual(freshRO.getUriString()).addProperty(ROEVO.wasChangedBy,
             changeSpecificationIndividual);
@@ -1255,15 +1248,15 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         if (loopResult == null) {
             if (direction == Direction.NEW) {
                 Individual changeIndividual = freshRoModel.createIndividual(
-                    generateRandomUriRelatedToResource(freshRO, "change"), ROEVO.ChangeClass);
-                changeIndividual.addRDFType(ROEVO.AdditionClass);
+                    generateRandomUriRelatedToResource(freshRO, "change"), ROEVO.Change);
+                changeIndividual.addRDFType(ROEVO.Addition);
                 changeIndividual.addProperty(ROEVO.relatedResource, node);
                 changeSpecificatinIndividual.addProperty(ROEVO.hasChange, changeIndividual);
                 result += freshRO + " " + node.toString() + " " + direction + "\n";
             } else {
                 Individual changeIndividual = freshRoModel.createIndividual(
-                    generateRandomUriRelatedToResource(freshRO, "change"), ROEVO.ChangeClass);
-                changeIndividual.addRDFType(ROEVO.RemovalClass);
+                    generateRandomUriRelatedToResource(freshRO, "change"), ROEVO.Change);
+                changeIndividual.addRDFType(ROEVO.Removal);
                 changeIndividual.addProperty(ROEVO.relatedResource, node);
                 changeSpecificatinIndividual.addProperty(ROEVO.hasChange, changeIndividual);
                 result += freshRO + " " + node.toString() + " " + direction + "\n";
@@ -1272,8 +1265,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         //False means there are some changes (Changes exists in two directions so they will be stored onlu once)
         else if (loopResult == false && direction == Direction.NEW) {
             Individual changeIndividual = freshRoModel.createIndividual(
-                generateRandomUriRelatedToResource(freshRO, "change"), ROEVO.ChangeClass);
-            changeIndividual.addRDFType(ROEVO.ModificationClass);
+                generateRandomUriRelatedToResource(freshRO, "change"), ROEVO.Change);
+            changeIndividual.addRDFType(ROEVO.Modification);
             changeIndividual.addProperty(ROEVO.relatedResource, node);
             changeSpecificatinIndividual.addProperty(ROEVO.hasChange, changeIndividual);
             result += freshRO + " " + node.toString() + " MODIFICATION" + "\n";
@@ -1512,7 +1505,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 
     public InputStream getEvoInfo(ResearchObject researchObject) {
-        return getNamedGraph(resolveURI(researchObject.getUri(), ".ro/evo_inf.rdf"), RDFFormat.TURTLE);
+        return getNamedGraph((researchObject.getFixedEvolutionAnnotationBodyPath()), RDFFormat.TURTLE);
     }
 
 
@@ -1637,5 +1630,138 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             folderModel.add(entryInd, RO.entryName, name);
         }
         return folder;
+    }
+
+
+    @Override
+    public void generateEvoInformation(ResearchObject researchObject, ResearchObject liveRO, EvoType type) {
+        switch (type) {
+            case LIVE:
+                generateLiveRoEvoInf(researchObject);
+                break;
+            case SNAPSHOT:
+                generateSnaphotEvoInf(researchObject, liveRO);
+                break;
+            case ARCHIVED:
+                generateArchiveEvoInf(researchObject, liveRO);
+                break;
+        }
+    }
+
+
+    private void generateLiveRoEvoInf(ResearchObject researchObject) {
+        OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
+        Individual manifest = manifestModel.getIndividual(researchObject.getManifestUri().toString());
+        Individual ro = manifestModel.getIndividual(researchObject.getUri().toString());
+        OntModel evoModel = createOntModelForNamedGraph(researchObject.getFixedEvolutionAnnotationBodyPath());
+        Individual evoInfo = evoModel.getIndividual(researchObject.getFixedEvolutionAnnotationBodyPath().toString());
+        if (evoInfo != null) {
+            throw new IllegalArgumentException("URI already exists: "
+                    + researchObject.getFixedEvolutionAnnotationBodyPath());
+        }
+        evoInfo = manifestModel.createIndividual(researchObject.getFixedEvolutionAnnotationBodyPath().toString(),
+            ORE.AggregatedResource);
+        Individual roEvo = evoModel.createIndividual(researchObject.getUri().toString(), ROEVO.LiveRO);
+
+        manifestModel.add(evoInfo, ORE.describes, ro);
+        manifestModel.add(evoInfo, DCTerms.created, evoModel.createTypedLiteral(Calendar.getInstance()));
+
+        addAnnotation(researchObject, Arrays.asList(researchObject.getUri()),
+            researchObject.getFixedEvolutionAnnotationBodyPath()).toString();
+        ro.addProperty(ORE.aggregates,
+            manifestModel.getResource(researchObject.getFixedEvolutionAnnotationBodyPath().toString()));
+    }
+
+
+    private void generateSnaphotEvoInf(ResearchObject researchObject, ResearchObject liveRO) {
+
+        OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
+        Individual manifest = manifestModel.getIndividual(researchObject.getManifestUri().toString());
+        Individual ro = manifestModel.getIndividual(researchObject.getUri().toString());
+        OntModel evoModel = createOntModelForNamedGraph(researchObject.getFixedEvolutionAnnotationBodyPath());
+        Individual evoInfo = evoModel.getIndividual(researchObject.getFixedEvolutionAnnotationBodyPath().toString());
+        if (evoInfo != null) {
+            throw new IllegalArgumentException("URI already exists: "
+                    + researchObject.getFixedEvolutionAnnotationBodyPath());
+        }
+        evoInfo = manifestModel.createIndividual(researchObject.getFixedEvolutionAnnotationBodyPath().toString(),
+            ORE.AggregatedResource);
+
+        Individual roEvo = evoModel.createIndividual(researchObject.getUri().toString(), ROEVO.SnapshotRO);
+
+        manifestModel.add(evoInfo, ORE.describes, ro);
+        manifestModel.add(evoInfo, DCTerms.created, evoModel.createTypedLiteral(Calendar.getInstance()));
+
+        evoModel.add(ro, ROEVO.isSnapshotOf, liveRO.getUri().toString());
+        evoModel.add(ro, ROEVO.snapshottedAtTime, evoModel.createTypedLiteral(Calendar.getInstance()));
+        evoModel.add(ro, ROEVO.snapshottedBy, evoModel.createResource(user.getUri().toString()));
+
+        addAnnotation(researchObject, Arrays.asList(researchObject.getUri()),
+            researchObject.getFixedEvolutionAnnotationBodyPath()).toString();
+        ro.addProperty(ORE.aggregates, researchObject.getFixedEvolutionAnnotationBodyPath().toString());
+        OntModel liveEvoModel = createOntModelForNamedGraph(liveRO.getFixedEvolutionAnnotationBodyPath());
+        liveEvoModel.add(createOntModelForNamedGraph(researchObject.getManifestUri())
+                .getResource(liveRO.getUriString()), ROEVO.hasSnapshot, ro);
+
+        try {
+            if (getPreviousSnaphotOrArchive(liveRO, researchObject) != null) {
+                storeAggregatedDifferences(researchObject,
+                    ResearchObject.create(getPreviousSnaphotOrArchive(liveRO, researchObject)));
+            }
+        } catch (URISyntaxException | IOException e) {
+            //any way to informa about the problem?
+            e.printStackTrace();
+        }
+    }
+
+
+    private void generateArchiveEvoInf(ResearchObject researchObject, ResearchObject liveRO) {
+        OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
+        Individual manifest = manifestModel.getIndividual(researchObject.getManifestUri().toString());
+        Individual ro = manifestModel.getIndividual(researchObject.getUri().toString());
+        OntModel evoModel = createOntModelForNamedGraph(researchObject.getFixedEvolutionAnnotationBodyPath());
+        Individual evoInfo = evoModel.getIndividual(researchObject.getFixedEvolutionAnnotationBodyPath().toString());
+        if (evoInfo != null) {
+            throw new IllegalArgumentException("URI already exists: "
+                    + researchObject.getFixedEvolutionAnnotationBodyPath());
+        }
+        evoInfo = manifestModel.createIndividual(researchObject.getFixedEvolutionAnnotationBodyPath().toString(),
+            ORE.AggregatedResource);
+
+        Individual roEvo = evoModel.createIndividual(researchObject.getUri().toString(), ROEVO.ArchivedRO);
+
+        manifestModel.add(evoInfo, ORE.describes, ro);
+        manifestModel.add(evoInfo, DCTerms.created, evoModel.createTypedLiteral(Calendar.getInstance()));
+
+        evoModel.add(ro, ROEVO.isArchiveOf, liveRO.getUri().toString());
+        evoModel.add(ro, ROEVO.archivedAtTime, evoModel.createTypedLiteral(Calendar.getInstance()));
+        evoModel.add(ro, ROEVO.archivedBy, evoModel.createResource(user.getUri().toString()));
+
+        addAnnotation(researchObject, Arrays.asList(researchObject.getUri()),
+            researchObject.getFixedEvolutionAnnotationBodyPath()).toString();
+        ro.addProperty(ORE.aggregates, researchObject.getFixedEvolutionAnnotationBodyPath().toString());
+        OntModel liveEvoModel = createOntModelForNamedGraph(liveRO.getFixedEvolutionAnnotationBodyPath());
+        liveEvoModel.add(createOntModelForNamedGraph(researchObject.getManifestUri())
+                .getResource(liveRO.getUriString()), ROEVO.hasArchive, ro);
+        try {
+            if (getPreviousSnaphotOrArchive(liveRO, researchObject) != null) {
+                storeAggregatedDifferences(researchObject,
+                    ResearchObject.create(getPreviousSnaphotOrArchive(liveRO, researchObject)));
+            }
+        } catch (URISyntaxException | IOException e) {
+            //any way to informa about the problem?
+            e.printStackTrace();
+        }
+    }
+
+
+    public Annotation findAnnotationForBody(ResearchObject researchObject, URI body) {
+        OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
+        Resource bodyR = manifestModel.createResource(body.toString());
+        StmtIterator it = manifestModel.listStatements(null, AO.body, bodyR);
+        if (!it.hasNext()) {
+            return null;
+        }
+        return new Annotation(URI.create(it.next().getSubject().getURI()));
     }
 }

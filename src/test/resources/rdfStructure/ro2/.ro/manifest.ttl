@@ -14,4 +14,8 @@
     dct:created "2012-05-02T16:01:10Z"^^xsd:dateTime ;
     dct:creator [ a foaf:Agent; foaf:name "RO manager" ] .
 
+<.ro/evo_info.ttl> a ore:AggregatedResources;
+    dct:created "2011-12-02T16:01:10Z"^^xsd:dateTime ;
+    dct:creator [ a foaf:Agent; foaf:name "RO manager" ] .
+
 <.> a ro:ResearchObject, ore:Aggregation .

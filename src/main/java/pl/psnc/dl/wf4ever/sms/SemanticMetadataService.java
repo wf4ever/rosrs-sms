@@ -13,6 +13,7 @@ import javax.naming.NamingException;
 
 import org.openrdf.rio.RDFFormat;
 
+import pl.psnc.dl.wf4ever.common.EvoType;
 import pl.psnc.dl.wf4ever.common.ResearchObject;
 import pl.psnc.dl.wf4ever.common.ResourceInfo;
 import pl.psnc.dl.wf4ever.common.UserProfile;
@@ -665,4 +666,30 @@ public interface SemanticMetadataService {
      * @return an updated folder
      */
     Folder addFolder(ResearchObject researchObject, Folder folder);
+
+
+    /**
+     * Generate a RO evolution information .
+     * 
+     * @param type
+     *            RO type
+     * @param parent
+     *            live Research Object
+     * @param researchObject
+     *            Snapshot or Archive
+     */
+    void generateEvoInformation(ResearchObject researchObject, ResearchObject parent, EvoType type);
+
+
+    /**
+     * Find annotation for given body URI.
+     * 
+     * @param researchObject
+     *            Research Object
+     * @param body
+     *            Annotation body
+     * @return Annotation, null if not found
+     */
+    Annotation findAnnotationForBody(ResearchObject researchObject, URI body);
+
 }

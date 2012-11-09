@@ -263,19 +263,15 @@ public class SemanticMetadataServiceImplTest {
      */
     @Test
     public final void testCreateResearchObject()
-            throws ClassNotFoundException, IOException, NamingException, SQLException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
+            throws IOException {
+        testStructure.sms.createResearchObject(researchObject);
         try {
-            sms.createResearchObject(researchObject);
-            try {
-                sms.createResearchObject(researchObject);
-                fail("Should throw an exception");
-            } catch (IllegalArgumentException e) {
-                // good
-            }
-        } finally {
-            sms.close();
+            testStructure.sms.createResearchObject(researchObject);
+            fail("Should throw an exception");
+        } catch (IllegalArgumentException e) {
+            // good
         }
+
     }
 
 
@@ -1338,87 +1334,38 @@ public class SemanticMetadataServiceImplTest {
             null);
 
         Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann3").toString(),
-            ROEVO.AdditionClass.toString(), model, nodes));
+            ROEVO.Addition.toString(), model, nodes));
         Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/afinalfolder").toString(),
-            ROEVO.AdditionClass.getURI(), model, nodes));
+            ROEVO.Addition.getURI(), model, nodes));
         Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann2").toString(),
-            ROEVO.ModificationClass.getURI(), model, nodes));
-        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/res3").toString(),
-            ROEVO.AdditionClass.getURI(), model, nodes));
+            ROEVO.Modification.getURI(), model, nodes));
+        Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/res3").toString(), ROEVO.Addition.getURI(),
+            model, nodes));
         Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp1/afolder").toString(),
-            ROEVO.RemovalClass.getURI(), model, nodes));
+            ROEVO.Removal.getURI(), model, nodes));
+
         //should not consider any resources added to the research object after the snaphot is done
         Assert.assertFalse(isChangeInTheChangesList(getResourceURI("ro1-sp1/change_annotation").toString(),
-            ROEVO.AdditionClass.getURI(), model, nodes));
-
+            ROEVO.Addition.getURI(), model, nodes));
+        Assert.assertFalse(isChangeInTheChangesList(getResourceURI("ro1-sp1/ann3-body").toString(),
+            ROEVO.Addition.getURI(), model, nodes));
     }
 
 
-    /*
-    /*
-    //@Test
-    public final void testStoreROhistory()
-            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
-
-        try {
-            InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
-            sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
-
-            String stringResult = sms
-                    .storeAggregatedDifferences(getResourceURI("ro1-sp2/"), getResourceURI("ro1-sp1/"));
-
-            OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
-            model.read(sms.getNamedGraph(getResourceURI("ro1-sp2/.ro/evo_inf.rdf"), RDFFormat.RDFXML), null);
-            Individual evoInfoSource = model.getIndividual(getResourceURI("ro1-sp2/.ro/evo_inf.rdf").toString());
-            List<RDFNode> changesList = evoInfoSource.listPropertyValues(
-                model.createProperty("http://purl.org/wf4ever/roevo#hasChange")).toList();
-
-            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann3").toString(),
-                ROEVO.AdditionClass.toString(), model, changesList));
-            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/res3").toString(),
-                ROEVO.AdditionClass.getURI(), model, changesList));
-            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/afinalfolder").toString(),
-                ROEVO.AdditionClass.getURI(), model, changesList));
-            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann2").toString(),
-                ROEVO.ModificationClass.getURI(), model, changesList));
-            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp1/afolder").toString(),
-                ROEVO.RemovalClass.getURI(), model, changesList));
-        } finally {
-            sms.close();
-        }
-    }
-
-
-    //@Test(expected = NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public final void testStoreROhistoryWithWrongParametrs()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
-        try {
-            InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
-            sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
-            sms.storeAggregatedDifferences(null, getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL");
-        } finally {
-            sms.close();
-        }
+        testStructure.sms.storeAggregatedDifferences(null, testStructure.sp1);
     }
 
 
-    //@Test
+    @Test
     public final void testStoreROhistoryWithNoAccenestor()
             throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
-        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile);
-        try {
-            InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp1/.ro/manifest.ttl");
-            sms.addNamedGraph(getResourceURI("ro1-sp1/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
-            String result = sms.storeAggregatedDifferences(getResourceURI("ro1-sp1/"), null);
-            Assert.assertEquals("", result);
-        } finally {
-            sms.close();
-        }
-        //@TODO read created model and look for the possible written changes
+        String result = testStructure.sms.storeAggregatedDifferences(testStructure.sp1, null);
+        Assert.assertEquals("", result);
     }
-         */
+
 
     @Test
     public void testAddFolder()
