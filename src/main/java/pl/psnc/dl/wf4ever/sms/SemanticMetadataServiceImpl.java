@@ -1668,5 +1668,8 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
             deleteProxy(researchObject, proxy);
         }
 
+        if (graphset.containsGraph(graphURI.toString())) {
+            graphset.removeGraph(graphURI.toString());
+        }
     }
 }
