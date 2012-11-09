@@ -1158,7 +1158,6 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         List<RDFNode> oldAggreagted = getAggregatedWithNoEvoAndBody(oldRO);
 
         OntModel evoInfoModel = createOntModelForNamedGraph(freshRO.getFixedEvolutionAnnotationBodyPath());
-        addAnnotation(freshRO, Arrays.asList(freshRO.getUri()), freshRO.getFixedEvolutionAnnotationBodyPath());
 
         Individual changeSpecificationIndividual = evoInfoModel.createIndividual(
             generateRandomUriRelatedToResource(freshRO, "change_specification"), ROEVO.ChangeSpecification);
