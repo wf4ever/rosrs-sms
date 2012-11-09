@@ -1641,43 +1641,6 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
 
     @Override
-    public boolean addAnnotationBody(ResearchObject researchObject, URI graphURI, InputStream inputStream,
-            RDFFormat rdfFormat) {
-        OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
-        Individual ro = manifestModel.getIndividual(researchObject.getUri().toString());
-        if (ro == null) {
-            throw new IllegalArgumentException("URI not found: " + researchObject.getUri());
-        }
-        Resource resource = manifestModel.createResource(graphURI.toString());
-        manifestModel.add(ro, ORE.aggregates, resource);
-        return addNamedGraph(graphURI, inputStream, rdfFormat);
-    }
-
-
-    @Override
-    public void removeAnnotationBody(ResearchObject researchObject, URI graphURI) {
-        graphURI = graphURI.normalize();
-        OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
-        Individual ro = manifestModel.getIndividual(researchObject.getUri().toString());
-        if (ro == null) {
-            throw new IllegalArgumentException("URI not found: " + researchObject.getUri());
-        }
-        Resource resource = manifestModel.getResource(graphURI.toString());
-        if (resource == null) {
-            throw new IllegalArgumentException("URI not found: " + graphURI);
-        }
-        manifestModel.remove(ro, ORE.aggregates, resource);
-
-        URI proxy = getProxyForResource(researchObject, graphURI);
-        if (proxy != null) {
-            deleteProxy(researchObject, proxy);
-        }
-        if (graphset.containsGraph(graphURI.toString())) {
-            graphset.removeGraph(graphURI.toString());
-        }
-    }
-
-
     public void generateEvoInformation(ResearchObject researchObject, ResearchObject liveRO, EvoType type) {
         switch (type) {
             case LIVE:
@@ -1709,6 +1672,7 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
 
         manifestModel.add(evoInfo, ORE.describes, ro);
         manifestModel.add(evoInfo, DCTerms.created, evoModel.createTypedLiteral(Calendar.getInstance()));
+
         addAnnotation(researchObject, Arrays.asList(researchObject.getUri()),
             researchObject.getFixedEvolutionAnnotationBodyPath()).toString();
         ro.addProperty(ORE.aggregates,
@@ -1807,4 +1771,42 @@ public class SemanticMetadataServiceImpl implements SemanticMetadataService {
         }
         return new Annotation(URI.create(it.next().getSubject().getURI()));
     }
+
+
+    public boolean addAnnotationBody(ResearchObject researchObject, URI graphURI, InputStream inputStream,
+            RDFFormat rdfFormat) {
+        OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
+        Individual ro = manifestModel.getIndividual(researchObject.getUri().toString());
+        if (ro == null) {
+            throw new IllegalArgumentException("URI not found: " + researchObject.getUri());
+        }
+        Resource resource = manifestModel.createResource(graphURI.toString());
+        manifestModel.add(ro, ORE.aggregates, resource);
+        return addNamedGraph(graphURI, inputStream, rdfFormat);
+    }
+
+
+    @Override
+    public void removeAnnotationBody(ResearchObject researchObject, URI graphURI) {
+        graphURI = graphURI.normalize();
+        OntModel manifestModel = createOntModelForNamedGraph(researchObject.getManifestUri());
+        Individual ro = manifestModel.getIndividual(researchObject.getUri().toString());
+        if (ro == null) {
+            throw new IllegalArgumentException("URI not found: " + researchObject.getUri());
+        }
+        Resource resource = manifestModel.getResource(graphURI.toString());
+        if (resource == null) {
+            throw new IllegalArgumentException("URI not found: " + graphURI);
+        }
+        manifestModel.remove(ro, ORE.aggregates, resource);
+
+        URI proxy = getProxyForResource(researchObject, graphURI);
+        if (proxy != null) {
+            deleteProxy(researchObject, proxy);
+        }
+        if (graphset.containsGraph(graphURI.toString())) {
+            graphset.removeGraph(graphURI.toString());
+        }
+    }
+
 }

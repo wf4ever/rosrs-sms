@@ -178,7 +178,7 @@ public class SemanticMetadataServiceImplTest {
     private static void cleanData() {
         SemanticMetadataService sms = null;
         try {
-            sms = new SemanticMetadataServiceImpl(userProfile, false);
+            sms = new SemanticMetadataServiceImpl(userProfile, true);
             try {
                 sms.removeResearchObject(researchObject);
             } catch (IllegalArgumentException e) {
@@ -202,8 +202,9 @@ public class SemanticMetadataServiceImplTest {
         } catch (ClassNotFoundException | IOException | NamingException | SQLException e) {
             e.printStackTrace();
         } finally {
-            if (sms != null)
+            if (sms != null) {
                 sms.close();
+            }
         }
     }
 
@@ -1199,6 +1200,68 @@ public class SemanticMetadataServiceImplTest {
         Assert.assertEquals("wrong parent URI", liveFromARCH, testStructure.ro1.getUri());
     }
 
+
+    /*
+    //    @Test
+    //    public final void testStoreROhistory()
+    //            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
+    //        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
+    //
+    //        try {
+    //            InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
+    //            sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
+    //
+    //            OntModel model = ModelFactory.createOntologyModel(OntModelSpec.OWL_LITE_MEM);
+    //            model.read(sms.getNamedGraph(getResourceURI("ro1-sp2/.ro/evo_inf.rdf"), RDFFormat.RDFXML), null);
+    //            Individual evoInfoSource = model.getIndividual(getResourceURI("ro1-sp2/.ro/evo_inf.rdf").toString());
+    //            List<RDFNode> changesList = evoInfoSource.listPropertyValues(
+    //                model.createProperty("http://purl.org/wf4ever/roevo#hasChange")).toList();
+    //
+    //            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann3").toString(),
+    //                ROEVO.AdditionClass.toString(), model, changesList));
+    //            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/res3").toString(),
+    //                ROEVO.AdditionClass.getURI(), model, changesList));
+    //            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/afinalfolder").toString(),
+    //                ROEVO.AdditionClass.getURI(), model, changesList));
+    //            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp2/ann2").toString(),
+    //                ROEVO.ModificationClass.getURI(), model, changesList));
+    //            Assert.assertTrue(isChangeInTheChangesList(getResourceURI("ro1-sp1/afolder").toString(),
+    //                ROEVO.RemovalClass.getURI(), model, changesList));
+    //        } finally {
+    //            sms.close();
+    //        }
+    //    }
+
+    @Test(expected = NullPointerException.class)
+    public final void testStoreROhistoryWithWrongParametrs()
+            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
+        try {
+            InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp2/.ro/manifest.ttl");
+            sms.addNamedGraph(getResourceURI("ro1-sp2/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
+            sms.storeAggregatedDifferences(null, getResourceURI("ro1-sp1/"), ".ro/manifest.ttl", "TTL");
+        } finally {
+            sms.close();
+        }
+    }
+
+
+    @Test
+    public final void testStoreROhistoryWithNoAccenestor()
+            throws ClassNotFoundException, IOException, NamingException, SQLException, URISyntaxException {
+        SemanticMetadataService sms = new SemanticMetadataServiceImpl(userProfile, false);
+        try {
+            InputStream is = getClass().getClassLoader().getResourceAsStream("rdfStructure/ro1-sp1/.ro/manifest.ttl");
+            sms.addNamedGraph(getResourceURI("ro1-sp1/.ro/manifest.rdf"), is, RDFFormat.TURTLE);
+            String result = sms.storeAggregatedDifferences(getResourceURI("ro1-sp1/"), null);
+            Assert.assertEquals("", result);
+        } finally {
+            sms.close();
+        }
+        //@TODO read created model and look for the possible written changes
+    >>>>>>> 60917032661e100f4a60a770a66dfc7744729270
+    }
+    */
 
     @Test
     public final void testChangeURIInManifestAndAnnotationBodies()
